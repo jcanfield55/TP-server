@@ -1,0 +1,1054 @@
+<html>
+   <head>
+      <title>Test</title>
+      <script type="text/javascript">
+      //<![CDATA[
+         
+            var ii=1;
+         function Util()   {}
+         Util.trueLiterals = new Array("true", "yes", "on", true);
+         Util.falseLiterals = new Array("false", "no", "off", false);
+         
+         Util.toBoolean = function(strVal)  {
+            if(strVal == null)   {
+               return false;
+            }
+            return ArrayUtil.contains(Util.trueLiterals, strVal);
+         };
+         
+         Util.toNumber = function(numVal, defaultVal)   {
+            var tmpVal = Number(numVal);
+            return isNaN(tmpVal) ? defaultVal ? Util.toNumber(defaultVal) : 0 : numVal;
+         };
+         
+         Util.toObjectSource = function(obj)   {
+            if(obj == null)   {
+               return "[null]";
+            }
+            if(obj == undefined) {
+               return "[undefined]";
+            }
+            
+            var str = "[";
+            var member = null;
+            for(var each in obj)	{
+               member = obj[each];
+               str += each + "=" + member + ", "
+            }
+            return str + "]";
+         };
+         
+         Util.nextUniqueId = function()   {
+            var uid = 1;
+            var win = window.opener ? window.opener.top : window.top;
+            if(win.jafguid) {
+               uid = ++win.jafguid;
+            }else {
+               win.jafguid = uid;
+            }
+            return uid;
+         };
+            
+            
+            
+         /**
+          * The Map stores objects in key - value pairs.
+          * @author aniket naik
+          */
+         function Map()   {
+            this.coll = new Object();
+            this.size = 0;
+            
+            /**
+             * Get all keys in this Map as Array
+             */
+            this.keys = function()   {
+               var arr = new Array();
+               for(key in this.coll)   {
+                  if(key != undefined)  {
+                     arr.push(key);
+                  }
+               }
+               return arr;
+            };
+            
+            /**
+             * Get all values in this map as Array
+             */
+            this.values = function()   {
+               var arr = new Array();
+               for(key in this.coll)   {
+                  if(key != undefined && this.coll[key] != undefined)  {
+                     arr.push(this.coll[key]);
+                  }
+               }
+               return arr;
+            };
+         
+            /**
+             * Get value corrosponding to specified key or 
+             * null if not present
+             */
+            this.get = function(key)  {
+               if(this.containsKey(key))  {
+                  return this.coll[key];
+               }
+               return null;
+            };
+            
+            /**
+             * Returns true if the specified key is
+             * present in this Map, else false
+             */
+            this.containsKey = function(key)   {
+               return (this.coll[key] != undefined)
+            };
+         
+            /**
+             * Returns true iff all the keys specified in arrKeys
+             * are present in this Map
+             */
+            this.containsKeys = function(arrKeys)  {
+               var i;
+               for(i = 0; i < arrKeys.length && this.containsKey(arrKeys[i]); i++);
+               return (i == arrKeys.length);
+            };
+            
+            /**
+             * Returns the number key-value pairs in this Map 
+             */
+            this.getSize = function()  {
+               return this.size;
+            };
+            
+            this.isEmpty = function()   {
+               return this.getSize() == 0;
+            };
+            
+            /**
+             * Inserts value (val) against a key (key) in this Map
+             * Replaces the value if key already present and returns
+             * the old value
+             */
+            this.put = function(key, val /*, flag */) {
+               var retVal = this.get(key);
+               if(! this.containsKey(key))  {
+                  this.size++;
+               }
+               this.coll[key] = (val == undefined) ? null : val;
+               
+               /* if(flag) {
+                  var str = "";
+                  for(ky in this.coll) {
+                     str += ky + "= " + this.coll[ky] + "\n";
+                  }
+                  alert(str);
+               } */
+               
+               return retVal;
+            };
+            
+            /**
+             * Adds all the keys-value pairs of otherMap into this Map
+             * overriding duplicate keys
+             * @param otherMap The Map from which data has to be transfered
+             */
+            this.putAll = function(otherMap)   {
+               if(otherMap == null) {
+                  return;
+               }
+               var arrKeys = otherMap.keys();
+               for(var i = 0, len = arrKeys.length; i < len; i++) {
+                  var key = arrKeys[i];
+                  this.put(key, otherMap.get(key));
+               }
+            };
+         
+            /**
+             * Removes the key-value pair from this Map
+             * Returns the value returned
+             */
+            this.remove = function(key)   {
+              var retVal = null;
+               if(this.coll[key] != undefined)  {
+                  retVal = this.coll[key];
+                  this.coll[key] = undefined;
+                  delete this.coll[key];
+                  this.size--;
+               }
+              return retVal;
+            };
+            
+            /**
+             * Emptys this map
+             */
+            this.clear = function()	{
+               this.coll = new Object();
+               this.size = 0;
+            };
+            
+            /**
+             * Gets the string output of this Map
+             */
+            this.toString = function()   {
+               var keys = this.keys();
+               var str = "Map[";
+               for(var i = 0; i < keys.length; i++)   {
+                  var val = this.get(keys[i]);
+                  str += keys[i] + "=" + (val == null ? "{null}" : val)  + ", ";
+               }
+         
+              if(str.lastIndexOf(", ") != -1)   {
+                  str = str.substring(0, str.lastIndexOf(", "));
+               }
+         
+               str += "]";
+               return str;
+            };
+         
+            /**
+             * Gets an equivalent associative array of this Map
+             */
+            this.toArray = function()   {
+               var keys = this.keys();
+               var retArray = new Array();
+               for(var i = 0; i < keys.length; i++)   {
+                 retArray[keys[i]] = this.get(keys[i])
+               }
+               return retArray;
+            };
+         
+            
+         }
+         Map.fromArray = function(arr, bPurgeEmpty) {
+            var map = new Map();
+            for(key in arr)   {
+               if (bPurgeEmpty && (key == ""))	{}
+               else	{
+                  map.put(key, arr[key]);
+               }
+            }
+            return map;
+         };
+         
+            
+         function ArrayUtil() {}
+      
+         /**
+          * Finds index of <tt>obj</tt> in the specified <tt>array</tt>
+          * @param   array The array to search
+          * @param   obj   The object to search
+          * @return        the 0 based index of the specified object or -1
+          * @see           ArrayUtil.lastIndexOf(array, obj)
+          */
+         ArrayUtil.indexOf = function(array, obj) {
+            var i;
+            var len;
+            for(i = 0, len = array.length; i < len && array[i] != obj; i++);
+            return (i == len) ? -1 : i;
+         };
+         
+         /**
+          * Finds the last index of the specified obejct
+          * @see ArrayUtil.indexOf(array, obj)
+          */
+         ArrayUtil.lastIndexOf = function(array, obj) {
+            var i;
+            for(i = array.length -1; i >= 0 && this[i] != obj; i--);
+            return i;
+         };
+         
+         /**
+          * Removes the first occurance of <tt>obj</tt> from <tt>array</tt>
+          * and returns it. If object cannot be found, returns null
+          */ 
+         ArrayUtil.remove = function(array, obj) {
+            var idx = ArrayUtil.indexOf(array, obj);
+            if(idx != -1)  {
+               return array.splice(idx, 1)[0];
+            }
+            return null;
+         };
+         
+         ArrayUtil.contains = function(array, obj)   {
+            return ArrayUtil.indexOf(array, obj) != -1;
+         };
+         
+         /**
+          * Adds the <tt>obj</tt> into <tt>array</tt> at the <tt>index</tt>
+          * If index is out of range of array indices, this method just returns
+          * silently without doing anything
+          * FIXME: should throw an error if index out of bounds
+          */
+         ArrayUtil.addAt = function(array, index, obj)   {
+            var len = array.length;
+            if(index >= 0) {
+               if(index < len)   {
+                  array.splice(index, 0, obj);
+                  return true;
+               }else if(index == len) {
+                  array.push(obj);
+                  return true;
+               }
+            }
+            return false;
+         };
+         
+         ArrayUtil.removeAt = function(array, idx)   {
+            var len = array.length;
+            var elem = null;
+            if(idx >= 0 && idx < len)  {
+               elem = array.splice(idx, 1);
+            }
+            return elem[0];
+         };
+         
+         ArrayUtil.shallowCopy = function(array)  {
+            if(array == null) {
+               return null;
+            }
+            var len = array.length;
+            var copy  = new Array(len);
+            for(var i = 0; i < len; i++)  {
+               copy[i] = array[i];
+            }
+            return copy;
+         };
+         
+         function npEval(str) {
+            return str;
+         }         
+         
+         
+            
+         /**
+          * Provides a wrapper around Microsoft's Msxml2.XMLHTTP.4.0 and Mozilla.org's
+          * XMLHttpRequest
+          * @author aniket naik
+          */
+         function XmlHttpProvider(doc)  {
+            this._doc = doc || document;
+            this._id = "xmlhttp_" + Util.nextUniqueId();
+            this._asyncHandler = null;
+            this._requestHeaders = new Map();
+         }
+         
+         var XmlHttpProviderProto = XmlHttpProvider.prototype; {
+            /**
+             * Send a HTTP GET request to the <tt>url</tt>
+             * If <tt>bAsync</tt> is true, and an async handler is attached to this
+             * provider, call the handler after the response completes passing the
+             * response xml or response text
+             * @param url     The URL to do a GET
+             * @param bAsync  [optional]
+             * @return void
+             */
+            XmlHttpProviderProto.doGet = function(url, objData, bAsync)   {
+               this.executeHttpMethod("GET", url, bAsync, objData);
+            };
+         
+            /**
+             * Send a HTTP POST request to the <tt>url</tt> passing the post data
+             * If <tt>bAsync</tt> is true, and an async handler is attached to this
+             * provider, call the handler after the response completes passing the
+             * response xml or response text
+             * @param url        The URL to do a POST
+             * @param bAsync     [optional]
+             * @param postData   The post data to send
+             * @return           void
+             */      
+            XmlHttpProviderProto.doPost = function(url, postData, bAsync) {
+               this.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+               this.executeHttpMethod("POST", url, bAsync, postData);
+            };
+            
+            /**
+             * Send a HTTP HEAD request to the url
+             */      
+            XmlHttpProviderProto.doHead = function(url, putData, bAsync)   {
+               this.executeHttpMethod("HEAD", url, bAsync, putData); 
+            };
+            
+            /**
+             * Set a response header to a specified value. Should be called before
+             * calling send.
+             */
+            XmlHttpProviderProto.setRequestHeader = function(strHeader, strVal) {
+               this._requestHeaders.put(strHeader, strVal);
+            };
+            
+            /**
+             * Gets the ready state of this xhr component. The default implementation
+             * always returns XmlHttpProvider.UNINITIALIZED.
+             * Sub classes should override it in a meaningful way
+             */
+            XmlHttpProviderProto.getReadyState = function()   {
+               return XmlHttpProvider.UNINITIALIZED;
+            };
+            
+            /**
+             * Gets the response XML as a result of transmission
+             * Subclasses should override this in a meaningful way, the default 
+             * implementation always returns null
+             */
+            XmlHttpProviderProto.getResponseXml = function() {
+               return null;
+            };
+            
+            /**
+             * Gets the response (as text) as a result of this transmission
+             * Subclasses should override this in a meaningful way, the default 
+             * implementation always returns null
+             */
+            XmlHttpProviderProto.getResponseText = function()   {
+               return null;
+            };
+            
+            /**
+             * Gets the content of the recent request if any. The type of the content
+             * here is not known. Subclasses should override this in a meaningful way.
+             * The default implementation always returns null
+             */
+            XmlHttpProviderProto.getContent = function()   {
+               return null;
+            };
+            
+            /**
+             * Override the mime type of the response with the specified one
+             * so as to deal with response body appropriately.
+             * Subclasses should override this in a meaningful way
+             */
+            XmlHttpProviderProto. overrideMimeType = function(strType) {};
+            
+            /**
+             * Gets the HTTP status code from the response.
+             * @return the status code from response
+             */
+            XmlHttpProviderProto.getStatusCode = function()  {
+               return -1;
+            };
+            
+            /**
+             * Gets the HTTP status message of the recent response
+             * Default implementation always returns null
+             */
+            XmlHttpProviderProto.getStatusMessage = function()  {
+               return null;
+            };
+            
+            /**
+             * Gets all the response headers as an Array. The array element contains 
+             * entire response headers with their names e.g. 'Content-Type: text/plain'
+             * If strHeaderName is specified, the array will contain the 'value' of 
+             * that response header e.g.
+             * If the header is 'Content-Type: text/plain' and this methods is called
+             * as <tt>getAllResponseHeaders('Content-Type')</tt>, then the returned
+             * array will contain single element 'text/plain'
+             * The default implementation returns an empty array
+             */
+            XmlHttpProviderProto.getAllResponseHeaders = function(strHeaderName) {
+               return new Array();
+            };
+            
+            /**
+             * Gets a specific response header
+             * @param strHeader The header to retrieve
+             */
+            XmlHttpProviderProto.getResponseHeader = function(strHeader) {
+               return null;
+            };
+             
+            /**
+             * Sets a handler which will be called when posts, gets are send 
+             * asynchronously. The handler will be called after the response is 
+             * complete by passing the response from the server
+             */
+            XmlHttpProviderProto.setAsyncHandler = function(funcHandler) {
+               this._asyncHandler = funcHandler;
+            };
+            
+            /**
+             * Resets the current XmLHttpProvider clearing all request headers
+             * and handlers. Calls resetInternal which is overriden by sub classes
+             */
+            XmlHttpProviderProto.reset = function()   {
+               this._asyncHandler = null;
+               this._requestHeaders = new Map();
+               this.resetInternal();
+            };
+            
+            /**
+             * Gets whether this provider is currently transmitting
+             */
+            XmlHttpProviderProto.isTransmitting = function() {
+                return true;
+            };
+            
+            /**
+             * Execute the specified HTTP method on the specified URL
+             * @param strMethod The HTTP method (GET|POST|HEAD|TRACE|OPTIONS etc.)
+             * This method is overidden by sub classes to provide appropriate 
+             * implementations. 
+             *
+             * @param url        The URL on which to send the HTTP request
+             * @param bAsync     Boolean flag indicating if this execution is asynchronous
+             * @param objData    [Optional] Data to send with the request
+             * @param strUName   [Optional] The user name if required
+             * @param strPasswd  [Optional] The user password if required
+             */
+            XmlHttpProviderProto.executeHttpMethod = function
+                  (strMethod, url, bAsync, objData, strUName, strPasswd) {
+               // Subclasses override
+            };
+            
+            /**
+             * Aborts the current request if currently transmitting
+             */
+            XmlHttpProviderProto.abort = function() {};
+         
+            /**
+             * Subclasses can override to provide custom "reset" functionality.
+             */
+            XmlHttpProviderProto.resetInternal = function()   {
+               // template reset method for sub classes
+            };
+             
+            /**
+             * String representation of this provider
+             * Subclasses should override this method.
+             */
+            XmlHttpProviderProto.toString = function() {
+               return "XmlHttpProvider";
+            };
+            
+            /* -------------------------- Static Members ----------------------------- */
+            XmlHttpProvider.providers = {
+               "XHRProvider": XHRProvider,
+               "IFrameHttpProvider": IFrameHttpProvider
+            };
+            
+            XmlHttpProvider.UNINITIALIZED = 0; //open() has not been called yet
+            XmlHttpProvider.LOADING = 1; //send() has not been called yet
+            XmlHttpProvider.LOADED = 2; //send() has been called, headers and status are available
+            XmlHttpProvider.INTERACTIVE = 3; //Downloading, responseText holds the partial data
+            XmlHttpProvider.COMPLETED = 4; //Finished with all operations
+            
+            /**
+             * A factory method that creates and instance of XmlHttpProvider depending
+             * on :<br />
+             * <ul>
+             *    <li>The optional argument provided for the implementation class</li>
+             *    <li>If available XML HTTP Transport on the browser (XHR) </li>
+             *    <li>IFrame HTTP Provider</li>
+             * <ul>
+             * @param optStrProvider The name of the provider class that extends from 
+             * XmlHttpProvider
+             * @param optDoc An optional document object
+             * @return An instance of XmlHttpProvider
+             */
+            XmlHttpProvider.getInstance = function(optDoc, optStrProvider)	{
+               var instance = null;
+               var clazz = null;
+               if(optStrProvider)   {
+                  clazz = XmlHttpProvider.providers[optStrProvider];
+                  if(! clazz) {
+                     clazz = eval(optStrProvider);
+                  }
+               }else if(window.XMLHttpRequest || window.ActiveXObject) {
+                  clazz = XHRProvider;
+               }else {
+                  clazz = IFrameHttpProvider;
+               }
+               return new clazz(optDoc);
+            };
+         }
+         
+         
+         
+         /**
+          * The XmlHttpProvider implementation that uses the native XMLHttpRequest available
+          * with most browsers today.
+          */
+         function XHRProvider(doc)  {
+            XmlHttpProvider.call(this, doc);
+            this._nativePeer = this._initProvider();
+         }
+         var XHRProviderProto = XHRProvider.prototype = new XmlHttpProvider;  {
+            XHRProviderProto.executeHttpMethod = function
+                  (strMethod, url, bAsync, objData, strUName, strPasswd) {
+               this._attachHandler(bAsync);
+               
+               strUName = strUName || "";
+               strPasswd = strPasswd || "";
+               bAsync = (bAsync == true) ? true : false;
+               
+               this._nativePeer.open(strMethod, url, bAsync, strUName, strPasswd);
+               
+               var headerNames = this._requestHeaders.keys();
+               for(var i = 0, len = headerNames.length; i < len; i++)   {
+                  var hdrName = headerNames[i];
+                  var val = this._requestHeaders.remove(hdrName) || "";
+                  this._nativePeer.setRequestHeader(hdrName, val);
+               }
+               
+               objData = objData || null;
+               this._nativePeer.send(objData);
+            };
+            
+            XmlHttpProviderProto.getReadyState = function()   {
+               return this._nativePeer.readyState;
+            };
+            
+            XHRProviderProto.isTransmitting = function()   {
+               return (this._nativePeer.readyState == 2 || 
+                     this._nativePeer.readyState == 3);
+            };
+            
+            XHRProviderProto.abort = function() {
+               try   {
+                  this._nativePeer.abort();
+               }catch(err) {
+                  // ignore
+               }
+            };
+         
+            XHRProviderProto.resetInternal = function()   {
+               try   {
+                  // this._nativePeer.abort();
+                  this._nativePeer.onreadystatechange = null;
+               }catch(err) {
+                  this._nativePeer.onreadystatechange = XHRProvider.noHandler;
+               }
+            };
+            
+            XHRProviderProto.getResponseXml = function() {
+               return this._nativePeer.responseXML;
+            };
+            
+            XHRProviderProto.getResponseText = function()   {
+               return this._nativePeer.responseText;
+            };
+            
+            /**
+             * Gets the content of the recent request. The content type is one of the 
+             * following:<br />
+             * <ul>
+             *    <li>XML if available</li>
+             *    <li>Text if XML is not available</li>
+             * </ul>
+             * 
+             * @throws Error if any of the HTTP error codes are encountered (400+)
+             */
+            XHRProviderProto.getContent = function()   {
+               // content not yet available.
+               if(this._nativePeer.readyState < 3)   {
+                  return null;
+               }
+               
+               var statCode = -1;
+               try   {
+                  statCode = this._nativePeer.status;
+               }catch(ex)  {
+                  // :-( browser throws error sometimes for async requests ignore.
+                  return null;
+               }
+               
+               if(statCode >= 400)  {
+                  throw new Error(statCode + ": " + this._nativePeer.statusText);
+               }
+               
+               var xmlDoc = this._nativePeer.responseXML;
+               if(xmlDoc && xmlDoc.documentElement)   {
+                  var root = xmlDoc.documentElement; 
+                  if(root.nodeName == "parsererror")  {
+                     throw new Error("ParseError: " + root);
+                  }
+                  return xmlDoc;
+               }else {
+                  return this._nativePeer.responseText;
+               }
+            };
+            
+            XHRProviderProto.getStatusCode = function()  {
+               return this._nativePeer.status;
+            };
+            
+            XHRProviderProto.getStatusMessage = function()  {
+               return this._nativePeer.statusText;
+            };
+            
+            XHRProviderProto.getAllResponseHeaders = function(strHeaderName) {
+               var responseHeaders = this._nativePeer.getAllResponseHeaders().trim();
+               var arr = responseHeaders.split("\n");
+               var valueArr = new Array();
+               
+               for(var i = 0, len = arr.length; i < len; i++)  {
+                  var hdr = arr[i].trim();
+                  arr[i] = hdr;
+                  if(strHeaderName && hdr.indexOf(strHeaderName) != -1) {
+                     var value = hdr.substring(hdr.indexOf(":") + 1);
+                     valueArr.push(value);
+                  }
+               }
+               
+               if(strHeaderName) {
+                  return valueArr;
+               }
+               return arr;
+            };
+            
+            XHRProviderProto.getResponseHeader = function(strHeader) {
+               return this._nativePeer.getResponseHeader(strHeader);
+            };
+            
+            /**
+             * Override the mime type of the response with the specified one
+             * so as to deal with response body appropriately. This method has
+             * no effect in any browsers except Mozilla
+             * @param strType The MIME type to override with
+             * NOTE: Only following mime types are supported
+             * text/xml, application/xhtml+xml, application/xml
+             */
+            XHRProviderProto. overrideMimeType = function(strType) {
+               if(this._nativePeer.overrideMimeType)  {
+                  if(strType == "text/xml" || strType == "application/xhtml+xml"
+                        || strType == "application/xml")  {
+                     this._nativePeer.overrideMimeType(strType);
+                  }
+               }
+            };
+             
+            /**
+             * String representation of this provider
+             * Subclasses should override this method.
+             */
+            XHRProviderProto.toString = function() {
+               return "XHRProvider[" + (this._nativePeer ? this._nativePeer : "") + "]";
+            };
+            
+            /* -------------------------- Private memebers --------------------------- */
+            
+            /**
+             * Initializes the internal native provider which is 
+             * browser specific.
+             */
+            XHRProviderProto._initProvider = function() {
+               var obj = null;
+               if(window.XMLHttpRequest)   {
+                  obj = new XMLHttpRequest();
+               }else if(window.ActiveXObject)  {
+                  obj = new ActiveXObject("Microsoft.XMLHTTP");
+               }
+               return obj;
+            };
+            
+            /**
+             * Register a handler for the specified provider.
+             */
+            XHRProviderProto._attachHandler = function(bAsync) {
+               if(bAsync && this._asyncHandler)  {
+                  var asyncHandler = this._asyncHandler;
+                  var nPeer = this._nativePeer;
+                  var instance = this;
+                  this._nativePeer.onreadystatechange = function()  {
+                     var rs = nPeer.readyState;
+                     var ct = (rs >= 3) ? instance.getContent() : null;
+                     asyncHandler(rs, ct);
+                     return true;
+                  };
+               }
+            };
+            
+            /* ----------------------------- Static members -------------------------- */
+            
+            XHRProvider.noHandler = function()   {};
+         }
+         
+
+
+         function IFrameHttpProvider(doc) {
+            XmlHttpProvider.call(this, doc);
+            // container for iframe
+            this._div = null;
+            this._iframe = null;
+            this._transmitting = false;
+         }
+         var IFrameProviderProto = IFrameHttpProvider.prototype = new XmlHttpProvider;  {  
+            IFrameProviderProto.executeHttpMethod = function
+                  (strMethod, url, bAsync, objData, strUName, strPasswd) {
+               this._transmitting = true;
+               this._attachHandler();
+               
+               var loc = this._iframe.location || 
+                     this._iframe.contentDocument ? this._iframe.contentDocument.location
+                     : this._iframe.contentWindow ? this._iframe.contentWindow.document.location 
+                     : null;
+               loc.replace(url + "?" + objData);
+            };
+            
+            IFrameProviderProto.setRequestHeader = function(strHeader, strVal)   {
+               // don't do anything
+            };
+            
+            IFrameProviderProto.isTransmitting = function()   {
+               return this._transmitting;
+            };
+            
+            IFrameProviderProto.abort = function() {
+               try   {
+                  var doc = HtmlUtil.getDocumentForFrame(this._iframe);
+                  doc.stop();
+               }catch(err) {
+                  alert(err);
+               }
+            };
+            
+            /**
+             * Resets the default page for the iframe to blank page. This is required
+             * because the iframe might contain a text or an XML document and if it is used
+             * again for a POST, the iframe's document needs to be HTML
+             */
+            IFrameProviderProto.resetInternal = function ()   {
+               var frm = this.getIFrame();
+               
+               if(frm.src != IFrameHttpProvider.DEFAULT_URL)   {
+                  var doc = frm.contentDocument || 
+                        (frm.contentWindow ? frm.contentWindow.document : null);
+                  if(doc)  {
+                     doc.location.replace(IFrameHttpProvider.DEFAULT_URL);
+                  }
+               }
+            };
+            
+            IFrameProviderProto.destroy = function()   {
+               if(this._div) {
+                  this._doc.body.removeChild(this._div);
+               }
+            };
+            
+            IFrameProviderProto.toString = function()   {
+               return "IFrameHttpProvider[" + this.getIFrame() + "]";
+            };
+            
+            
+            /* -------------------------- Private memebers --------------------------- */
+            
+            IFrameProviderProto.getIFrame = function()   {
+               if(! this._iframe)   {
+                  this._div = this._doc.body.appendChild(this._doc.createElement("div"));
+                  if(window.ActiveXObject)   {
+                     // For IE since the form's target is not resolved to this iframe
+                     var iframeStr = "<iframe style='' src='' name='" + this._id + "'></iframe>";
+                     alert(iframeStr);
+                     this._div.innerHTML = iframeStr;
+                     this._iframe = this._div.firstChild;
+                  }else {
+                     this._iframe = this._doc.createElement("iframe");
+                     this._iframe.setAttribute("name", this._id + "");
+                     this._iframe.src = IFrameHttpProvider.DEFAULT_URL;
+                     this._iframe = this._div.appendChild(this._iframe);
+                  }
+                  
+                  // style and set width and height to 0; 
+                  var style = this._iframe.style;
+                  style.width = 300;
+                  style.height = 300;
+                  style.border = "1px solid gold";
+               }      
+               return this._iframe;
+            };
+            
+            /**
+             * Register a handler for the specified provider.
+             */
+            IFrameProviderProto._attachHandler = function() {
+               if(this._asyncHandler)  {
+                  var handler = this._asyncHandler;
+                  var instance = this;
+                  
+                  var ifrm = this.getIFrame();
+                  var funcHandler = function()  {
+                     var content = ifrm.contentDocument 
+                        || (ifrm.contentWindow ? ifrm.contentWindow.document : ifrm.document);
+                     handler(XmlHttpProvider.COMPLETED, content);
+                     instance._transmitting = false;
+                     this.onload = null;
+                     // alert("Inside: " + instance.isTransmitting());
+                     return true;
+                  };
+                  
+                  // for some reason this has to be done for IE
+                  if(ifrm.attachEvent) {
+                     ifrm.attachEvent("onload" , funcHandler);
+                  }else {
+                     ifrm.onload = funcHandler;
+                  }
+               }
+            };
+            
+            /* 
+            IFrameProviderProto._executeHttpGet = function(url, objData) {
+               var loc = this._iframe.location || 
+                     this._iframe.contentDocument ? this._iframe.contentDocument.location
+                     : this._iframe.contentWindow ? this._iframe.contentWindow.document.location 
+                     : null;
+               loc.replace(url + "?" + objData);
+            };
+         
+            IFrameProviderProto._executeHttpPost = function(url, objData)   {
+               this._executeFormSubmit("POST", url, objData);
+               this._executeHttpGet(url, objData);
+            };
+            
+            IFrameProviderProto._executeFormSubmit = function(method, url, objData)   {
+               var submitForm = this._createForm(method, url, objData);
+               submitForm.submit();
+               
+            };
+            
+            IFrameProviderProto._createForm = function(method, url, objData)   {
+               var frm = this.getIFrame();
+               this.reset();
+         
+               var doc = frm.contentDocument || 
+                     (frm.contentWindow ? frm.contentWindow.document : null);
+               if(doc == null)   {
+                  alert("IFrame document is null!!");
+                  return null;
+               }
+               
+               var form = this._doc.createElement("form");
+               var bdy = this._doc.body;
+               form = bdy ? bdy.appendChild(form) : form;
+               
+               form.action = url; // url + "?" + escape(objData);
+               form.method = method;
+               form.setAttribute("target", this._iframe.name + "");
+               // form.enctype = "application/x-www-form-urlencoded";
+               form.enctype = "text/xml";
+               
+               // add an input element
+                
+               var input = this._doc.createElement("input");
+               input.type = "text";
+               input.name = "data";
+               input.value = objData;  // assume the data is always text
+               form.appendChild(input);
+               return form;
+            };
+            */
+            
+            /* --------------------------- Static Members ---------------------------- */
+            
+            // IFrameHttpProvider.DEFAULT_URL = "/jaf/etc/default/blank.xhtml";
+            IFrameHttpProvider.DEFAULT_URL = "about:blank";
+         }
+         
+         
+         // --------------------------------------------------------------------
+         
+         function $(id)   {
+            return document.getElementById(id);
+         }
+         
+         function go()  {
+            var url = $("url").value;
+            var reqData = $("request").value;
+            var txtRes = $("response");
+            
+            var prov = XmlHttpProvider.getInstance();
+            
+            try {
+                prov.setAsyncHandler(function(rState, content)  {
+                   try  {
+                       if(rState == 4)   {
+                          var res = prov.getResponseText();
+                          txtRes.value = res;
+                       }
+                   }catch(er)   {
+                       txtRes.value = er.message;
+                   }
+                });
+                
+                txtRes.value = "Sending Request...";
+                prov.doPost(url, reqData, true);
+            }catch(e)   {
+                txtRes.value = e.message;
+            }
+         }
+         
+         function wipe()  {
+            document.getElementById('req').value = "";
+         }
+		 function addElement() {
+			  var ni = document.getElementById('idfile');		  
+
+			  var newdiv = document.createElement('input');  
+
+			  newdiv.setAttribute('name','fileupload'+ii++);
+			  newdiv.setAttribute('type','file');
+
+			  //newdiv.innerHTML = 'hi';
+			  ni.appendChild(newdiv);
+
+}
+      
+      //]]>
+      </script>
+      
+      <style type="text/css">
+         table {
+            border: 1px solid #e7e7e7;
+            border-collapse: collapse;
+         }
+         
+         textarea, input {
+            border: 1px solid #666;
+            width: 100%;
+         }
+      </style>
+   </head>
+   <body>   
+      <form action="ws/feedback/new" method="post">
+	   <table id ="uploadform" width="100%">     
+         <tr>
+            <td style="padding-left: 5px;padding-right: 5;">
+               Request Data:<br />
+               <textarea name="req" id="request" cols="50" rows="15"></textarea>
+            </td>
+         </tr>        
+         <tr>
+            <td colspan="2" style="text-align: center;">
+               <input style="width:200px" id="submit" type="submit" value="Post data to URL" />
+               <input onclick="wipe()" style="width:200px" id="clear" type="button" value="Clear fields" />             
+            </td>
+         </tr>   
+      
+      </table>
+	   </form>
+	        <form action="ws/feedback/new" enctype="multipart/form-data" method="post">
+	   <table id ="uploadform" width="100%">     
+         <tr>
+            <td>
+               Request Data:<br />
+               <textarea name="req" id="request" cols="50" rows="15"></textarea>
+            </td>
+         </tr>
+         <tr>
+            <td id="idfile">              
+           </td>
+         </tr>
+         <tr>
+            <td colspan="2" style="text-align: center;">
+               <input style="width:200px" id="submit" type="submit" value="Post MultiPart" />
+               <input onclick="wipe()" style="width:200px" id="clear" type="button" value="Clear fields" />
+               <input onclick="addElement()" style="width:200px" id="file" type="button" value="Attache File" />
+            </td>
+         </tr>         
+      
+      </table>
+
+ </form>
+   </body>
+</html>
+

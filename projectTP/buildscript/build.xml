@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<project name="ProjectTP" default="all" basedir="..">
+	<!-- Loading Property file-->
+	<property file="buildscript/build.properties" />
+	<property name="build.folder" value="${workspace.folder.relativepath}/build" />
+	<property name="classes.folder" value="${build.folder}/classes" />
+	<property name="build.jar.file" value="projectTP_${build.major}.${build.minor}.${build.no}.jar" />
+	<property name="src.dir" value="src" />
+
+	<!-- set classpath -->
+	<path id="project.class.path">
+		<pathelement location="src" />
+		<pathelement path="${java.class.path}/" />
+		<fileset dir="WebContent/WEB-INF/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${tomcat.home}/lib">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+	<target name="clean">
+		<delete dir="build" />
+		<delete dir="WebContent/WEB-INF/lib">
+		    <include name="projectTP*.jar"/>
+		</delete>
+	</target>
+
+	<target name="war" depends="compile" description="Create web archieve for server.">
+		<mkdir dir="build/WebContent" />
+		<copydir dest="build/WebContent" src="WebContent">
+		</copydir>
+
+		<war destfile="build/projectTP.war" webxml="WebContent/WEB-INF/web.xml">
+			<fileset dir="build/WebContent" />
+		</war>
+	</target>
+
+	<target name="compile" description="Compile src to bin." depends="clean">
+		<property name="cp" refid="project.class.path" />
+		<mkdir dir="build/classes" />
+		<copydir dest="build/src" src="src">
+		</copydir>
+		<javac srcdir="build/src" destdir="build/classes" classpath="${cp}">
+		</javac>
+		
+		<jar destfile="WebContent/WEB-INF/lib/${build.jar.file}" basedir="build/classes">
+			<manifest>
+				<attribute name="Built-By" value="Apprika Inc." />
+			</manifest>
+		</jar>
+		
+		<mkdir dir="WebContent/WEB-INF/classes/conf" />
+		<copydir dest="WebContent/WEB-INF/classes/conf" src="${src.dir}/conf" />
+	</target>
+
+	<target name="package" depends="war" description="Build tomcat bundle.">
+		<delete dir="${tomcat.home}/webapps" includes="*.war">
+		</delete>
+		<copy todir="${tomcat.home}/webapps">
+			<fileset dir="build">
+				<include name="*.war" />
+			</fileset>
+		</copy>
+		<tstamp />
+		<zip destfile="dist/ProjectTP_${build.major}.${build.minor}.${build.no}.zip">
+			<fileset dir="${tomcat.home}">
+			</fileset>
+		</zip>
+	</target>
+	<target name="all" depends="package" />
+</project>

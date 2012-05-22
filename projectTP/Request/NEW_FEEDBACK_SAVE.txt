@@ -1,0 +1,13 @@
+multipart request
+
+/OTPServer/feedback/new
+Parameters:
+	deviceid
+	trip
+	source
+	formattype //1 text,2-audio,-3audio_taxt
+	rating
+	txtfb
+	
+	
+	deviceid=123&trip=<trtp xml>&source=2&formattype=3&rating=3.14

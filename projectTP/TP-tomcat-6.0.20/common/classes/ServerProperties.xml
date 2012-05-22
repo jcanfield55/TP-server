@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+
+<properties>
+
+	<comment><![CDATA[This is server properties file.]]></comment>
+
+	<!-- Server name -->
+	<entry key="SERVER_NAME">npMany</entry>
+
+	<!-- Server version -->
+	<!-- entry key="SERVER_VERSION">1.1</entry -->
+
+	<!-- Progress icon file name -->
+	<!-- entry key="PROGRESS_ICON">/progress.gif</entry -->
+
+</properties>
+

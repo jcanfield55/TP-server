@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd" >
+<log4j:configuration>
+	<!-- console Appender -->
+	<appender name="stdout" class="org.apache.log4j.ConsoleAppender">
+		<param name="threshold" value="fatal" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+		</layout>
+	</appender>
+
+	<!-- main servlet appender -->
+	<appender name="MainServlet" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/otplogs/MainServlet.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+		</layout>
+	</appender>	
+	<appender name="persistance" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/otplogs/PersistanceService.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+		</layout>
+	</appender>
+	<!-- Default appender -->
+	<appender name="syslog" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="INFO" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/otplogs/syslog.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+		</layout>
+	</appender>
+	<!-- ===================================================== Loggers ============================================================== -->
+	<logger name="com.apprika.otp.servlet.MainServlet">
+		<level value="DEBUG" />
+		<appender-ref ref="MainServlet" />
+	</logger>
+	<logger name="com.apprika.otp.mongo.PersistanceService">
+		<level value="DEBUG" />
+		<appender-ref ref="persistance" />
+	</logger>
+	<logger name="com.apprika.otp.service.TPFeedbackService">
+		<level value="DEBUG" />
+		<appender-ref ref="MainServlet" />
+	</logger>
+	<logger name="com.apprika.otp.startup.StartupManager">
+		<level value="DEBUG" />
+		<appender-ref ref="MainServlet" />
+	</logger>
+	<logger name="com.apprika.otp.ws.FeedbackWS">
+		<level value="DEBUG" />
+		<appender-ref ref="MainServlet" />
+	</logger>
+	<logger name="console">
+		<level value="DEBUG" />
+		<appender-ref ref="stdout" />
+	</logger>
+	<root>
+		<priority value="debug" />
+		<appender-ref ref="syslog" />
+		<appender-ref ref="stdout" />
+	</root>
+</log4j:configuration>
