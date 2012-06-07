@@ -3,8 +3,22 @@
     "spring-beans.dtd">
 
 <beans>
-	<bean id="FeedBackService"  class="com.apprika.otp.ws.FeedbackWS">
-	</bean> 	 
-	<!-- <bean id="TestService"  class="com.apprika.otp.ws.TestService">
-	</bean> --> 	 
+	<bean id="FeedBackService" class="com.nimbler.tp.rest.TpFeedbackRestService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.TpFeedbackService</value>
+		</property>
+	</bean>
+
+	<bean id="TripPlanService" class="com.nimbler.tp.rest.TpPlanRestService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.TpPlanService</value>
+		</property>
+	</bean>
+
+	<bean id="TpLoggingWS" class="com.nimbler.tp.rest.TpEventLoggingRestService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.TpEventLoggingService</value>
+		</property>
+	</bean>
+	<!-- <bean id="TestService" class="com.nimbler.tp.ws.TestService"> </bean> -->
 </beans>

@@ -1,13 +1,16 @@
 multipart request
 
-/OTPServer/feedback/new
+/TPServer/ws/feedback/new
 Parameters:
-	deviceid
-	trip
-	source
+	deviceid	
+	source /// 1-plan, 2 itinerary,3-leg
+	planid or itineraryid or legid
+	txtfb - text feedback
 	formattype //1 text,2-audio,-3audio_taxt
 	rating
-	txtfb
 	
 	
-	deviceid=123&trip=<trtp xml>&source=2&formattype=3&rating=3.14
+	file attachement
+	
+	
+	

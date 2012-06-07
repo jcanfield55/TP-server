@@ -15,54 +15,119 @@
 		<param name="threshold" value="DEBUG" />
 		<param name="maxFileSize" value="2MB" />
 		<param name="maxBackupIndex" value="5" />
-		<param name="File" value="../logs/otplogs/MainServlet.log" />
-		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern"
-				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
-		</layout>
-	</appender>	
-	<appender name="persistance" class="org.apache.log4j.RollingFileAppender">
-		<param name="threshold" value="DEBUG" />
-		<param name="maxFileSize" value="2MB" />
-		<param name="maxBackupIndex" value="5" />
-		<param name="File" value="../logs/otplogs/PersistanceService.log" />
+		<param name="File" value="../logs/tplogs/MainServlet.log" />
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern"
 				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
 		</layout>
 	</appender>
+	<appender name="persistance" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/PersistenceService.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+		</layout>
+	</appender>
+	<appender name="planService" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/planService.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+		</layout>
+	</appender>
+	<appender name="otpMonitorLog" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/OtpMonitorLog.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+		</layout>
+	</appender>
+	<appender name="feedbackService" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/feedbackService.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+		</layout>
+	</appender>
+	<appender name="loggingService" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/loggingService.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+		</layout>
+	</appender>
+	<!--  Live Feeds Appender -->
+	<appender name="liveFeeds" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/liveFeeds.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+		</layout>
+	</appender>
+	
 	<!-- Default appender -->
 	<appender name="syslog" class="org.apache.log4j.RollingFileAppender">
 		<param name="threshold" value="INFO" />
 		<param name="maxFileSize" value="2MB" />
 		<param name="maxBackupIndex" value="5" />
-		<param name="File" value="../logs/otplogs/syslog.log" />
+		<param name="File" value="../logs/tplogs/syslog.log" />
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern"
 				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
 		</layout>
 	</appender>
 	<!-- ===================================================== Loggers ============================================================== -->
-	<logger name="com.apprika.otp.servlet.MainServlet">
+	<logger name="default">
 		<level value="DEBUG" />
 		<appender-ref ref="MainServlet" />
 	</logger>
-	<logger name="com.apprika.otp.mongo.PersistanceService">
+	<logger name="com.nimbler.tp.mongo.PersistenceService">
 		<level value="DEBUG" />
 		<appender-ref ref="persistance" />
 	</logger>
-	<logger name="com.apprika.otp.service.TPFeedbackService">
+	<logger name="com.nimbler.tp.service.TpFeedbackService">
+		<level value="DEBUG" />
+		<appender-ref ref="feedbackService" />
+	</logger>
+
+	<logger name="com.nimbler.tp.service.TpEventLoggingService">
+		<level value="DEBUG" />
+		<appender-ref ref="loggingService" />
+	</logger>
+	<logger name="com.nimbler.tp.service.TpPlanService">
+		<level value="DEBUG" />
+		<appender-ref ref="planService" />
+	</logger>
+	<logger name="com.nimbler.tp.startup.StartupManager">
 		<level value="DEBUG" />
 		<appender-ref ref="MainServlet" />
 	</logger>
-	<logger name="com.apprika.otp.startup.StartupManager">
+	<logger name="com.nimbler.tp.service.OtpMonitoringService">
 		<level value="DEBUG" />
-		<appender-ref ref="MainServlet" />
+		<appender-ref ref="otpMonitorLog" />
 	</logger>
-	<logger name="com.apprika.otp.ws.FeedbackWS">
+	<logger name="com.nimbler.tp.service.livefeeds">
 		<level value="DEBUG" />
-		<appender-ref ref="MainServlet" />
-	</logger>
+		<appender-ref ref="liveFeeds" />
+	</logger>	
 	<logger name="console">
 		<level value="DEBUG" />
 		<appender-ref ref="stdout" />

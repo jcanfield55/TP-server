@@ -4,7 +4,7 @@
 	<property file="buildscript/build.properties" />
 	<property name="build.folder" value="${workspace.folder.relativepath}/build" />
 	<property name="classes.folder" value="${build.folder}/classes" />
-	<property name="build.jar.file" value="projectTP_${build.major}.${build.minor}.${build.no}.jar" />
+	<property name="build.jar.file" value="${build.name}_${build.major}.${build.minor}.${build.no}.jar" />
 	<property name="src.dir" value="src" />
 
 	<!-- set classpath -->
@@ -22,7 +22,7 @@
 	<target name="clean">
 		<delete dir="build" />
 		<delete dir="WebContent/WEB-INF/lib">
-		    <include name="projectTP*.jar"/>
+		    <include name="${build.name}*.jar"/>
 		</delete>
 	</target>
 
@@ -31,7 +31,7 @@
 		<copydir dest="build/WebContent" src="WebContent">
 		</copydir>
 
-		<war destfile="build/projectTP.war" webxml="WebContent/WEB-INF/web.xml">
+		<war destfile="build/${build.name}.war" webxml="WebContent/WEB-INF/web.xml">
 			<fileset dir="build/WebContent" />
 		</war>
 	</target>
@@ -63,7 +63,7 @@
 			</fileset>
 		</copy>
 		<tstamp />
-		<zip destfile="dist/ProjectTP_${build.major}.${build.minor}.${build.no}.zip">
+		<zip destfile="dist/${build.name}_${build.major}.${build.minor}.${build.no}.zip">
 			<fileset dir="${tomcat.home}">
 			</fileset>
 		</zip>

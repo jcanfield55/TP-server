@@ -14,10 +14,73 @@
 
 	<bean id="mongoOpetation" class="org.springframework.data.document.mongodb.MongoTemplate">
 		<constructor-arg ref="mongo" />
-		<constructor-arg name="databaseName" value="otpdb" />
+		<constructor-arg name="databaseName" value="tpdb" />
+		<!--
+			<property name="username" value="admin"/> <property name="password"
+			value="admin"/>
+		-->
 	</bean>
 
-	<!-- <bean id="OTPService" class="com.apprika.otp.service.OTPService" /> -->
-	<bean id="PersistanceService" class="com.apprika.otp.mongo.PersistanceService" />
-	
+	<bean id="persistenceService" class="com.nimbler.tp.mongo.PersistenceService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.mongo.PersistenceService</value>
+		</property>
+	</bean>
+
+	<bean id="tpPlanService" class="com.nimbler.tp.service.TpPlanService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.TpPlanService</value>
+		</property>
+	</bean>
+
+	<bean id="tpEventLoggingService" class="com.nimbler.tp.service.TpEventLoggingService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.TpEventLoggingService</value>
+		</property>
+	</bean>
+	<bean id="tpFeedbackService" class="com.nimbler.tp.service.TpFeedbackService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.TpFeedbackService</value>
+		</property>
+	</bean>
+
+	<bean id="otpMonitoringService" class="com.nimbler.tp.service.OtpMonitoringService"
+		init-method="init">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.OtpMonitoringService</value>
+		</property>
+	</bean>
+
+	<bean id="mailService" class="com.nimbler.tp.service.smtp.MailService"
+		init-method="init" />
+
+	<bean id="loggingService" class="com.nimbler.tp.service.LoggingService"
+		init-method="init" />
+
+	<bean id="bartApiClient" class="com.nimbler.tp.livefeeds.BARTApiClient"
+		init-method="init">
+		<property name="baseUrl">
+			<value>http://api.bart.gov/api/</value>
+		</property>
+		<property name="routeMap">
+			<map>
+				<entry key="ROUTE_LIST" value="route.aspx" />
+				<entry key="ESTIMATE_TIME" value="etd.aspx" />
+			</map>
+		</property>
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.livefeeds</value>
+		</property>
+	</bean>
+
+	<bean id="nextBusApiClient" class="com.nimbler.tp.livefeeds.NextBusApiClient"
+		init-method="init">
+		<property name="baseUrl">
+			<value>http://webservices.nextbus.com/service/publicXMLFeed</value>
+		</property>
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.livefeeds</value>
+		</property>
+	</bean>
+
 </beans>
