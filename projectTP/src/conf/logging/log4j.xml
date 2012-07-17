@@ -10,17 +10,7 @@
 		</layout>
 	</appender>
 
-	<!-- main servlet appender -->
-	<appender name="MainServlet" class="org.apache.log4j.RollingFileAppender">
-		<param name="threshold" value="DEBUG" />
-		<param name="maxFileSize" value="2MB" />
-		<param name="maxBackupIndex" value="5" />
-		<param name="File" value="../logs/tplogs/MainServlet.log" />
-		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern"
-				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
-		</layout>
-	</appender>
+
 	<appender name="persistance" class="org.apache.log4j.RollingFileAppender">
 		<param name="threshold" value="DEBUG" />
 		<param name="maxFileSize" value="2MB" />
@@ -28,7 +18,7 @@
 		<param name="File" value="../logs/tplogs/PersistenceService.log" />
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern"
-				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}]  %m%n" />
 		</layout>
 	</appender>
 	<appender name="planService" class="org.apache.log4j.RollingFileAppender">
@@ -38,7 +28,7 @@
 		<param name="File" value="../logs/tplogs/planService.log" />
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern"
-				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
 		</layout>
 	</appender>
 	<appender name="otpMonitorLog" class="org.apache.log4j.RollingFileAppender">
@@ -48,7 +38,7 @@
 		<param name="File" value="../logs/tplogs/OtpMonitorLog.log" />
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern"
-				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
 		</layout>
 	</appender>
 	<appender name="feedbackService" class="org.apache.log4j.RollingFileAppender">
@@ -58,7 +48,7 @@
 		<param name="File" value="../logs/tplogs/feedbackService.log" />
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern"
-				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
 		</layout>
 	</appender>
 	<appender name="loggingService" class="org.apache.log4j.RollingFileAppender">
@@ -68,7 +58,7 @@
 		<param name="File" value="../logs/tplogs/loggingService.log" />
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern"
-				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
 		</layout>
 	</appender>
 	<!--  Live Feeds Appender -->
@@ -79,10 +69,19 @@
 		<param name="File" value="../logs/tplogs/liveFeeds.log" />
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern"
-				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
 		</layout>
 	</appender>
-	
+	<appender name="tweetLog" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/Twitter.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
+		</layout>
+	</appender>
 	<!-- Default appender -->
 	<appender name="syslog" class="org.apache.log4j.RollingFileAppender">
 		<param name="threshold" value="INFO" />
@@ -94,11 +93,48 @@
 				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
 		</layout>
 	</appender>
+	<appender name="mailservice" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/mailservice.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
+		</layout>
+	</appender>
+	<appender name="gtfsmonitoring" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/gtfsmonitoring.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
+		</layout>
+	</appender>
+	<!-- Graph acceptance test -->
+	<appender name="gat" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/graphAcceptanceTest.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
+		</layout>
+	</appender>
+	<appender name="apn" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/apnService.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
+		</layout>
+	</appender>
 	<!-- ===================================================== Loggers ============================================================== -->
-	<logger name="default">
-		<level value="DEBUG" />
-		<appender-ref ref="MainServlet" />
-	</logger>
 	<logger name="com.nimbler.tp.mongo.PersistenceService">
 		<level value="DEBUG" />
 		<appender-ref ref="persistance" />
@@ -118,15 +154,36 @@
 	</logger>
 	<logger name="com.nimbler.tp.startup.StartupManager">
 		<level value="DEBUG" />
-		<appender-ref ref="MainServlet" />
+		<appender-ref ref="syslog" />
+	</logger>
+
+	<logger name="com.nimbler.tp.service.smtp.MailService">
+		<level value="DEBUG" />
+		<appender-ref ref="mailservice" />
+	</logger>
+	<logger name="com.nimbler.tp.gtfs.GraphAcceptanceTest">
+		<level value="DEBUG" />
+		<appender-ref ref="gat" />
 	</logger>
 	<logger name="com.nimbler.tp.service.OtpMonitoringService">
 		<level value="DEBUG" />
 		<appender-ref ref="otpMonitorLog" />
 	</logger>
+	<logger name="com.nimbler.tp.service.twitter">
+		<level value="DEBUG" />
+		<appender-ref ref="tweetLog" />
+	</logger>
+	<logger name="com.nimbler.tp.gtfs.GtfsDataMonitor">
+		<level value="DEBUG" />
+		<appender-ref ref="gtfsmonitoring" />
+	</logger>
 	<logger name="com.nimbler.tp.service.livefeeds">
 		<level value="DEBUG" />
 		<appender-ref ref="liveFeeds" />
+	</logger>	
+	<logger name="com.nimbler.tp.service.APNService">
+		<level value="DEBUG" />
+		<appender-ref ref="apn" />
 	</logger>	
 	<logger name="console">
 		<level value="DEBUG" />

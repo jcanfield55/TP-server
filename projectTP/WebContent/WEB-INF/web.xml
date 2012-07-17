@@ -3,14 +3,7 @@
 	xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	id="WebApp_ID" version="2.5">
-	<display-name>PickOne</display-name>
-	<!--
-		<servlet> <description></description> <display-name>OTP</display-name>
-		<servlet-name>MainServlet</servlet-name>
-		<servlet-class>com.nimbler.tp.servlet.MainServlet</servlet-class>
-		</servlet> <servlet-mapping> <servlet-name>MainServlet</servlet-name>
-		<url-pattern>/MainServlet</url-pattern> </servlet-mapping>
-	-->
+	<display-name>TripPlanner</display-name>
 	<welcome-file-list>
 		<welcome-file>index.jsp</welcome-file>
 		<welcome-file>default.html</welcome-file>
@@ -23,10 +16,8 @@
 
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
-		<param-value>
-		WEB-INF/classes/conf/spring/ServiceRegistry.xml,
-		 WEB-INF/classes/conf/spring/Context-security.xml
-		</param-value>
+		<param-value>WEB-INF/classes/conf/spring/ServiceRegistry.xml
+		WEB-INF/classes/conf/spring/security-applicationContext.xml</param-value>
 	</context-param>
 	<listener>
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
@@ -37,30 +28,32 @@
 		<servlet-class>com.sun.jersey.spi.spring.container.servlet.SpringServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
-
 	<servlet-mapping>
 		<servlet-name>TPRestService</servlet-name>
 		<url-pattern>/ws/*</url-pattern>
 	</servlet-mapping>
-
-	<!-- Spring Security -->
-	<filter>
+  <servlet>
+    <description></description>
+    <display-name>AdminServlet</display-name>
+    <servlet-name>AdminServlet</servlet-name>
+    <servlet-class>com.nimbler.tp.servlets.AdminServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AdminServlet</servlet-name>
+    <url-pattern>/AdminServlet</url-pattern>
+  </servlet-mapping>
+	<!-- Enables Spring Security-->
+	<!-- <filter>
 		<filter-name>springSecurityFilterChain</filter-name>
 		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+		<init-param>
+			<param-name>targetBeanName</param-name>
+			<param-value>springSecurityFilterChain</param-value>
+		</init-param>
 	</filter>
-
 	<filter-mapping>
 		<filter-name>springSecurityFilterChain</filter-name>
 		<url-pattern>/*</url-pattern>
-	</filter-mapping>
+	</filter-mapping>  -->
 
-	<!--
-		<servlet> <servlet-name>Jersey</servlet-name>
-		<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
-		<init-param>
-		<param-name>com.sun.jersey.config.property.packages</param-name>
-		<param-value>com.nimbler.tp.ws</param-value> </init-param> </servlet>
-		<servlet-mapping> <servlet-name>Jersey</servlet-name>
-		<url-pattern>/ws/*</url-pattern> </servlet-mapping>
-	-->
 </web-app>

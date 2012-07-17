@@ -1,0 +1,10 @@
+/TPServer/ws/event/revgeocode
+	
+
+lat -raw address
+lon - formatted address
+geoRes - geo json response form google
+deviceid
+
+
+http://10.0.0.38:8080/TPServer/ws/event/geocode?type=1&rawAdd=raw&frmtdAdd=ffffrrrmtd&geoRes={}geo json&deviceid=123-456-789

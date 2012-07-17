@@ -20,5 +20,25 @@
 			<value>com.nimbler.tp.service.TpEventLoggingService</value>
 		</property>
 	</bean>
-	<!-- <bean id="TestService" class="com.nimbler.tp.ws.TestService"> </bean> -->
+
+	<bean id="TpPredictionService" class="com.nimbler.tp.rest.RealTimePredictionService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.livefeeds</value>
+		</property>
+	</bean>
+
+	<bean id="userManagementRestService" class="com.nimbler.tp.rest.UserManagementRestService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.twitter</value>
+		</property>
+	</bean>
+	
+	<bean id="advisoriesService" class="com.nimbler.tp.rest.AdvisoriesRestService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.twitter</value>
+		</property>
+	</bean>
+	
+	<bean id="TestService" class="com.nimbler.tp.rest.TestService"> </bean>
+	
 </beans>

@@ -15,10 +15,8 @@
 	<bean id="mongoOpetation" class="org.springframework.data.document.mongodb.MongoTemplate">
 		<constructor-arg ref="mongo" />
 		<constructor-arg name="databaseName" value="tpdb" />
-		<!--
-			<property name="username" value="admin"/> <property name="password"
-			value="admin"/>
-		-->
+		<!-- <property name="username" value="admin"/> <property name="password" 
+			value="admin"/> -->
 	</bean>
 
 	<bean id="persistenceService" class="com.nimbler.tp.mongo.PersistenceService">
@@ -52,12 +50,19 @@
 	</bean>
 
 	<bean id="mailService" class="com.nimbler.tp.service.smtp.MailService"
-		init-method="init" />
+		init-method="init">
+		<property name="mailThreadPoolSize">
+			<value>10</value>
+		</property>
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.smtp.MailService</value>
+		</property>
+	</bean>
 
 	<bean id="loggingService" class="com.nimbler.tp.service.LoggingService"
 		init-method="init" />
 
-	<bean id="bartApiClient" class="com.nimbler.tp.livefeeds.BARTApiClient"
+	<bean id="bartApiClient" class="com.nimbler.tp.service.livefeeds.stub.BARTApiClient"
 		init-method="init">
 		<property name="baseUrl">
 			<value>http://api.bart.gov/api/</value>
@@ -73,13 +78,174 @@
 		</property>
 	</bean>
 
-	<bean id="nextBusApiClient" class="com.nimbler.tp.livefeeds.NextBusApiClient"
+	<bean id="nextBusApiClient" class="com.nimbler.tp.service.livefeeds.stub.NextBusApiClient"
 		init-method="init">
 		<property name="baseUrl">
 			<value>http://webservices.nextbus.com/service/publicXMLFeed</value>
 		</property>
 		<property name="loggerName">
 			<value>com.nimbler.tp.service.livefeeds</value>
+		</property>
+	</bean>
+
+	<bean id="nextBusApiImpl" class="com.nimbler.tp.service.livefeeds.NextBusApiImpl">
+		<property name="timeDiffercenceInMin">
+			<value>3</value>
+		</property>
+		<property name="agencyMap">
+			<map>
+				<entry key="AC Transit" value="actransit" />
+				<entry key="SFMTA" value="sf-muni" />
+			</map>
+		</property>
+	</bean>
+
+	<bean id="bartApiImpl" class="com.nimbler.tp.service.livefeeds.BARTApiImpl">
+		<property name="bartAPIRegKey">
+			<value>MW9S-E7SL-26DU-VV8V</value>
+		</property>
+		<property name="timeDiffercenceInMin">
+			<value>3</value>
+		</property>
+	</bean>
+
+	<bean id="caltrainAdvisoriesService"
+		class="com.nimbler.tp.service.twitter.CaltrainAdvisoriesService"
+		init-method="init">
+		<property name="tweetUrl">
+			<value>http://search.twitter.com/search.json</value>
+		</property>
+		<property name="timeIntervalInMin">
+			<value>3</value>
+		</property>
+		<property name="maxAlertThreshhold">
+			<value>6</value>
+		</property>
+		<property name="tweetSources">
+			<list>
+				<value>caltrain_news</value>
+				<value>caltrain</value> 
+				<!-- <value>apprikatest1</value> --> 
+			</list>
+		</property>
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.twitter</value>
+		</property>
+	</bean>
+
+	<bean id="userManagementService" class="com.nimbler.tp.service.UserManagementService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.twitter</value>
+		</property>
+	</bean>
+
+	<bean id="gat" class="com.nimbler.tp.gtfs.GraphAcceptanceTest"
+		init-method="startTest">
+		<property name="sourceDir" value="/usr/local/server/GAT/src/" />
+		<property name="destDir" value="/usr/local/server/GAT/dest/" />
+		<property name="threads" value="5" />
+		<property name="loggerName">
+			<value>com.nimbler.tp.gtfs.GraphAcceptanceTest</value>
+		</property>
+	</bean>
+	<bean id="apnService" class="com.nimbler.tp.service.APNService"
+		init-method="init">
+		<property name="password" value="password@123" />		
+		<property name="KEYSTORE_P12_FILE" value="conf/cert/certificateForProduction.p12" />		
+		<!-- use -1 for ignore pool usage -->
+		<property name="poolSize" value="5" />		
+		<!-- 1- sandbox, 2- production -->		
+		<property name="certType" value="2" />
+		<property name="isQueued" value="false" />
+		<property name="isNonBlocking" value="false" />
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.APNService</value>
+		</property>
+	</bean>
+
+	<bean id="gtfsMonitoring" class="com.nimbler.tp.gtfs.GtfsDataMonitor">
+		<property name="downloadDirectory" value="/usr/local/server/otp_build/tmp/" />
+		<property name="loggerName">
+			<value>com.nimbler.tp.gtfs.GtfsDataMonitor</value>
+		</property>
+		<property name="gtfsBundles">
+			<list>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="defaultAgencyId" value="BART" />
+					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/BART.zip" />
+					<property name="downloadUrl"
+						value="http://bart.gov/dev/schedules/google_transit.zip" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="defaultAgencyId" value="Menlo-Midday" />
+					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/Menlo-Midday.zip" />
+					<property name="downloadUrl"
+						value="http://www.menlopark.org/departments/trn/google/google_transit.zip" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="defaultAgencyId" value="ACtransit" />
+					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/ACtransit.zip" />
+					<property name="downloadUrl"
+						value="http://www.actransit.org/wp-content/plugins/download-monitor/download.php?id=5" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="defaultAgencyId" value="Caltrain" />
+					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/Caltrain.zip" />
+					<property name="downloadUrl"
+						value="http://www.caltrain.com/Assets/GTFS/caltrain/google_transit.zip" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="defaultAgencyId" value="SF-ferries" />
+					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/SF-ferries.zip" />
+					<property name="downloadUrl"
+						value="http://trilliumtransit.com/transit_feeds/sfbay-ferries-ca-us/google_transit.zip" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="defaultAgencyId" value="VTA" />
+					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/VTA.zip" />
+					<property name="downloadUrl"
+						value="http://www.vta.org/dev/data/google_transit.zip " />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="defaultAgencyId" value="SFMTA" />
+					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/SFMTA.zip" />
+					<property name="downloadUrl"
+						value="http://www.sfmta.com/transitdata/google_transit.zip" />
+				</bean>
+			</list>
+		</property>
+	</bean>
+	<!-- ====================================== Quarts trigger ================================== -->
+
+	<bean name="gtfsMonitoringJob"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetBeanName" value="gtfsMonitoring" />
+		<property name="targetMethod" value="checkGtfs" />
+	</bean>
+	<bean id="gtfsMonitoringJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="gtfsMonitoringJob" />
+		<property name="cronExpression" value="0 0 21 * * ?" />
+	</bean>
+	
+	<bean name="fetchTweetsJob"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetBeanName" value="caltrainAdvisoriesService" />
+		<property name="targetMethod" value="getLatestTweets" />
+	</bean>
+	<bean id="fetchTweetsTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="fetchTweetsJob" />
+		<property name="cronExpression" value="0 0/3 * * * ?" />
+	</bean>
+	
+	<bean id="schedulerFactoryBean"
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+				<ref bean="gtfsMonitoringJobTrigger" />
+				<ref bean="fetchTweetsTrigger" />
+			</list>
 		</property>
 	</bean>
 
