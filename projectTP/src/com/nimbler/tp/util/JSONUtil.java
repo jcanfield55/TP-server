@@ -1,3 +1,6 @@
+/*
+ * @author nirmal
+ */
 package com.nimbler.tp.util;
 
 import com.google.gson.Gson;
@@ -41,6 +44,14 @@ public class JSONUtil {
 		}
 		return response.getPlan();
 	}
+
+	/**
+	 * Gets the full plan obj from json.
+	 *
+	 * @param planJsonString the plan json string
+	 * @return the full plan obj from json
+	 * @throws TpException the tp exception
+	 */
 	public static TripResponse getFullPlanObjFromJson(String planJsonString) throws TpException {
 		Gson gson = new Gson();
 		TripResponse response =  gson.fromJson(planJsonString, TripResponse.class);

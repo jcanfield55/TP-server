@@ -10,7 +10,6 @@
 		</layout>
 	</appender>
 
-
 	<appender name="persistance" class="org.apache.log4j.RollingFileAppender">
 		<param name="threshold" value="DEBUG" />
 		<param name="maxFileSize" value="2MB" />

@@ -118,9 +118,9 @@
 		<property name="timeIntervalInMin">
 			<value>3</value>
 		</property>
-		<property name="maxAlertThreshhold">
+		<!-- <property name="maxAlertThreshhold">
 			<value>6</value>
-		</property>
+		</property> -->
 		<property name="tweetSources">
 			<list>
 				<value>caltrain_news</value>
@@ -151,11 +151,11 @@
 	<bean id="apnService" class="com.nimbler.tp.service.APNService"
 		init-method="init">
 		<property name="password" value="password@123" />		
-		<property name="KEYSTORE_P12_FILE" value="conf/cert/certificateForProduction.p12" />		
+		<property name="KEYSTORE_P12_FILE" value="conf/cert/Certificate_Dev_push.p12" />		
 		<!-- use -1 for ignore pool usage -->
 		<property name="poolSize" value="5" />		
 		<!-- 1- sandbox, 2- production -->		
-		<property name="certType" value="2" />
+		<property name="certType" value="1" />
 		<property name="isQueued" value="false" />
 		<property name="isNonBlocking" value="false" />
 		<property name="loggerName">
@@ -185,6 +185,7 @@
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="ACtransit" />
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/ACtransit.zip" />
+					<!--<property name="crackedDataFile" value="C:/OTP_/GTFS/ACtransit_hack.zip" />-->
 					<property name="downloadUrl"
 						value="http://www.actransit.org/wp-content/plugins/download-monitor/download.php?id=5" />
 				</bean>
@@ -225,7 +226,7 @@
 	</bean>
 	<bean id="gtfsMonitoringJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="gtfsMonitoringJob" />
-		<property name="cronExpression" value="0 0 21 * * ?" />
+ 		<property name="cronExpression" value="0 0 21 * * ?" /> 		
 	</bean>
 	
 	<bean name="fetchTweetsJob"
@@ -248,5 +249,30 @@
 			</list>
 		</property>
 	</bean>
-
+	<!-- ====================================== Mail configuration  ================================== -->
+ 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host" value="smtp.gmail.com" />
+        <property name="port" value="587" />
+        <property name="protocol" value="smtp" />
+        <property name="username" value="feedback@networkcommuting.com" />
+        <property name="password" value="nikunj27" />
+        <property name="javaMailProperties">
+            <props>
+            	<prop key="mail.smtp.from">feedback@networkcommuting.com</prop>
+                <prop key="mail.smtp.auth">true</prop>
+                <prop key="mail.smtp.starttls.enable">true</prop>
+                <prop key="mail.smtp.quitwait">false</prop>
+            </props>
+        </property>
+	</bean> 
+<!--<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+		<property name="host" value="192.168.3.11" />
+        <property name="protocol" value="smtp" />
+        <property name="javaMailProperties">
+            <props>
+                <prop key="mail.smtp.from">donotreply@tripplanner.com</prop>
+                <prop key="mail.smtp.auth">false</prop>
+            </props>
+        </property>
+	</bean>  -->  
 </beans>

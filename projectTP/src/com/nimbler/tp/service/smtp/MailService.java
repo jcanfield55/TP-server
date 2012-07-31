@@ -14,40 +14,37 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.activation.DataSource;
 import javax.mail.MessagingException;
 import javax.mail.Session;
-import javax.mail.Transport;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 
-import com.nimbler.tp.dataobject.SmtpConfig;
 import com.nimbler.tp.dbobject.FeedBack;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.TpConstants;
-import com.nimbler.tp.util.TpProperty;
 
 /**
  * The Class MailService.
  */
 public class MailService {
 
-	private SmtpConfig smtpConfig = null;
-	private Properties mailProperties = new Properties();
 	private Session mailSession;
 	ExecutorService executor ;
 	private int mailThreadPoolSize;
 	@Autowired
 	private LoggingService logger;
 	private String loggerName;
+	@Autowired
+	JavaMailSenderImpl mailSender;
 
 	/**
 	 * 
@@ -55,60 +52,13 @@ public class MailService {
 	public void init() {
 		try {
 			executor = Executors.newFixedThreadPool(mailThreadPoolSize);
-			smtpConfig = new SmtpConfig();
-			boolean isThirdPary = Boolean.valueOf(TpProperty.getDefaultProperty("isThirdParty"));
-			smtpConfig.setThirdParty(isThirdPary);
-			smtpConfig.setHost(TpProperty.getDefaultProperty("smtpHost"));
-			smtpConfig.setEnableDebug(Boolean.valueOf(TpProperty.getDefaultProperty("enableDebug")));
-			smtpConfig.setFrom(TpProperty.getDefaultProperty("from"));
-			smtpConfig.setTls(TpProperty.getDefaultProperty("mail.smtp.starttls.enable"));
-			boolean enableAuth = Boolean.valueOf(TpProperty.getDefaultProperty("enableAuthentication"));
-			if (enableAuth) {
-				smtpConfig.setEnableAuthentication(enableAuth);
-				smtpConfig.setUserName(TpProperty.getDefaultProperty("username"));
-				smtpConfig.setPassword(TpProperty.getDefaultProperty("password"));
-			}
-			String port = TpProperty.getDefaultProperty("port");
-			if(!ComUtils.isEmptyString(port))
-				smtpConfig.setPort(Integer.valueOf(port));
-
-			loadProperties();
 			logger.info(loggerName, "Mail service started");
 		} catch (Exception e) {
-			logger.error(loggerName, e);
 			e.printStackTrace();			
+			logger.error(loggerName, e);
 		}
 	}
 
-	/**
-	 * Load properties.
-	 */
-	private void loadProperties() {
-		if(smtpConfig.isThirdParty()){
-			String tls = smtpConfig.getTls();
-			if(!ComUtils.isEmptyString(tls))
-				mailProperties.put("mail.smtp.starttls.enable", tls);
-			mailProperties.put(TpConstants.MAIL_PROP_SMTP_AUTH,String.valueOf(smtpConfig.isEnableAuthentication()));
-		}else{
-			mailProperties.put(TpConstants.MAIL_PROP_SMTP_HOST, smtpConfig.getHost());
-			mailProperties.put(TpConstants.MAIL_PROP_SMTP_AUTH,String.valueOf(smtpConfig.isEnableAuthentication()));
-			if ( smtpConfig.isEnableAuthentication()) {
-				mailProperties.put(TpConstants.MAIL_PROP_AUTH_USER, smtpConfig.getUserName());
-				mailProperties.put(TpConstants.MAIL_PROP_AUTH_PASSWORD, smtpConfig.getPassword());
-			}			
-		}
-		mailSession = Session.getInstance(mailProperties,null);
-		mailSession.setDebug(smtpConfig.isEnableDebug());		
-	}
-	/**
-	 * Must be synchronized.
-	 * @param newConfig
-	 */
-	public void updateSmtpConfig(SmtpConfig newConfig) {
-		synchronized (smtpConfig) {
-			smtpConfig = newConfig;
-		}
-	}
 	/**
 	 * 
 	 * @param mailMsg
@@ -137,12 +87,13 @@ public class MailService {
 		@Override
 		public void run() {
 			try {
-				MimeMessage msg = new MimeMessage(mailSession);						
+				MimeMessage msg = new MimeMessage(mailSession);
 				msg.setSentDate(new Date());
-				msg.setFrom(new InternetAddress(smtpConfig.getFrom()));
-				Transport transport = getTransport(mailSession);
+				String from = mailSender.getSession().getProperty("mail.smtp.from");
+				if(from!=null)
+					msg.setFrom(new InternetAddress(from));
 				mailMsg.toMimeMessage(msg, lstAttachmentPaths);
-				transport.sendMessage(msg,msg.getAllRecipients());
+				mailSender.send(msg);
 				logger.debug(loggerName,"mail sent to "+mailMsg.getTo()+", Subject: "+mailMsg.getSubject());
 			} catch (AddressException e) {
 				logger.error(loggerName, e.getMessage()+", Msg:"+mailMsg);
@@ -209,26 +160,6 @@ public class MailService {
 	}
 
 	/**
-	 * Gets the transport.
-	 *
-	 * @param session the session
-	 * @return the transport
-	 * @throws MessagingException the messaging exception
-	 * @author nirmal
-	 * @since Aug 24, 2011
-	 */
-	private Transport getTransport(Session session) throws MessagingException{
-		Transport transport = session.getTransport("smtp");
-		if(smtpConfig.isEnableAuthentication()){
-			if(smtpConfig.getPort()!=0)
-				transport.connect(smtpConfig.getHost(),smtpConfig.getPort(),smtpConfig.getFrom(), smtpConfig.getPassword());
-			else
-				transport.connect(smtpConfig.getHost(),smtpConfig.getFrom(), smtpConfig.getPassword());
-		}else
-			transport.connect();
-		return transport;
-	}
-	/**
 	 * 
 	 * @param message
 	 */
@@ -270,8 +201,7 @@ public class MailService {
 		mailMsg.setSubject(TpConstants.FEEDBACK_EMAIL_SUBJECT);
 		mailMsg.setMessage(tripMsg);
 		mailMsg.setHtml(true);
-		sendMail(mailMsg, lstAttachment,lstFilesToDelete);
-		System.out.println("mail sent...");
+		sendMail(mailMsg, lstAttachment,lstFilesToDelete);		
 	}
 
 	public static void main(String[] args) {
@@ -281,7 +211,7 @@ public class MailService {
 		mailMsg.setTo("nirmal@apprika.com");
 		//		mailMsg.setMessage("<b>Test message....<b>");
 		//		mailMsg.setMessage(TestConstant.TEMPLET);
-		mailMsg.setSubject("Test mail from Pick-1");
+		mailMsg.setSubject("Test mail");
 		mailMsg.setHtml(true);
 
 		MailService mailService = new MailService();

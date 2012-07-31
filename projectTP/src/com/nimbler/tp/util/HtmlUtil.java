@@ -44,8 +44,8 @@ public class HtmlUtil {
 		for (GtfsMonitorResult result : lstGtfsMonitorResults) {			
 			StringBuffer sb = new StringBuffer();
 			sb.append("<br>");
-			sb.append(getHeaderLink(result.getGtfsBundle().getDownloadUrl(), result.getGtfsBundle().getDefaultAgencyId(),i));
-			addComparisonTable(sb,result);
+			String tag = getHeaderLink(result.getGtfsBundle().getDownloadUrl(), result.getGtfsBundle().getDefaultAgencyId(),i,sb);
+			addComparisonTable(sb,result,tag);
 			sb.append("<br>");
 			body.append(sb.toString());
 			i++;
@@ -76,22 +76,20 @@ public class HtmlUtil {
 	 *
 	 * @param sb the sb
 	 * @param result the result
+	 * @param tag 
 	 */
-	private static void addComparisonTable(StringBuffer sb,	GtfsMonitorResult result) {
-		if(result.getError()!=null){
-			StringBuffer sbTable = new StringBuffer();
-			sbTable.append(getHeadRow());
-			sbTable.append("<tr style='color: red; background:"+ROW_COLSPAN_BG+";'><td align='center' colspan='3'>"+result.getError()+"</td></tr>");
-			sb.append(table.replace("--data--", sbTable.toString()));	
-			return;
-		}
-		List<TableRow> lsTableRows = new ArrayList<TableRow>(result.getMerged().values());
+	private static void addComparisonTable(StringBuffer sb,	GtfsMonitorResult result, String tag) {
 		StringBuffer sbTable = new StringBuffer();
 		sbTable.append(getHeadRow());		
-		for (TableRow row : lsTableRows) {
-			sbTable.append(getTableRow(row));
+		if(result.getError()!=null){
+			sbTable.append("<tr style='color: red; background:"+ROW_COLSPAN_BG+";'><td align='center' colspan='4'>"+result.getError()+"</td></tr>");
+		}else{
+			List<TableRow> lsTableRows = new ArrayList<TableRow>(result.getMerged().values());
+			for (TableRow row : lsTableRows) 
+				sbTable.append(getTableRow(row));
 		}
-		sb.append(table.replace("--data--", sbTable.toString()));
+		String strTable = table.replace("--data--", sbTable.toString());				
+					sb.append("<div id=\""+tag+"\">"+strTable+"</div>");
 	}
 
 	/**
@@ -116,6 +114,7 @@ public class HtmlUtil {
 		private String service;
 		private Date oldDate;
 		private Date newDate;
+		private Date crackedDate;
 		public String getService() {
 			return service;
 		}
@@ -143,8 +142,16 @@ public class HtmlUtil {
 		public void setNewDate(Date newDate) {
 			this.newDate = newDate;
 		}
+		public Date getCrackedDate() {
+			return crackedDate;
+		}
+		public void setCrackedDate(Date crackedDate) {
+			this.crackedDate = crackedDate;
+		}
 
-
+		public boolean isCracked(){
+			return crackedDate!=null;
+		}
 		public boolean isNewDataAvailable(){
 			boolean res = false;
 			if(oldDate!=null && newDate!=null)
@@ -172,6 +179,12 @@ public class HtmlUtil {
 				return oldDate.compareTo(new Date())==-1;
 			return res;
 		}
+		public boolean isCrackedExpired(){
+			boolean res = false;
+			if(crackedDate!=null )
+				return crackedDate.compareTo(new Date())==-1;
+			return res;
+		}
 	}
 
 	/**
@@ -187,11 +200,13 @@ public class HtmlUtil {
 		private int updateService=0;
 		private int sameData=0;
 		private int expInSevenDay=0;
+		private int crackedService=0;
+		private int expiredCrackedService=0;
 
 		public GtfsSummery() {
 		}
 		public boolean isChange(){
-			if(newService==0 && expInSevenDay==0 && canceledService==0 && expiredService==0 && updateService==0 && sameData>0)
+			if(newService==0 && expInSevenDay==0 && canceledService==0 && expiredService==0 && updateService==0 && crackedService==0 && sameData>0)
 				return false;
 			else
 				return true;
@@ -214,6 +229,18 @@ public class HtmlUtil {
 		}
 		public int getNewService() {
 			return newService;
+		}
+		public int getCrackedService() {
+			return crackedService;
+		}
+		public void setCrackedService(int crackedService) {
+			this.crackedService = crackedService;
+		}
+		public int getExpiredCrackedService() {
+			return expiredCrackedService;
+		}
+		public void setExpiredCrackedService(int expiredCrackedService) {
+			this.expiredCrackedService = expiredCrackedService;
 		}
 		public void setNewService(int newService) {
 			this.newService = newService;
@@ -250,6 +277,12 @@ public class HtmlUtil {
 		public void incExpiredService() {
 			this.expiredService++;
 		}
+		public void incCrackedService() {
+			this.crackedService++;
+		}
+		public void incExpiredCrackedService() {
+			this.expiredCrackedService++;
+		}
 		public void incNewData() {
 			this.updateService++;
 		}
@@ -282,6 +315,7 @@ public class HtmlUtil {
 				"<td align='left' width=\"40%\"><b>Service<b></td>" +
 				"<td align='left'><b>Old Date</b></td>" +
 				"<td align='left'><b>New Date<b></td>" +
+				"<td align='left'><b>Cracked Date<b></td>" +
 				"</tr>";
 	}
 
@@ -294,12 +328,13 @@ public class HtmlUtil {
 	private static String getTableRow(TableRow row){
 		String bg = row.isNewDataAvailable()?" style=\"background-color: #BAF7A0\"":"";
 		String red = row.isOldExpired()?"  style=\"color: red;\"":"";
-		red = row.isExpireinSevenDays()?"  style=\"color: #D08310;\"":"";
+		String orange = row.isExpireinSevenDays()?"  style=\"color: #D08310;\"":"";
 		String res =  "" +
 				"<tr style=\"color: #000; text-aling: left; background: #fff;\">" +
 				"	<td "+bg+"><div>"+row.getService()+"</div></td>" +
-				"	<td "+bg+"><div"+red+">"+getDate(row.getOldDate())+"</div></td>" +
+				"	<td "+bg+"><div"+StringUtils.defaultString(red, orange)+">"+getDate(row.getOldDate())+"</div></td>" +
 				"	<td "+bg+"><div>"+getDate(row.getNewDate())+"</div></td>" +
+				"	<td "+bg+"><div>"+getDate(row.getCrackedDate())+"</div></td>" +
 				"</tr>";
 		return res;
 	}
@@ -310,12 +345,17 @@ public class HtmlUtil {
 	 * @param link the link
 	 * @param text the text
 	 * @param i the i
+	 * @param sb 
 	 * @return the header link
 	 */
-	private static String getHeaderLink(String link,String text, int i){
-		return "<div style='font-weight: bolder; color: #1879AD;'>" +i+
+	private static String getHeaderLink(String link,String text, int i, StringBuffer sb){		
+		String tag = System.nanoTime()+"";		
+		sb.append("<div style='font-weight: bolder; color: #1879AD;'>" +
+				" <a href=\"#"+tag+"\" style=\"text-decoration:none;\" onclick=\"showHide(this,'"+tag+"'); return false;\">[ - ]</a> " 
+				+i+
 				".<a style='font-weight: bold; color: #0E5D84;'" +
-				"href='"+link+"'> "+text+"</a></div>";
+				"href='"+link+"'> "+text+"</a></div>");
+		return tag;
 
 	}
 	private static String getHyperLink(String link,String text){
@@ -337,7 +377,7 @@ public class HtmlUtil {
 			res =  "" +
 					"<tr style=\"color: #000;; background: #E8E8E8;\">" +
 					"	<td ><div align=\"left\">"+summery.getAgency()+"</div></td>" +
-					"		<td colspan=\"5\" align=\"center\" style=\"background: "+ROW_COLSPAN_BG+"; color: red;\"><div>"+result.getError()+"</div></td>" +
+					"		<td colspan=\"7\" align=\"center\" style=\"background: "+ROW_COLSPAN_BG+"; color: red;\"><div>"+result.getError()+"</div></td>" +
 					"</tr>";
 		}else if(summery.isChange()){
 			res =   "<tr style=\"color: #000; background: #fff;\">" +
@@ -347,12 +387,14 @@ public class HtmlUtil {
 					"<td><div align=\"center\">"+summery.getCanceledService()+"</div></td>" +
 					"<td><div align=\"center\">"+summery.getUpdateService()+"</div></td>" +
 					"<td><div align=\"center\">"+summery.getExpInSevenDay()+"</div></td>" +
+					"<td><div align=\"center\">"+summery.getCrackedService()+"</div></td>" +
+					"<td><div align=\"center\">"+summery.getExpiredCrackedService()+"</div></td>" +
 					"</tr>";
 		}else{
 			res =  "" +
 					"<tr style=\"color: #000;; background: #E8E8E8;\">" +
 					"	<td ><div align=\"left\">"+summery.getAgency()+"</div></td>" +
-					"		<td colspan=\"5\" align=\"center\" style=\"background: "+ROW_COLSPAN_BG+"; color: #0cc712\"><div>"+msg+"</div></td>" +
+					"		<td colspan=\"7\" align=\"center\" style=\"background: "+ROW_COLSPAN_BG+"; color: #0cc712\"><div>"+msg+"</div></td>" +
 					"</tr>";
 		}
 		return res;

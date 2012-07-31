@@ -113,20 +113,29 @@ public class BARTApiImpl implements RealTimeAPI {
 	 * @return
 	 */
 	private Integer getClosestEstimation(List<Estimate> estimates, long scheduledTime) {
+		int defaultReturnVal = -1;
 		if (estimates==null || estimates.size()==0)
-			return -1;
+			return defaultReturnVal;
 		//key = difference between scheduled and estimated time, value = estimated time in min
 		Map<Integer, Integer> diffToMiutes = new TreeMap<Integer, Integer>();
 		for (Estimate estimate: estimates) {
-			Integer intMins = NumberUtils.toInt(estimate.getMinutes(), 1);
-			//System.out.println("Estimates: "+intMins);
+			int intMins = NumberUtils.toInt(estimate.getMinutes(), -1);
+			if (intMins == -1) {
+				//if BART vehicle is in leaving state and scheduled time is nearby current time, then mark it as on-time. 
+				long currentTime = System.currentTimeMillis();
+				long diff = (scheduledTime - currentTime) / (1000 * 60);
+				if (Math.abs(diff) <= 3)
+					return 1;
+				else
+					continue;
+			}
 			Calendar cal = Calendar.getInstance();
 			cal.add(Calendar.MINUTE, intMins);
 			Long estimatedDepartureTime = cal.getTimeInMillis();
 			int diff = (int) (estimatedDepartureTime - scheduledTime);
 			diffToMiutes.put(Math.abs(diff), intMins);
 		}
-		return diffToMiutes.size()>0 ? diffToMiutes.entrySet().iterator().next().getValue() : -1;
+		return diffToMiutes.size()>0 ? diffToMiutes.entrySet().iterator().next().getValue() : defaultReturnVal;
 	}
 	@Override
 	public List<LegLiveFeed> getLiveFeeds(List<Leg> leg) {

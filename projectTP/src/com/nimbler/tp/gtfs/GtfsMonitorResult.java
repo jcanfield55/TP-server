@@ -16,6 +16,7 @@ public class GtfsMonitorResult {
 	private GtfsBundle gtfsBundle;
 	private Map<String,Date> oldData;
 	private Map<String,Date> newData;
+	private Map<String,Date> crackedData;
 	private Map<String,TableRow> merged;
 	private GtfsSummery gtfsSummury;
 	private String error;
@@ -44,6 +45,12 @@ public class GtfsMonitorResult {
 	public void setMerged(Map<String, TableRow> merged) {
 		this.merged = merged;
 	}
+	public Map<String, Date> getCrackedData() {
+		return crackedData;
+	}
+	public void setCrackedData(Map<String, Date> crackedData) {
+		this.crackedData = crackedData;
+	}
 	public Map<String, Date> getNewData() {
 		return newData;
 	}
@@ -62,6 +69,8 @@ public class GtfsMonitorResult {
 	@Override
 	public String toString() {
 		return "GtfsMonitorResult [gtfsBundle=" + gtfsBundle + ", oldData="
-				+ oldData + ", newData=" + newData + ", error=" + error + "]\n";
+				+ oldData + ", newData=" + newData + ", crakedData="
+				+ crackedData + ", merged=" + merged + ", gtfsSummury="
+				+ gtfsSummury + ", error=" + error + "]";
 	}
 }

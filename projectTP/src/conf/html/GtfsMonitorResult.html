@@ -3,6 +3,19 @@
 <head>
 <meta http-equiv='Content-Type' content='text/html; charset=ISO-8859-1'>
 <title>Feedback Template</title>
+<script language="javascript" type="text/javascript">
+function showHide(obj,id){
+ var s=document.getElementById(id).style;
+ if (s.display=='none'){
+  obj.firstChild.data='[ - ]';
+  s.display='block'
+ }
+ else {
+  obj.firstChild.data='[ + ]';
+  s.display='none'
+ }
+}
+</script>
 </head>
 <body
 	style="font-family: Arial, Helvetica, sans-serif; color: #333333; font-size: 12px;">

@@ -121,5 +121,6 @@ public class TpConstants {
 	}
 
 	public static final String GTFS_DATA_COMPARE_MAIL_SUBJECT = TpProperty.getDefaultProperty("gtfs.compare.mail.subject");
+	public static final String GTFS_DATA_COMPARE_MAIL_ID = TpProperty.getDefaultProperty("gtfs.monitor.notify.emailid");
 	public static final String GRAPH_TEST_MAIL_SUBJECT = TpProperty.getDefaultProperty("graph.test.mail.subject");
 }

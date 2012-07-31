@@ -65,6 +65,7 @@ public class CaltrainAdvisoriesService {
 		} catch (Exception e) {
 			logger.error(loggerName, e);
 		}*/
+		maxAlertThreshhold = NumberUtils.toInt(TpConstants.TWEET_MAX_COUNT, 6);
 	}
 	/**
 	 * 
@@ -171,6 +172,7 @@ public class CaltrainAdvisoriesService {
 	private void publishTweets(long lastSentTime, int tweetCount, long lastLegTime) {
 		try {
 			String alertMsg = StatusMsgConfig.getInstance().getMsg("CALTRAIN_REGULAR_TWEET");
+			String alertMsgForSingleThreshold = StatusMsgConfig.getInstance().getMsg("CALTRAIN_REGULAR_TWEET_FOR_1_THRESHOLD");
 			Map<Integer, String> msgCache = new HashMap<Integer, String>();
 			int pageSize = 500;
 			int never = -1;
@@ -188,11 +190,16 @@ public class CaltrainAdvisoriesService {
 					break;
 				List<String> pushSuccessDevices = new ArrayList<String>();
 				for (User user : resultSet) {
+					String formattedMsg = null;
 					int newTweetCount = TweetStore.getInstance().getTweetCountAfterTime(user.getLastPushTime(), lastLegTime);
-					String formattedMsg = msgCache.get(newTweetCount);
-					if (formattedMsg==null) {
-						formattedMsg = String.format(alertMsg, newTweetCount, TpConstants.TWEET_TIME_DIFF);
-						msgCache.put(newTweetCount, formattedMsg);
+					if (user.getNumberOfAlert()==1) {
+						formattedMsg = alertMsgForSingleThreshold;
+					} else { 
+						formattedMsg = msgCache.get(newTweetCount);
+						if (formattedMsg==null) {
+							formattedMsg = String.format(alertMsg, newTweetCount, TpConstants.TWEET_TIME_DIFF);
+							msgCache.put(newTweetCount, formattedMsg);
+						}
 					}
 					pushToPhone(user.getDeviceToken(),newTweetCount, formattedMsg, false);
 					pushSuccessDevices.add(user.getId());

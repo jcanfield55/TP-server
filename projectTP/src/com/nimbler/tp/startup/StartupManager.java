@@ -17,6 +17,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 import org.apache.log4j.xml.DOMConfigurator;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.common.DBException;
@@ -30,7 +31,6 @@ import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.TpConstants;
 import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
 import com.nimbler.tp.util.TpException;
-import com.nimbler.tp.util.TpProperty;
 
 /**
  * The Class StartupManager.
@@ -50,7 +50,7 @@ public class StartupManager {
 		TPApplicationContext.getInstance();		
 		System.out.println("Image Repository Relative Path: "+TpConstants.REPO_RELATIVE_PATH);
 		System.out.println("\n==============================================================================");
-		System.out.println("SMTP                           : "+TpProperty.getDefaultProperty("smtpHost"));
+		System.out.println("SMTP                           : "+((JavaMailSenderImpl)TPApplicationContext.getBeanByName("mailSender")).getHost());
 		System.out.println("==============================================================================\n");
 		File imageRepository = new File(TpConstants.REPO_RELATIVE_PATH);
 		if(!imageRepository.exists())
@@ -92,7 +92,7 @@ public class StartupManager {
 			List<UserCredential> list= credential.getUserCredentials();
 			if (list == null || list.size() == 0)
 				throw new TpException("Error create while file read of default user.");
-			
+
 			for (UserCredential userCredential : list) {
 				Login login = new Login();
 				login.setUsername(userCredential.getUsername());
