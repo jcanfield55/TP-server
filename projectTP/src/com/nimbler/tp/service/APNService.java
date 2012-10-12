@@ -10,9 +10,13 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.nimbler.tp.util.ComUtils;
 import com.notnoop.apns.APNS;
+import com.notnoop.apns.ApnsDelegate;
+import com.notnoop.apns.ApnsNotification;
 import com.notnoop.apns.ApnsService;
 import com.notnoop.apns.ApnsServiceBuilder;
+import com.notnoop.apns.DeliveryError;
 import com.notnoop.apns.PayloadBuilder;
 import com.notnoop.exceptions.InvalidSSLConfig;
 import com.notnoop.exceptions.NetworkIOException;
@@ -21,7 +25,7 @@ import com.notnoop.exceptions.NetworkIOException;
  * @author nirmal
  *
  */
-public class APNService {
+public class APNService implements ApnsDelegate{
 	@Autowired
 	private LoggingService logger;
 	private String loggerName;
@@ -33,6 +37,7 @@ public class APNService {
 	private int certType;
 	private boolean isQueued = false;
 	private boolean isNonBlocking = false;
+	private  String sound = null;
 
 	public enum APN_CERT_TYPE{
 		UNDEFINED,
@@ -48,20 +53,20 @@ public class APNService {
 	 * On load.
 	 */
 	public void init(){
-		try {			
+		try {   
 			InputStream is = APNService.class.getClassLoader().getResourceAsStream(KEYSTORE_P12_FILE);
-			ApnsServiceBuilder serviceBuilder =	APNS.newService().withCert(is, password);
+			ApnsServiceBuilder serviceBuilder = APNS.newService().withCert(is, password);
 			if(certType == APN_CERT_TYPE.SAND_BOX.ordinal())
 				serviceBuilder = serviceBuilder.withSandboxDestination();
 			else
-				serviceBuilder = serviceBuilder.withProductionDestination();			
+				serviceBuilder = serviceBuilder.withProductionDestination();   
 			if(isQueued)
 				serviceBuilder = serviceBuilder.asQueued();
 			if(poolSize!=-1)
 				serviceBuilder = serviceBuilder.asPool(poolSize);
 			if(isNonBlocking)
 				serviceBuilder = serviceBuilder.asNonBlocking();
-			service = serviceBuilder.build();			
+			service = serviceBuilder.withDelegate(this).build();   
 		} catch (InvalidSSLConfig e) {
 			e.printStackTrace();
 		}catch (Exception e) {
@@ -78,11 +83,13 @@ public class APNService {
 	 * @param isUrgent the is urgent - optional
 	 * @return true, if successful
 	 */
-	public boolean push(String deviceToken,String msg,Integer badge,Boolean isUrgent){
+	public boolean push(String deviceToken,String msg,Integer badge,Boolean isUrgent,boolean useSound){
 		boolean success = false;
-		String payload = null;		
+		String payload = null;  
 		try {
 			PayloadBuilder payloadBuilder = APNS.newPayload();
+			if(sound!=null && useSound)
+				payloadBuilder.sound(sound);
 			if(msg!=null)
 				payloadBuilder.alertBody(msg);
 			if(badge!=null)
@@ -91,14 +98,14 @@ public class APNService {
 				payloadBuilder.customField("isUrgent",isUrgent+"");
 			payload = payloadBuilder.build();
 			logger.debug(loggerName,"Sending push notification..."+payload);
-			service.push(deviceToken, payload);			
+			service.push(deviceToken, payload);   
 			success = true;
 			logger.debug(loggerName,"notification  sent to "+deviceToken);
 		} catch (NetworkIOException e) {
-			logger.error(loggerName, "NetworkIOException: "+e.getMessage()+",deviceToken:"+deviceToken+", payload:"+payload);			
+			logger.error(loggerName, "NetworkIOException: "+e.getMessage()+",deviceToken:"+deviceToken+", payload:"+payload);   
 		}catch (RuntimeException e) {
 			logger.error(loggerName, e.getMessage()+",deviceToken:"+deviceToken+", payload:"+payload);
-		}catch (Exception e) {			
+		}catch (Exception e) {  
 			logger.error(loggerName,"deviceToken:"+deviceToken+", payload:"+payload, e);
 		}
 		return success;
@@ -113,10 +120,12 @@ public class APNService {
 	 * @param isUrgent the is urgent
 	 * @return true, if successful
 	 */
-	public boolean push(List<String> deviceTokens,String msg,Integer badge,Boolean isUrgent){
+	public boolean push(List<String> deviceTokens,String msg,Integer badge,Boolean isUrgent,boolean useSound){
 		boolean success = false;
 		try {
 			PayloadBuilder payloadBuilder = APNS.newPayload();
+			if(sound!=null && useSound)
+				payloadBuilder.sound(sound);
 			if(msg!=null)
 				payloadBuilder.alertBody(msg);
 			if(badge!=null)
@@ -146,11 +155,13 @@ public class APNService {
 	 * @param customFields the custom fields - optional
 	 * @return true, if successful
 	 */
-	public boolean pushWithCustomFields(String deviceToken,String msg,Integer badge,Map customFields){
+	public boolean pushWithCustomFields(String deviceToken,String msg,Integer badge,Map customFields,boolean useSound){
 		boolean success = false;
 		String payload = null;
 		try {
 			PayloadBuilder payloadBuilder = APNS.newPayload();
+			if(sound!=null && useSound)
+				payloadBuilder.sound(sound);
 			if(msg!=null)
 				payloadBuilder.alertBody(msg);
 			if(badge!=null)
@@ -163,7 +174,7 @@ public class APNService {
 			success = true;
 			logger.debug(loggerName,"notification sent to "+deviceToken);
 		} catch (NetworkIOException e) {
-			logger.error(loggerName, "NetworkIOException: "+e.getMessage()+",deviceToken:"+deviceToken+", payload:"+payload);			
+			logger.error(loggerName, "NetworkIOException: "+e.getMessage()+",deviceToken:"+deviceToken+", payload:"+payload);   
 		}catch (Exception e) {
 			logger.error(loggerName,"deviceToken:"+deviceToken+", payload:"+payload, e);
 		}
@@ -177,7 +188,7 @@ public class APNService {
 		try {
 			service.stop();
 		} catch (Exception e) {
-			logger.error(loggerName,"Error While closing APN service:"+e.getMessage());			
+			logger.error(loggerName,"Error While closing APN service:"+e.getMessage());   
 		}
 	}
 
@@ -231,5 +242,28 @@ public class APNService {
 	}
 	public void setIsNonBlocking(boolean isNonBlocking) {
 		this.isNonBlocking = isNonBlocking;
+	}
+
+	public void setSound(String str) {
+		if(!ComUtils.isEmptyString(str))
+			this.sound = str;
+	}
+
+	public String getSound() {
+		return sound;
+	}
+
+	@Override
+	public void connectionClosed(DeliveryError deliveryerror, int i) {
+		logger.error(loggerName, "DeliveryError: "+ deliveryerror+", int: "+ i);		
+	}
+
+	@Override
+	public void messageSendFailed(ApnsNotification apnsnotification,Throwable throwable) {
+		logger.error(loggerName,"ApnsNotification: "+ apnsnotification+", Throwable: "+ throwable);
+	}
+
+	@Override
+	public void messageSent(ApnsNotification apnsnotification) {
 	}
 }

@@ -38,6 +38,11 @@
 			<value>com.nimbler.tp.service.twitter</value>
 		</property>
 	</bean>
+	<bean id="gtfsMedaDataResrService" class="com.nimbler.tp.rest.GtfsMetaDataRestService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.gtfs.GtfsDataMonitor</value>
+		</property>
+	</bean>
 	
 	<bean id="TestService" class="com.nimbler.tp.rest.TestService"> </bean>
 	

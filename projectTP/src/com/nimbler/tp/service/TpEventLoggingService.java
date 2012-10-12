@@ -15,6 +15,7 @@ import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.dbobject.EventLog;
 import com.nimbler.tp.dbobject.EventLog.EVENT_TYPE;
 import com.nimbler.tp.mongo.PersistenceService;
+import com.nimbler.tp.mongo.PersistenceService.DB_OPERATION;
 import com.nimbler.tp.service.smtp.MailService;
 import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
@@ -72,9 +73,9 @@ public class TpEventLoggingService {
 
 			log.setPlanId(planId);
 			logger.debug(loggerName, "New Log:"+log);
-			persistanceService.addObject(MONGO_TABLES.event_log.name(), log);
+			persistanceService.addObjectQueued(MONGO_TABLES.event_log.name(), log,DB_OPERATION.ADD_OBJECT);
 			res = log.getId();			
-		} catch (DBException e) {
+		} catch (Exception e) {
 			// do not throw exception as event insertion fail can be ignored for response , just log 
 			logger.error(loggerName, e.getMessage()); 
 		}

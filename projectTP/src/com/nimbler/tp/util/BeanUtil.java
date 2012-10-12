@@ -5,6 +5,7 @@ package com.nimbler.tp.util;
 
 import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.TPApplicationContext.SPRING_BEANS;
+import com.nimbler.tp.gtfs.GtfsDataMonitor;
 import com.nimbler.tp.mongo.PersistenceService;
 import com.nimbler.tp.rest.AdvisoriesRestService;
 import com.nimbler.tp.service.APNService;
@@ -102,5 +103,8 @@ public class BeanUtil {
 
 	public static APNService getApnService() {
 		return (APNService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.APN_SERVICE.bean());
+	}
+	public static GtfsDataMonitor getGtfsDataMonitorService() {
+		return (GtfsDataMonitor) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.GTFS_DATA_MONITOR.bean());
 	}
 }

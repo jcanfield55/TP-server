@@ -7,6 +7,7 @@
 package com.nimbler.tp.util;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 
 /**
  * Constants used in application.
@@ -64,6 +65,9 @@ public class TpConstants {
 	public static final String PLAN_END_TIME_PATH = TpProperty.getDefaultProperty("plan.entime.path");
 
 	public static final String DEFAULT_DATE_FORMAT_PATTERN = "yyyy-MM-dd HH:mm:ss";
+	public static final String GTFS_DATE_FORMAT = "yyyyMMdd";
+	public static final String OTP_DATE_FORMAT = "dd/MM/yyyy hh:mm:ss a";
+	SimpleDateFormat gtfsDateFormat = new SimpleDateFormat(TpConstants.GTFS_DATE_FORMAT);
 
 	public static final String PUBLIC_RESPONSE_URL =  SERVER_DEFAULT+"/survey.jsp?sessid=%s";
 	public static final String PUBLIC_SHARED_RESPONSE_URL =  SERVER_DEFAULT+"/shareSurvey.jsp";
@@ -73,7 +77,11 @@ public class TpConstants {
 	public static final String OTP_FAIL_NOTIFY_EMAIL_SUBJECT = TpProperty.getDefaultProperty("otp.fail.notify.subject");
 	public static final String FEEDBACK_EMAIL_SUBJECT = TpProperty.getDefaultProperty("feedback.email.subject");
 
+	public static final String ZIP_AGENCY_FILE = "agency.txt";
 	public static final String ZIP_CALENDAR_FILE = "calendar.txt";
+	public static final String ZIP_CALENDAR_DATES_FILE = "calendar_dates.txt";
+	public static final String ZIP_TRIPS_FILE = "trips.txt";
+	public static final String ZIP_ROUTES_FILE = "routes.txt";
 	public static String  OTP_HTML_STRING;
 
 	public static final String DEVICE_ID 			= "deviceId";
@@ -82,6 +90,9 @@ public class TpConstants {
 	public static final String DEVICE_TOKEN 		= "deviceToken";
 	public static final String LAST_ALERT_TIME 		= "lastAlertTime";
 	public static final String LAST_PUSH_TIME 		= "lastPushTime";
+	public static final String CREATE_TIME 		= "createTime";
+	public static final String UPDATE_TIME 		= "updateTime";
+
 	public static final String TWEET_TIME_DIFF 		= TpProperty.getDefaultProperty("tweet.time.diff");
 	public static final String TWEET_CREATED 		= TpProperty.getDefaultProperty("tweet.created");
 	public static final String TWEET_TEXT 			= TpProperty.getDefaultProperty("tweet.text");
@@ -95,6 +106,9 @@ public class TpConstants {
 	public static String  GRAPH_TEST_RESULT_HTML_STRING;
 	public static String  GRAPH_TEST_SUMMERY_HTML_STRING;
 
+	public static String NIMBLER_PARAMS_NAME ="name";
+	public static String NIMBLER_PARAMS_VALUE="value";
+
 	public enum MONGO_TABLES {
 		users,
 		feedback,
@@ -102,7 +116,8 @@ public class TpConstants {
 		itinerary,
 		leg,
 		event_log,
-		login
+		login,
+		nimbler_params
 	}
 
 	public enum LIVE_FEED_MODES {
@@ -123,4 +138,7 @@ public class TpConstants {
 	public static final String GTFS_DATA_COMPARE_MAIL_SUBJECT = TpProperty.getDefaultProperty("gtfs.compare.mail.subject");
 	public static final String GTFS_DATA_COMPARE_MAIL_ID = TpProperty.getDefaultProperty("gtfs.monitor.notify.emailid");
 	public static final String GRAPH_TEST_MAIL_SUBJECT = TpProperty.getDefaultProperty("graph.test.mail.subject");
+	
+	public static final int ROUTE_DIRECTION_OUTBOUND = 0;
+	public static final int ROUTE_DIRECTION_INBOUND = 1;
 }

@@ -34,11 +34,21 @@
 						<%
 							String message = request.getParameter("error");
 							if (message != null) {
+								if (message.endsWith("Logout")) {
+						%>
+						<div style="color: GREEN; font: bold;">
+							<%=message%>
+						</div>
+						<%
+							} else {
 						%>
 						<div style="color: RED; font: bold;">
-							<%=message%> *</div>
+							<%=message%>
+							*
+						</div>
 						<%
 							}
+						}
 						%>
 						<input type="hidden" name="opcode" value="authentication"/> 
                                 <p> 

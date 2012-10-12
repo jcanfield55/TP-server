@@ -20,7 +20,7 @@ public class RequestParam {
 	public static final String DEVICE_TOKEN = "deviceToken";
 	public static final String MAX_DISTANCE ="maxDistance";
 	public static final String ALERT    ="alertCount";
-	
+
 	public static final String PLAN_ID = "planid";
 	public static final String ITINERARY_ID = "itineraryid";
 	public static final String LEG_ID = "legid";
@@ -59,4 +59,10 @@ public class RequestParam {
 	public static final String DATE = "date";
 	//OTP parameters...
 	public static final String OTP_SERVER_URL = "otp.server.url";
+
+	public static final String ENABLE_STD_NOTIFICATION 		= "enableStdNotifSound";
+	public static final String ENABLE_URGENT_NOTIFICATION 	= "enableUrgntNotifSound";
+	public static final String FOR_TODAY = "forToday";
+	public static final String REQ_ID = "reqId";
+
 }

@@ -26,7 +26,8 @@ public class EventLog implements Serializable{
 	public enum TO_FROM_TYPE{
 		UNDEFINED,
 		GEO,
-		REVERSE_GEO
+		REVERSE_GEO,
+		PREDEFINED_LIST
 	}
 	private String id;
 	private int eventType;

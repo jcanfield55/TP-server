@@ -33,7 +33,7 @@ public class TestService {
 	@Path("/apn/")
 	public String testApn(@QueryParam("token") String token,@QueryParam("msg") String msg,@QueryParam("badge") String badge) {
 		APNService service = BeanUtil.getApnService();
-		service.push(token, msg,NumberUtils.toInt(badge),null);
+		service.push(token, msg,NumberUtils.toInt(badge),null,true);
 		System.out.println("APN sent.....");
 		return "sucess";
 	}

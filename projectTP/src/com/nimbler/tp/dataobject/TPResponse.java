@@ -14,9 +14,11 @@ import com.nimbler.tp.util.OperationCode.TP_CODES;
 public class TPResponse {
 	private int code;
 	private String msg;
+	private String reqId;
 	private TripPlan plan;
+	private Long planGenerateTime;
 	private PlannerError error = null;
-	
+
 	public TPResponse() {
 
 	}
@@ -48,6 +50,12 @@ public class TPResponse {
 	public TripPlan getPlan() {
 		return plan;
 	}
+	public Long getPlanGenerateTime() {
+		return planGenerateTime;
+	}
+	public void setPlanGenerateTime(Long planGenerateTime) {
+		this.planGenerateTime = planGenerateTime;
+	}
 	public void setPlan(TripPlan plan) {
 		this.plan = plan;
 	}
@@ -69,8 +77,17 @@ public class TPResponse {
 	public void setMsg(String msg) {
 		this.msg = msg;
 	}
+
+	public String getReqId() {
+		return reqId;
+	}
+	public void setReqId(String reqId) {
+		this.reqId = reqId;
+	}
 	@Override
 	public String toString() {
-		return "TPResponse [code=" + code + ", msg=" + msg + "]";
+		return "TPResponse [code=" + code + ", msg=" + msg + ", reqId=" + reqId
+				+ ", plan=" + plan + ", planGenerateTime=" + planGenerateTime
+				+ ", error=" + error + "]";
 	}
 }	

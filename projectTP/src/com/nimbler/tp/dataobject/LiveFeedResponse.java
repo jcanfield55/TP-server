@@ -13,7 +13,7 @@ import com.nimbler.tp.util.TpConstants.ETA_FLAG;
 public class LiveFeedResponse {
 
 	private String itineraryId;
-	private int errCode;
+	private Integer errCode;
 	private String errMsg;
 	private int arrivalTimeFlag;//if any of the legs in this Itinerary is delayed, then mark whole itinerary status as delayed.
 	private List<LegLiveFeed> legLiveFeeds;	
@@ -63,7 +63,7 @@ public class LiveFeedResponse {
 		legLiveFeeds.add(legFeed); 
 	}
 
-	public int getErrCode() {
+	public Integer getErrCode() {
 		return errCode;
 	}
 

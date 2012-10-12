@@ -3,6 +3,9 @@
  */
 package com.nimbler.tp.util;
 
+import java.util.List;
+import java.util.Map;
+
 import com.google.gson.Gson;
 import com.jayway.jsonpath.JsonPath;
 import com.nimbler.tp.dataobject.TPResponse;
@@ -75,5 +78,31 @@ public class JSONUtil {
 			res =  JsonPath.read(data, path);
 		} catch (Exception e) {	}
 		return res;
+	}
+
+	/**
+	 * Gets the request parameter.
+	 *
+	 * @param jSon the j son
+	 * @return the request parameter
+	 */
+	public static Map getRequestParameter(List<String> lst) {
+		Map<Object, Object>  res = null;
+		if(!ComUtils.isEmptyList(lst)){
+			res = new com.google.gson.Gson().fromJson(lst.get(0),Map.class);
+			if(res!=null && res.size()==0)
+				res = null;
+			else{ // convert all value to string
+				for (Map.Entry<Object, Object> entry : res.entrySet()) {
+					Object key = entry.getKey();
+					Object value = entry.getValue();
+					if(value!=null){
+						res.put(key, value+"");
+					}
+				}	
+			}
+		}
+		return res;
+
 	}
 }

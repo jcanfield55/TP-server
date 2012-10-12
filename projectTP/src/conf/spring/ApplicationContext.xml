@@ -15,11 +15,11 @@
 	<bean id="mongoOpetation" class="org.springframework.data.document.mongodb.MongoTemplate">
 		<constructor-arg ref="mongo" />
 		<constructor-arg name="databaseName" value="tpdb" />
-		<!-- <property name="username" value="admin"/> <property name="password" 
-			value="admin"/> -->
+		<!-- 	<property name="username" value="tpuser" />
+		<property name="password" value="password" />  -->
 	</bean>
 
-	<bean id="persistenceService" class="com.nimbler.tp.mongo.PersistenceService">
+	<bean id="persistenceService" class="com.nimbler.tp.mongo.PersistenceService" init-method="init">
 		<property name="loggerName">
 			<value>com.nimbler.tp.mongo.PersistenceService</value>
 		</property>
@@ -107,6 +107,10 @@
 		<property name="timeDiffercenceInMin">
 			<value>3</value>
 		</property>
+		<!--<property name="maxTimeDifference">
+			In minutes 
+			<value>40</value>			
+		</property>-->
 	</bean>
 
 	<bean id="caltrainAdvisoriesService"
@@ -131,6 +135,9 @@
 		<property name="loggerName">
 			<value>com.nimbler.tp.service.twitter</value>
 		</property>
+		<property name="pushIntervalStartTime" value="5"/>
+		<property name="pushIntervalEndTime" value="22"/>
+		<property name="validTweetHours" value="6"/>
 	</bean>
 
 	<bean id="userManagementService" class="com.nimbler.tp.service.UserManagementService">
@@ -158,12 +165,13 @@
 		<property name="certType" value="1" />
 		<property name="isQueued" value="false" />
 		<property name="isNonBlocking" value="false" />
+		<property name="sound" value="default" />
 		<property name="loggerName">
 			<value>com.nimbler.tp.service.APNService</value>
 		</property>
 	</bean>
 
-	<bean id="gtfsMonitoring" class="com.nimbler.tp.gtfs.GtfsDataMonitor">
+	<bean id="gtfsMonitoring" class="com.nimbler.tp.gtfs.GtfsDataMonitor" init-method="init">
 		<property name="downloadDirectory" value="/usr/local/server/otp_build/tmp/" />
 		<property name="loggerName">
 			<value>com.nimbler.tp.gtfs.GtfsDataMonitor</value>
@@ -175,12 +183,14 @@
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/BART.zip" />
 					<property name="downloadUrl"
 						value="http://bart.gov/dev/schedules/google_transit.zip" />
+					<property name="lastUpdateDate" value="20120815" />
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="Menlo-Midday" />
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/Menlo-Midday.zip" />
 					<property name="downloadUrl"
 						value="http://www.menlopark.org/departments/trn/google/google_transit.zip" />
+					<property name="lastUpdateDate" value="20120815" />
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="ACtransit" />
@@ -188,31 +198,37 @@
 					<!--<property name="crackedDataFile" value="C:/OTP_/GTFS/ACtransit_hack.zip" />-->
 					<property name="downloadUrl"
 						value="http://www.actransit.org/wp-content/plugins/download-monitor/download.php?id=5" />
-				</bean>
+					<property name="lastUpdateDate" value="20120815" />
+				</bean> 
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="Caltrain" />
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/Caltrain.zip" />
 					<property name="downloadUrl"
 						value="http://www.caltrain.com/Assets/GTFS/caltrain/google_transit.zip" />
+					<property name="lastUpdateDate" value="20120815" />
 				</bean>
-				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+				 <bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="SF-ferries" />
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/SF-ferries.zip" />
 					<property name="downloadUrl"
-						value="http://trilliumtransit.com/transit_feeds/sfbay-ferries-ca-us/google_transit.zip" />
+						value="http://trilliumtransit.com/transit_feeds/sfbay-ferries-ca-us/gtfs.zip" />
+					<property name="lastUpdateDate" value="20120815" />
+					<property name="enableAgency" value="false" />						
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="VTA" />
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/VTA.zip" />
 					<property name="downloadUrl"
 						value="http://www.vta.org/dev/data/google_transit.zip " />
-				</bean>
+					<property name="lastUpdateDate" value="20120815" />
+				</bean> 
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="SFMTA" />
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/SFMTA.zip" />
 					<property name="downloadUrl"
 						value="http://www.sfmta.com/transitdata/google_transit.zip" />
-				</bean>
+					<property name="lastUpdateDate" value="20120815" />
+				</bean> 
 			</list>
 		</property>
 	</bean>
@@ -226,9 +242,19 @@
 	</bean>
 	<bean id="gtfsMonitoringJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="gtfsMonitoringJob" />
- 		<property name="cronExpression" value="0 0 21 * * ?" /> 		
+		<property name="cronExpression" value="0 0 21 * * ?" /> 		
 	</bean>
-	
+
+	<bean name="clearAdvisaryCounterJob"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetBeanName" value="caltrainAdvisoriesService" />
+		<property name="targetMethod" value="resetAllCounters" />
+	</bean>
+	<bean id="clearAdvisaryCounterTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="clearAdvisaryCounterJob" />
+		<property name="cronExpression" value="0 0 0/6 * * ?" />
+	</bean>
 	<bean name="fetchTweetsJob"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="concurrent" value="false" />
@@ -237,35 +263,46 @@
 	</bean>
 	<bean id="fetchTweetsTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="fetchTweetsJob" />
-		<property name="cronExpression" value="0 0/3 * * * ?" />
+		<property name="cronExpression" value="0 0/3 * * * ?" />		
 	</bean>
-	
+	<bean name="urgentAdvisoriesClearJob"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetBeanName" value="caltrainAdvisoriesService" />
+		<property name="targetMethod" value="clearUrgentAdvisories" />
+	</bean>
+	<bean id="urgentAdvisoriesClearJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="urgentAdvisoriesClearJob" />
+		<property name="cronExpression" value="0 59 23 * * ?" /> 		
+	</bean>
 	<bean id="schedulerFactoryBean"
 		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>
 				<ref bean="gtfsMonitoringJobTrigger" />
 				<ref bean="fetchTweetsTrigger" />
+				<ref bean="urgentAdvisoriesClearJobTrigger" />
+				<ref bean="clearAdvisaryCounterTrigger" />
 			</list>
 		</property>
 	</bean>
 	<!-- ====================================== Mail configuration  ================================== -->
- 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
 		<property name="host" value="smtp.gmail.com" />
-        <property name="port" value="587" />
-        <property name="protocol" value="smtp" />
-        <property name="username" value="feedback@networkcommuting.com" />
-        <property name="password" value="nikunj27" />
-        <property name="javaMailProperties">
-            <props>
-            	<prop key="mail.smtp.from">feedback@networkcommuting.com</prop>
-                <prop key="mail.smtp.auth">true</prop>
-                <prop key="mail.smtp.starttls.enable">true</prop>
-                <prop key="mail.smtp.quitwait">false</prop>
-            </props>
-        </property>
+		<property name="port" value="587" />
+		<property name="protocol" value="smtp" />
+		<property name="username" value="feedback@networkcommuting.com" />
+		<property name="password" value="nikunj27" />
+		<property name="javaMailProperties">
+			<props>
+				<prop key="mail.smtp.from">feedback@networkcommuting.com</prop>
+				<prop key="mail.smtp.auth">true</prop>
+				<prop key="mail.smtp.starttls.enable">true</prop>
+				<prop key="mail.smtp.quitwait">false</prop>
+			</props>
+		</property>
 	</bean> 
-<!--<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+	<!--<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
 		<property name="host" value="192.168.3.11" />
         <property name="protocol" value="smtp" />
         <property name="javaMailProperties">

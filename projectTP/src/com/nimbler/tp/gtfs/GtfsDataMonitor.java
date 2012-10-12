@@ -14,15 +14,15 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipEntry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.nimbler.tp.dataobject.BartRouteInfo;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.service.smtp.MailService;
 import com.nimbler.tp.util.ComUtils;
@@ -39,7 +39,7 @@ import com.nimbler.tp.util.TpException;
  */
 @SuppressWarnings("unchecked")
 public class GtfsDataMonitor {
-	private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+
 	@Autowired
 	private LoggingService logger;
 	@Autowired
@@ -47,10 +47,17 @@ public class GtfsDataMonitor {
 	private String loggerName;
 	private String downloadDirectory;
 	List<GtfsBundle> gtfsBundles;
-	// used for debug only, must true on production
-	private static final boolean enableNewDownload = true;
+	private List<BartRouteInfo> bartRouteInfo = new ArrayList<BartRouteInfo>();
 
 	public GtfsDataMonitor() {
+
+	}
+	/**
+	 * 
+	 */
+	public void init() {
+		readGtfsFiles();
+		readBartRouteInfo();
 	}
 
 	/**
@@ -82,13 +89,103 @@ public class GtfsDataMonitor {
 	}
 
 	/**
+	 * Read gtfs files.
+	 */
+	public void readGtfsFiles() {
+		try {
+			if(ComUtils.isEmptyList(gtfsBundles))
+				throw new TpException("No bundle found");
+			ExecutorService service = Executors.newFixedThreadPool(gtfsBundles.size());
+			for (GtfsBundle bundle : gtfsBundles){ 
+				service.execute(new GtfsMetaExtractor(bundle,logger,loggerName));
+			}
+			service.shutdown();
+			service.awaitTermination(10, TimeUnit.HOURS);
+			System.out.println("Gtfs file read complete...........");
+		} catch (TpException e) {
+			logger.warn(loggerName, e.getErrMsg());
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(loggerName, e);
+		}
+	}
+	/**
+	 * 
+	 */
+	public  void queryGtfsService() {
+		SimpleDateFormat gtfsDateFormat = new SimpleDateFormat(TpConstants.GTFS_DATE_FORMAT);
+		try {
+			Map<String, Object> map = new HashMap<String,Object>();
+			String strCompareDate = "20120823";
+			Date date = gtfsDateFormat.parse(strCompareDate);
+			for (GtfsBundle bundle : gtfsBundles){
+				List<GtfsCalander> lstCalanders = bundle.getLstCalanders(); 
+				for (GtfsCalander cal : lstCalanders) {
+					cal.isServiceEnabled(date);
+					//TODO 
+				}
+				List<GtfsCalandeDates> lstCalandeDates = bundle.getLstCalandeDates();
+				for (GtfsCalandeDates calandeDates : lstCalandeDates) {
+					calandeDates.getDate().equals(strCompareDate);
+					//TODO 
+
+				}
+			}
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+	}
+	/**
+	 * Read BART routes and trip information used in BART prediction.
+	 */
+	public void readBartRouteInfo() {
+		try {
+			String bartAgencyId = "bart";
+			String bartGtfsFileName = getBartGTFSFileName(bartAgencyId);
+			if (bartGtfsFileName==null) {
+				logger.error(loggerName, "BART GTFS file not found from GTFS bunch."); 
+				return;
+			}
+			GtfsUtils util = new GtfsUtils(logger, loggerName);
+			List<BartRouteInfo> bartRoutes = util.getBARTRoutes(bartGtfsFileName);
+			if (bartRoutes!=null && bartRoutes.size()>0) {
+				util.updateBARTRouteDetails(bartGtfsFileName, bartRoutes);
+				this.bartRouteInfo = bartRoutes;
+				System.out.println(String.format("Gtfs file read complete for    :      [%-15s]", "BART - route info"));
+			}
+		} catch (ZipException e) {			
+			logger.error(loggerName, "Error while extracting BART GTFS files: "+e.getMessage());
+		} catch (IOException e) {
+			logger.error(loggerName, "Error while extracting BART GTFS files: "+e.getMessage());
+		} catch (TpException e) {
+			logger.error(loggerName, "Error while extracting BART GTFS files: "+e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, "Error while parsing BART GTFS files: "+e.getMessage());
+		}
+	}
+	/**
+	 * 
+	 * @param bartAgencyId
+	 * @return
+	 */
+	private String getBartGTFSFileName(String bartAgencyId) {
+		for (GtfsBundle bundle: gtfsBundles) {
+			if (bundle.getDefaultAgencyId().equalsIgnoreCase(bartAgencyId)) {
+				if (!ComUtils.isEmptyString(bundle.getCrackedDataFile()))
+					return bundle.getCrackedDataFile();
+				else
+					return bundle.getCurrentDataFile();
+			}
+		}
+		return null;
+	}
+	/**
 	 * Check single gtfs.
 	 *
 	 * @param gtfsBundle the gtfs bundle
 	 * @return 
 	 * @throws TpException 
 	 */
-	@SuppressWarnings("unused")
 	private GtfsMonitorResult checkSingleGtfs(GtfsBundle gtfsBundle){
 		GtfsMonitorResult result = new GtfsMonitorResult(gtfsBundle);
 		String agency = gtfsBundle.getDefaultAgencyId();
@@ -97,98 +194,65 @@ public class GtfsDataMonitor {
 			logger.debug(loggerName, "Check start for "+agency+", current file:"+gtfsBundle.getCurrentDataFile());
 			String fileName = FilenameUtils.getName(currentFile);
 			File downloadFile = new File(downloadDirectory+fileName);
-			if(downloadFile.exists() && enableNewDownload){
+			if(downloadFile.exists()){
 				boolean res = downloadFile.delete();
 				logger.debug(loggerName, "Old file "+downloadFile.getAbsolutePath()+" delete: "+res);
 			}
+			Map<String, Date> newMap = null;
 			if(!new File(currentFile).exists())
 				throw new TpException("No currunt GTFS file found for "+agency+" to compare");
-			if(enableNewDownload){
-				logger.info(loggerName, "Downloading: "+agency+", url:"+gtfsBundle.getDownloadUrl());
+			GtfsUtils utils = new GtfsUtils(logger, loggerName);
+
+			logger.info(loggerName, "Downloading: "+agency+", url:"+gtfsBundle.getDownloadUrl());
+			try {
 				ComUtils.getDownloadFile(downloadFile,gtfsBundle.getDownloadUrl());
 				logger.debug(loggerName, "Download complete");
-			}else
-				logger.info(loggerName, "Skipping download: "+agency+", url:"+gtfsBundle.getDownloadUrl());
-			Map<String, Date> newMap = getExpireDateFromGtfs(downloadFile);
-			Map<String, Date> oldMap = getExpireDateFromGtfs(new File(currentFile));
+				newMap = utils.getExpireDateFromGtfs(downloadFile);
+			} catch (Exception e) {					
+				result.addError("["+e.getClass().getSimpleName()+"] "+e.getMessage());
+				logger.error(loggerName, " Error while downloading gtfs file: "+result.getError()+", for "+agency);
+				result.ignoreErrorInSummery = true;
+			}
+
+			Map<String, Date> oldMap = utils.getExpireDateFromGtfs(new File(currentFile));
 			Map<String, Date> crackedMap = null;
 			if(!ComUtils.isEmptyString(gtfsBundle.getCrackedDataFile()))
-				crackedMap = getExpireDateFromGtfs(new File(gtfsBundle.getCrackedDataFile()));			
+				crackedMap = utils.getExpireDateFromGtfs(new File(gtfsBundle.getCrackedDataFile()));			
 			result.setOldData(oldMap);
 			result.setNewData(newMap);
 			result.setCrackedData(crackedMap);
-			logger.info(loggerName, "File check done for "+agency+", Old service count: "+oldMap.size()+",new service count: "+newMap.size());
+			logger.info(loggerName, "File check done for "+agency+", Old service count: "+oldMap.size()+",new service count: "+(newMap!=null?""+newMap.size():"0"));
 		}catch (TpException e) {
-			result.setError("Error while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.addError("Error while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.ignoreErrorInSummery = false;
 			logger.error(loggerName,result.getError());
 		}catch (ZipException e) {
-			result.setError("Error[ZipException] while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.addError("Error[ZipException] while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.ignoreErrorInSummery = false;
 			logger.error(loggerName,result.getError());
 		}catch (UnknownHostException e) {
-			result.setError("Error[UnknownHostException] while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.addError("Error[UnknownHostException] while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.ignoreErrorInSummery = false;
 			logger.error(loggerName,result.getError());
 		}catch (NullPointerException e) {
-			result.setError("NullPointerException while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.addError("NullPointerException while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.ignoreErrorInSummery = false;
 			logger.error(loggerName,e);
 		}catch (ArrayIndexOutOfBoundsException e) {
-			result.setError("ArrayIndexOutOfBoundsException while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.addError("ArrayIndexOutOfBoundsException while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.ignoreErrorInSummery = false;
 			logger.error(loggerName,result.getError());
 		}catch (SocketException e) {
-			result.setError("Error[SocketException] while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.addError("Error[SocketException] while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.ignoreErrorInSummery = false;
 			logger.error(loggerName,result.getError());
 		}catch (Exception e) {
-			result.setError("Error while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.addError("Error while checking gtfs file from "+agency+" : "+e.getMessage());
+			result.ignoreErrorInSummery = false;
 			logger.error(loggerName,e);
 		}
 		return result;
 
-	}
-	class GtfsMonitorTask{
-	}
-
-	/**
-	 * Gets the expire date from gtfs.
-	 *
-	 * @param file the file
-	 * @return the expire date from gtfs
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws ParseException the parse exception
-	 * @throws TpException the tp exception
-	 */
-	public Map<String, Date> getExpireDateFromGtfs(File file) throws IOException, ParseException, TpException {
-		ZipFile zipFile = new ZipFile(file);
-		ZipEntry zipEntry = zipFile.getEntry(TpConstants.ZIP_CALENDAR_FILE);		
-		List<String> lstLines = IOUtils.readLines(zipFile.getInputStream(zipEntry),"ISO-8859-1");
-		Map<String, Date> mapServiceIdAndDate = new HashMap<String, Date>();
-		if(ComUtils.isEmptyList(lstLines))
-			throw new TpException("Invalid file, No data found in file: "+file);
-		String[] headers = lstLines.get(0).split(",");
-		int END_DATE_INDEX = -1;
-		int SERVICE_ID_INDEX = -1;
-		for (int i = 0; i < headers.length; i++) {
-			if(headers[i].toLowerCase().indexOf("service_id")!=-1)
-				SERVICE_ID_INDEX = i;
-			else if (headers[i].toLowerCase().indexOf("end_date")!=-1)
-				END_DATE_INDEX =i;
-		}
-		if(END_DATE_INDEX==-1 || SERVICE_ID_INDEX==-1)
-			throw new TpException("No service_id or end_date found in data for file:"+file);
-		for (int i = 1; i < lstLines.size(); i++) {					
-			try {
-				String[] line = lstLines.get(i).split(",");
-				if(line==null || SERVICE_ID_INDEX > (line.length-1) || END_DATE_INDEX > (line.length-1)){
-					logger.warn(loggerName, "empty line found in gtfs");
-					continue;					
-				}
-				String key =line[SERVICE_ID_INDEX];
-				String val = line[END_DATE_INDEX];
-				if(ComUtils.isEmptyString(key) || ComUtils.isEmptyString(val));
-				mapServiceIdAndDate.put(key, dateFormat.parse(StringUtils.remove(val, "\"")));
-			} catch (Exception e) {
-				logger.error(loggerName,"Malformed data Found at line "+i+", data: "+lstLines.get(i));				
-			}
-		}
-		return mapServiceIdAndDate;
 	}
 	public String getDownloadDirectory() {
 		return downloadDirectory;
@@ -221,5 +285,11 @@ public class GtfsDataMonitor {
 
 	public void setMailService(MailService mailService) {
 		this.mailService = mailService;
+	}
+	public List<BartRouteInfo> getBartRouteInfo() {
+		return bartRouteInfo;
+	}
+	public void setBartRouteInfo(List<BartRouteInfo> bartRouteInfo) {
+		this.bartRouteInfo = bartRouteInfo;
 	}
 }

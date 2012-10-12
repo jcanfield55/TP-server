@@ -20,6 +20,7 @@ public class GtfsMonitorResult {
 	private Map<String,TableRow> merged;
 	private GtfsSummery gtfsSummury;
 	private String error;
+	public boolean ignoreErrorInSummery = false;
 
 	public GtfsBundle getGtfsBundle() {
 		return gtfsBundle;
@@ -65,6 +66,12 @@ public class GtfsMonitorResult {
 	}
 	public void setError(String error) {
 		this.error = error;
+	}
+	public void addError(String err) {
+		if(error == null)
+			error = err;
+		else
+			error = error+", "+err;
 	}
 	@Override
 	public String toString() {

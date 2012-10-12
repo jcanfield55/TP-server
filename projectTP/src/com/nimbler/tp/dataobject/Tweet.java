@@ -6,7 +6,7 @@ public class Tweet {
 	private Long time;
 	private String tweetTime;
 	private Boolean isUrgent;
-	
+
 	public String getTweet() {
 		return tweet;
 	}
@@ -50,8 +50,8 @@ public class Tweet {
 	@Override
 	public String toString() {
 		return "Tweet [tweet=" + tweet + ", time=" + time + ", tweetTime="
-				+ tweetTime + ", isUrgent=" + isUrgent + "]";
+				+ tweetTime + ", isUrgent=" + isUrgent + "]\n";
 	}
-	
-	
+
+
 }

@@ -28,7 +28,6 @@ import com.nimbler.tp.service.TpEventLoggingService;
 import com.nimbler.tp.service.TpPlanService;
 import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
-import com.nimbler.tp.util.HttpUtils;
 import com.nimbler.tp.util.JSONUtil;
 import com.nimbler.tp.util.OperationCode.TP_CODES;
 import com.nimbler.tp.util.RequestParam;
@@ -56,6 +55,7 @@ public class TpPlanRestService {
 	@Path("/new/")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Produces({MediaType.TEXT_PLAIN})
+	@Deprecated
 	public String savePlan(@Context HttpServletRequest request) {
 		Map<String,String> reqMap = new HashMap<String, String>();
 		TPResponse response = null;
@@ -80,6 +80,7 @@ public class TpPlanRestService {
 	}
 	@GET
 	@Path("/get/")
+	@Deprecated
 	public String getPlanDetails(@QueryParam(RequestParam.DEVICE_ID) String deviceId) {
 		TPResponse response = null;
 		try{
@@ -107,13 +108,20 @@ public class TpPlanRestService {
 	 * @return the tP response
 	 * @throws TpException 
 	 */
-	@GET
+	@POST
 	@Path("/generate/")
 	@Produces({MediaType.APPLICATION_JSON})
 	public String generatePlan(@Context HttpServletRequest httpRequest){
 		TPResponse response = null;
+		String reqID = "";
+		//		long time = System.currentTimeMillis();
 		try {
-			Map<String,String> reqParams = HttpUtils.getRequestParameters(httpRequest);
+			Map<String,String> reqParams  = ComUtils.parseMultipartRequest(httpRequest);
+			if(reqParams==null || reqParams.size()==0)
+				throw new TpException(TP_CODES.INVALID_REQUEST);
+			//			System.out.println(">============================================================");
+			//			System.out.println(reqParams.get("time")+"::"+reqParams.get("date"));
+			reqID = reqParams.get(RequestParam.REQ_ID);
 			TpPlanService service = BeanUtil.getPlanService();
 			TripResponse tripResponse = service.genearetePlan(reqParams);
 			String planId = null;
@@ -121,21 +129,30 @@ public class TpPlanRestService {
 				throw new TpException("TripResponse is null");
 			if(tripResponse.getPlan()!=null)
 				planId = tripResponse.getPlan().getId();
+
 			TpEventLoggingService tpLoggingService = BeanUtil.getTpEventLoggingService();
+			reqParams.put(RequestParam.TIME_TRIP_PLAN, tripResponse.getPlanGenerateTime()+"");
 			tpLoggingService.savePlan(reqParams,planId);
 
 			response = new TPResponse(TP_CODES.SUCESS);
 			response.setPlan(tripResponse.getPlan());
 			response.setError(tripResponse.getError());
-			return JSONUtil.getJsonFromObj(response);
+			response.setPlanGenerateTime(tripResponse.getPlanGenerateTime());
+			//			long total = System.currentTimeMillis() - time;
+			//			System.out.println("Plan + overhead : "+tripResponse.getPlanGenerateTime()+", "+(total-tripResponse.getPlanGenerateTime()));
 		} catch (TpException e) {
 			logger.info(loggerName, e.getErrMsg());
 			response =ResponseUtil.createResponse(e);
 		}catch (Exception e) {
 			logger.error(loggerName, e);
 			response =ResponseUtil.createResponse(TP_CODES.INTERNAL_SERVER_ERROR);
+		}finally{
+			response.setReqId(reqID);
 		}
-		return JSONUtil.getResponseJSON(response);		
+		String res = JSONUtil.getResponseJSON(response);
+		//		System.out.println(res);
+		//		System.out.println("============================================================");
+		return res;
 	}
 
 	/**

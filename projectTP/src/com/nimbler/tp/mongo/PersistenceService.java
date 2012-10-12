@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,13 +29,24 @@ import com.mongodb.MongoException;
 import com.mongodb.WriteResult;
 import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.service.LoggingService;
-import com.nimbler.tp.util.TpConstants;
+import com.nimbler.tp.util.BeanUtil;
 /**
  * 
  * @author suresh
  *
  */
 public class PersistenceService {
+
+	/**
+	 * The Enum DB_OPERATION.
+	 *
+	 * @author nirmal
+	 */
+	public enum DB_OPERATION{
+		UNDEFINED,
+		ADD_OBJECT,
+		ADD_OBJECT_COLLECTION
+	}
 
 	@Autowired
 	private LoggingService logger;
@@ -43,6 +56,16 @@ public class PersistenceService {
 
 	private String loggerName;
 
+	private int poolSize = 5;
+
+	private ExecutorService executorService ;
+
+	public PersistenceService() {
+	}
+	public void init() {
+		executorService = Executors.newFixedThreadPool(poolSize);
+		logger.info(loggerName, "Persistance service started");
+	}
 	/**
 	 * add single row object
 	 * @param collectionName
@@ -229,16 +252,38 @@ public class PersistenceService {
 	 */
 	public List getUserListByPaging(String collectionName, String lastAlertTimeColumn, long lastTimeLeg, String alertColumn, int tweetCount, int never,int pageSize, Class clazz) throws DBException {
 		try {
-			Integer numberOfAlert[] = new Integer[Integer.parseInt(TpConstants.TWEET_MAX_COUNT)];
-			for(int i=1;i<=tweetCount;i++) {
-				numberOfAlert[i-1] = i;
-				if(i== Integer.parseInt(TpConstants.TWEET_MAX_COUNT) ) {
-					break;
-				}
-			}
+
+			Integer[] numberOfAlert = new Integer[]{tweetCount};
 			Criteria criteria = Criteria.where(lastAlertTimeColumn).lt(lastTimeLeg).and(alertColumn).in(numberOfAlert);
 			Query query = new Query();
 			query.addCriteria(criteria).limit(pageSize);
+			return mongoOpetation.find(collectionName, query, clazz);
+		}  catch (DataAccessResourceFailureException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage()); 
+		} catch (MongoException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		}
+	}
+
+	/**
+	 * Find by in.
+	 *
+	 * @param collectionName the collection name
+	 * @param column the column
+	 * @param clazz the clazz
+	 * @return the list
+	 * @throws DBException the dB exception
+	 */
+	public List findByIn(String collectionName, String column,Object[] values, Class clazz) throws DBException {
+		try {
+			Criteria criteria = Criteria.where(column).in(values);
+			Query query = new Query();
+			query.addCriteria(criteria);
 			return mongoOpetation.find(collectionName, query, clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
@@ -493,6 +538,17 @@ public class PersistenceService {
 	}
 
 	/**
+	 * Adds the object queued.
+	 *
+	 * @param collectionName the collection name
+	 * @param value the value
+	 * @param operation the operation
+	 */
+	public void addObjectQueued(String collectionName,Object value,DB_OPERATION operation){
+		executorService.execute(new DbInsertTask(collectionName, value,operation));
+	}
+
+	/**
 	 * To drop collection
 	 * @param collectionName
 	 */
@@ -517,5 +573,61 @@ public class PersistenceService {
 	}
 	public void setLoggerName(String loggerName) {
 		this.loggerName = loggerName;
+	}
+
+	/**
+	 * The Class DbInsertTask.
+	 *
+	 * @author nirmal
+	 */
+	class DbInsertTask implements Runnable{
+		private String collectionName;  
+		private Object value;
+		private DB_OPERATION operation;
+		private  PersistenceService persistenceService;
+
+		private DbInsertTask(String collectionName, Object value,
+				DB_OPERATION operation) {
+			this.collectionName = collectionName;
+			this.value = value;
+			this.operation = operation;
+			persistenceService = BeanUtil.getPersistanceService();
+		}
+
+
+		@Override
+		public void run() {
+			try {
+				switch (operation) {
+				case ADD_OBJECT:
+					persistenceService.addObject(collectionName, value);					
+					break;
+				case ADD_OBJECT_COLLECTION:
+					persistenceService.addObjects(collectionName, (List<?>) value);
+					break;
+				default:
+					throw new DBException("INcalid Operation: "+operation);
+				}
+			} catch (DBException e) {
+				logger.error(loggerName, "Error while saving object in :"+collectionName+": "+value+", "+e);				
+			}
+			catch (Exception e) {
+				logger.error(loggerName, "Error while saving object in :"+collectionName+": "+value+", "+e);				
+			}
+
+		}
+	}
+
+	public int getPoolSize() {
+		return poolSize;
+	}
+	public void setPoolSize(int poolSize) {
+		this.poolSize = poolSize;
+	}
+	public ExecutorService getExecutorService() {
+		return executorService;
+	}
+	public void setExecutorService(ExecutorService executorService) {
+		this.executorService = executorService;
 	}
 }

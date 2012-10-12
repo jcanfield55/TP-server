@@ -12,6 +12,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
 import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.dataobject.TPResponse;
 import com.nimbler.tp.service.LoggingService;
@@ -38,6 +40,8 @@ public class UserManagementRestService {
 	public String saveAlertPreference(@QueryParam(RequestParam.DEVICE_ID)String deviceid,
 			@QueryParam(RequestParam.ALERT)String alertCount,
 			@QueryParam(RequestParam.DEVICE_TOKEN)String deviceToken,
+			@QueryParam(RequestParam.ENABLE_STD_NOTIFICATION)String enableStdNot,
+			@QueryParam(RequestParam.ENABLE_URGENT_NOTIFICATION)String enableUrgntNot,
 			@QueryParam(RequestParam.MAX_DISTANCE)String maxWalkDistance) throws TpException {
 
 		TPResponse response = new TPResponse();
@@ -46,8 +50,9 @@ public class UserManagementRestService {
 				throw new TpException(TP_CODES.INVALID_REQUEST);
 
 			UserManagementService alertService = BeanUtil.getUserManagementService();
-			alertService.saveAlertPreferences(deviceid, Integer.parseInt(alertCount), deviceToken, maxWalkDistance);
-			logger.info(loggerName, "Preferences are :"+deviceid+","+ alertCount + ","+ deviceToken+","+maxWalkDistance);
+			logger.debug(loggerName, "Preferences are :"+deviceid+","+ alertCount + ","+ deviceToken+","+maxWalkDistance);
+			alertService.saveAlertPreferences(deviceid, Integer.parseInt(alertCount), deviceToken, maxWalkDistance,
+					NumberUtils.toInt(enableStdNot),NumberUtils.toInt(enableUrgntNot));
 			response.setCode(TP_CODES.SUCESS.getCode()); 
 		} catch (TpException e) {
 			logger.error(loggerName, e.getErrMsg());

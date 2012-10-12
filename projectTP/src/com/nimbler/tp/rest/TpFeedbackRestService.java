@@ -13,10 +13,12 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
@@ -44,8 +46,8 @@ public class TpFeedbackRestService {
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	@Path("/test/")
-	public String firstTest(@Context HttpServletRequest request) {
-		return "Feedback service";
+	public String firstTest(@DefaultValue("2") @QueryParam("test") List<Integer> test) {
+		return "Feedback service: "+test;
 	}
 
 	@POST

@@ -14,6 +14,7 @@ public class TripResponse implements Serializable{
 	private TripPlan plan;
 	private PlannerError error = null;
 	private Map requestParameters;
+	private Long planGenerateTime = 0l;
 
 	public TripResponse(TripPlan plan) {
 		this.plan = plan;
@@ -46,9 +47,16 @@ public class TripResponse implements Serializable{
 			return  requestParameters.get(key);
 		return null;
 	}
+	public Long getPlanGenerateTime() {
+		return planGenerateTime;
+	}
+	public void setPlanGenerateTime(long planGenerateTime) {
+		this.planGenerateTime = planGenerateTime;
+	}
 	@Override
 	public String toString() {
 		return "TripResponse [plan=" + plan + ", error=" + error
-				+ ", requestParameters=" + requestParameters + "]";
+				+ ", requestParameters=" + requestParameters
+				+ ", planGenerateTime=" + planGenerateTime + "]";
 	}
 }

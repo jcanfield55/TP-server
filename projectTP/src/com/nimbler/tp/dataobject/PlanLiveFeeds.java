@@ -24,6 +24,10 @@ public class PlanLiveFeeds {
 		this.errCode = TP_CODES.SUCESS.getCode();
 	}
 
+	public PlanLiveFeeds() {
+		this.errCode = TP_CODES.SUCESS.getCode();	
+	}
+
 	public String getPlanId() {
 		return planId;
 	}

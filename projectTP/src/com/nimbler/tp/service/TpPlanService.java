@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -138,9 +139,13 @@ public class TpPlanService {
 			}			
 			String url = TpConstants.SERVER_URL+"ws/plan?"+StringUtils.join(lstOtpParams, "&");
 			long start = System.currentTimeMillis();
+			//System.out.println(url);
 			String planJsonString = HttpUtils.getHttpResponse(url);
-			reqMap.put(RequestParam.TIME_TRIP_PLAN, (System.currentTimeMillis()-start)+"");
-			response= JSONUtil.getFullPlanObjFromJson(planJsonString);
+			//System.out.println(planJsonString);
+			long planGenerationTime = System.currentTimeMillis()-start;
+			reqMap.put(RequestParam.TIME_TRIP_PLAN, planGenerationTime+"");
+			response= JSONUtil.getFullPlanObjFromJson(planJsonString);			
+			response.setPlanGenerateTime(planGenerationTime);
 			if(response.getPlan()==null){
 				logger.debug(loggerName, "No plan found, possoble error:"+response.getError());
 				return response;
@@ -325,6 +330,35 @@ public class TpPlanService {
 				}
 			}
 			return itineraries;
+		}
+		return null;
+	}
+
+	/**
+	 * Gets the full itineraries by ids.
+	 *
+	 * @param itineraryIds the itinerary ids
+	 * @return the full itineraries by ids
+	 * @author nirmal
+	 * @since 30Aug2012
+	 * @throws DBException the dB exception
+	 */
+	public List<Itinerary> getFullItinerariesByIds(String[] itineraryIds) throws DBException {
+		List resultSet = persistenceService.findByIn(MONGO_TABLES.itinerary.name(), "id", itineraryIds, Itinerary.class);
+		if (resultSet!=null && resultSet.size()>0) {
+			List<Itinerary> itineraries = new ArrayList<Itinerary>(resultSet);
+			Map<String, Itinerary> map = new HashMap<String, Itinerary>();
+			for (Itinerary itin: itineraries) 
+				map.put(itin.getId(), itin);
+					List<Leg> resultSetLegs = persistenceService.findByIn(MONGO_TABLES.leg.name(), "itinId", itineraryIds, Leg.class);
+					if (resultSetLegs!=null && resultSetLegs.size()>0) {
+						for (Leg leg : resultSetLegs) {
+							Itinerary it = map.get(leg.getItinId());
+							if(it!=null)
+								it.addLeg(leg); 
+						}
+					}
+					return itineraries;
 		}
 		return null;
 	}

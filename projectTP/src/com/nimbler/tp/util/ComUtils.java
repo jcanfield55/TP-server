@@ -18,8 +18,10 @@ import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -203,6 +205,23 @@ public class ComUtils {
 			}
 		}
 	}
+	public static Map parseMultipartRequest(HttpServletRequest request) throws Exception {	
+		Map map = null;
+		if (ServletFileUpload.isMultipartContent(request)) {
+			map = new HashMap();
+			DiskFileItemFactory  fileItemFactory = new DiskFileItemFactory();
+			ServletFileUpload uploadHandler = new ServletFileUpload(fileItemFactory);
+			List items = uploadHandler.parseRequest(request);
+			Iterator itr = items.iterator();
+			while(itr.hasNext()) {
+				FileItem item = (FileItem) itr.next();
+				if(item.isFormField()) {						
+					map.put(item.getFieldName(), item.getString());
+				} 
+			}
+		}
+		return map;
+	}
 	/**
 	 * Gets the file names from files.
 	 *
@@ -354,9 +373,114 @@ public class ComUtils {
 		}
 	}
 
+	/**
+	 * Sleep.
+	 *
+	 * @param millSec the mill sec
+	 */
 	public static void sleep(long millSec) {
 		try {			
 			Thread.sleep(millSec);
 		} catch (InterruptedException e) {}		
+	}
+
+	/**
+	 * Gets the week start time in millis.
+	 *
+	 * @param time the time
+	 * @param timzone the timzone
+	 * @return the week start time in millis
+	 */
+	public static long getWeekStartTimeInMillis(long time, String timzone) {		
+		Calendar calendar = null;
+		if(!isEmptyString(timzone))
+			calendar = Calendar.getInstance(TimeZone.getTimeZone(timzone));
+		else
+			calendar = Calendar.getInstance();
+
+		calendar.setTimeInMillis(time);
+		calendar.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY);
+		calendar.set(Calendar.HOUR_OF_DAY, 0);
+		calendar.set(Calendar.MINUTE, 0);
+		calendar.set(Calendar.SECOND, 0);
+		return calendar.getTimeInMillis();
+	}
+
+	/**
+	 * Gets the week end time in millis.
+	 *
+	 * @param time the time
+	 * @param timzone the timzone
+	 * @return the week end time in millis
+	 */
+	public static long getWeekEndTimeInMillis(long time, String timzone) {
+		Calendar calendar = null;
+		if(!isEmptyString(timzone))
+			calendar = Calendar.getInstance(TimeZone.getTimeZone(timzone));
+		else
+			calendar = Calendar.getInstance();
+
+		calendar.setTimeInMillis(time);
+		calendar.set(Calendar.DAY_OF_WEEK, Calendar.SATURDAY);
+		calendar.set(Calendar.HOUR_OF_DAY, 23);
+		calendar.set(Calendar.MINUTE, 59);
+		calendar.set(Calendar.SECOND, 59);
+		return calendar.getTimeInMillis();
+	}
+
+	/**
+	 * Removes the quotation.
+	 *
+	 * @param arr the arr
+	 */
+	public static void removeQuotation(String[] arr){
+		if(arr==null)
+			return;
+		for (int i = 0; i < arr.length; i++) {
+			if(arr[i]!=null){
+				if(arr[i].startsWith("\""))
+					arr[i] = arr[i].substring(1);
+				if(arr[i].endsWith("\""))
+					arr[i] = arr[i].substring(0,arr[i].length()-1);
+			}
+		}
+	}
+
+	/**
+	 * Gets the list from array.
+	 *
+	 * @param strings the strings
+	 * @return the list from array
+	 */
+	public static  List<String> getListFromArray(String[] strings) {
+		if(strings==null)
+			return null;
+		List<String> lst = new ArrayList<String>();
+		for (String type : strings) {
+			lst.add(type);
+		}
+		return lst;
+	}
+	public static void main(String[] args) {
+		String[] s = new String[]{"\"hello\"","\"hello","hello\"","hello"};
+		removeQuotation(s);
+		System.out.println(Arrays.toString(s));
+	}
+
+	/**
+	 * Gets the today date.
+	 *
+	 * @param startTime the start time
+	 * @return the today date
+	 */
+	public static long getTodayDateTime(long startTime) {
+		Calendar legTime = Calendar.getInstance();
+		legTime.setTimeInMillis(startTime);
+		Calendar now = Calendar.getInstance();
+		now.set(Calendar.HOUR_OF_DAY, legTime.get(Calendar.HOUR_OF_DAY));
+		now.set(Calendar.MINUTE, legTime.get(Calendar.MINUTE));
+		now.set(Calendar.SECOND, legTime.get(Calendar.SECOND));
+		now.set(Calendar.MILLISECOND, legTime.get(Calendar.MILLISECOND));
+		return now.getTimeInMillis();
 	}
 }

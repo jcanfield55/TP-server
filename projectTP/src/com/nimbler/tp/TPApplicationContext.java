@@ -36,7 +36,8 @@ public class TPApplicationContext {
 		CALTRAIN_ADVISORIES_SERVICE("caltrainAdvisoriesService"),
 		USER_MANAGEMENT_SERVICE("userManagementService"),
 		Advisories_REST_SERVICE("advisoriesService"),
-		APN_SERVICE("apnService");
+		APN_SERVICE("apnService"),
+		GTFS_DATA_MONITOR("gtfsMonitoring");
 		String name;
 
 		/**

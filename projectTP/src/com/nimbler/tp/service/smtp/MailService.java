@@ -38,13 +38,17 @@ import com.nimbler.tp.util.TpConstants;
 public class MailService {
 
 	private Session mailSession;
-	ExecutorService executor ;
+	private ExecutorService executor ;
 	private int mailThreadPoolSize;
 	@Autowired
 	private LoggingService logger;
 	private String loggerName;
 	@Autowired
-	JavaMailSenderImpl mailSender;
+	private JavaMailSenderImpl mailSender;
+	
+
+	private MailService() {
+	}
 
 	/**
 	 * 

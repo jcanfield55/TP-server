@@ -1,8 +1,12 @@
+/*
+ * @author nirmal
+ */
 package com.nimbler.tp.rest;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
@@ -22,6 +26,7 @@ import com.nimbler.tp.service.TpPlanService;
 import com.nimbler.tp.service.livefeeds.RealTimeAPI;
 import com.nimbler.tp.service.livefeeds.RealTimeAPIFactory;
 import com.nimbler.tp.util.BeanUtil;
+import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.JSONUtil;
 import com.nimbler.tp.util.OperationCode.TP_CODES;
 import com.nimbler.tp.util.RequestParam;
@@ -41,6 +46,7 @@ public class RealTimePredictionService {
 
 	@GET
 	@Path("/itinerary/")
+	@Deprecated
 	public String predictWholeItinerary(@QueryParam(RequestParam.ITINERARY_ID) String itineraryId) {
 		LiveFeedResponse response = new LiveFeedResponse();
 		try {
@@ -80,8 +86,84 @@ public class RealTimePredictionService {
 		return getJsonResponse(response);
 	}
 
+	/**
+	 * Predict itineraries.
+	 *
+	 * @param itineraryId the comma seprated itinerary ids
+	 * @return the string
+	 */
+	@GET
+	@Path("/itineraries/")
+	public String predictItineraries (@QueryParam(RequestParam.ITINERARY_ID) String itineraryId,
+			@DefaultValue("false") @QueryParam(RequestParam.FOR_TODAY) Boolean forToday
+			) {
+		PlanLiveFeeds response = new PlanLiveFeeds();
+		try {
+			TpPlanService planService = BeanUtil.getPlanService();
+			List<Itinerary> itineraries =planService.getFullItinerariesByIds(itineraryId.split(","));
+			if ( ComUtils.isEmptyList(itineraries) ) 
+				throw new TpException(TP_CODES.DATA_NOT_EXIST.getCode());
+			if(forToday)
+				updateLegTimeToToday(itineraries);
+
+			for (Itinerary itin: itineraries) {
+				LiveFeedResponse itinFeeds = new LiveFeedResponse();
+				itinFeeds.setItineraryId(itin.getId());
+				List<Leg> legs = getApplicableLegs(itin.getLegs());
+				if (legs == null || legs.size()==0) {
+					logger.warn(loggerName, "Live feeds not applicable for any of the legs of Itinerary: "+itin.getId()); 
+					continue;
+				}
+				for (Leg leg : legs) {
+					try {
+						RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg.getMode());
+						LegLiveFeed legFeed = liveFeedAPI.getLiveFeeds(leg);
+						if (legFeed!=null) {
+							itinFeeds.addLegLiveFeed(legFeed);
+						}
+					} catch (FeedsNotFoundException e) {
+						logger.info(loggerName, e.getMessage());
+					}
+				}
+				if (itinFeeds.getLegLiveFeeds()!=null && itinFeeds.getLegLiveFeeds().size()>0) {
+					updateItineraryTimeFlag(itinFeeds); 
+					response.addItinLiveFeeds(itinFeeds); 
+				}
+			}
+			if (response.getItinLiveFeeds()==null || response.getItinLiveFeeds().size()==0)
+				response.setError(TP_CODES.DATA_NOT_EXIST.getCode());
+		} catch (TpException tpe) {
+			logger.error(loggerName, tpe.getErrMsg());
+			response.setError(tpe.getErrCode());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			response.setError(TP_CODES.FAIL.getCode());
+		}
+		return getJsonResponse(response);
+	}
+	/**
+	 * Update leg time to today.
+	 *
+	 * @param itineraries the itineraries
+	 */
+	private void updateLegTimeToToday(List<Itinerary> itineraries) {
+		for (Itinerary itinerary : itineraries) {
+			List<Leg> legs = itinerary.getLegs();
+			if(legs==null){
+				logger.warn(loggerName, "No legs found in itinerary: "+itinerary.getId());
+				continue;
+			}
+			for (Leg leg : legs) {
+				long time =ComUtils.getTodayDateTime(leg.getStartTime());				
+				leg.setStartTime(time);
+			}
+		}
+
+	}
+
 	@GET
 	@Path("/plan/")
+	@Deprecated
 	public String predictWholePlan(@QueryParam(RequestParam.PLAN_ID) String planId) {
 		PlanLiveFeeds response = new PlanLiveFeeds(planId);
 		try {
@@ -112,18 +194,16 @@ public class RealTimePredictionService {
 						RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg.getMode());
 						LegLiveFeed legFeed = liveFeedAPI.getLiveFeeds(leg);
 						if (legFeed!=null) {
-							if (legFeed.getArrivalTimeFlag() == ETA_FLAG.DELAYED.ordinal() 
-									|| legFeed.getArrivalTimeFlag() == ETA_FLAG.EARLY.ordinal()) {
-								itinFeeds.setArrivalTimeFlag(ETA_FLAG.ITINERARY_TIME_SLIPPAGE.ordinal());
-							}
 							itinFeeds.addLegLiveFeed(legFeed);
 						}
 					} catch (FeedsNotFoundException e) {
 						logger.error(loggerName, e.getMessage());
 					}
 				}
-				if (itinFeeds.getLegLiveFeeds()!=null && itinFeeds.getLegLiveFeeds().size()>0)
+				if (itinFeeds.getLegLiveFeeds()!=null && itinFeeds.getLegLiveFeeds().size()>0) {
+					updateItineraryTimeFlag(itinFeeds); 
 					response.addItinLiveFeeds(itinFeeds); 
+				}
 			}
 			if (response.getItinLiveFeeds()==null || response.getItinLiveFeeds().size()==0)
 				response.setError(TP_CODES.DATA_NOT_EXIST.getCode());
@@ -185,6 +265,27 @@ public class RealTimePredictionService {
 			}
 		}
 		return applicableLegs;
+	}
+	/**
+	 * 
+	 * @param itinFeeds
+	 */
+	private void updateItineraryTimeFlag(LiveFeedResponse itinFeeds) {
+		boolean delayed = false; boolean early = false;
+		for (LegLiveFeed legFeed: itinFeeds.getLegLiveFeeds()) {
+			if (legFeed.getArrivalTimeFlag() == ETA_FLAG.DELAYED.ordinal())
+				delayed = true;
+			else if (legFeed.getArrivalTimeFlag() == ETA_FLAG.EARLY.ordinal())
+				early = true;
+		}
+		if (delayed && early)
+			itinFeeds.setArrivalTimeFlag(ETA_FLAG.ITINERARY_TIME_SLIPPAGE.ordinal()); 
+		else if (delayed)
+			itinFeeds.setArrivalTimeFlag(ETA_FLAG.DELAYED.ordinal());
+		else if (early)
+			itinFeeds.setArrivalTimeFlag(ETA_FLAG.EARLY.ordinal());
+		else
+			itinFeeds.setArrivalTimeFlag(ETA_FLAG.ON_TIME.ordinal());		
 	}
 	/**
 	 * 

@@ -81,7 +81,7 @@ public class HtmlUtil {
 	private static void addComparisonTable(StringBuffer sb,	GtfsMonitorResult result, String tag) {
 		StringBuffer sbTable = new StringBuffer();
 		sbTable.append(getHeadRow());		
-		if(result.getError()!=null){
+		if(result.getError()!=null && !result.ignoreErrorInSummery){
 			sbTable.append("<tr style='color: red; background:"+ROW_COLSPAN_BG+";'><td align='center' colspan='4'>"+result.getError()+"</td></tr>");
 		}else{
 			List<TableRow> lsTableRows = new ArrayList<TableRow>(result.getMerged().values());
@@ -465,7 +465,7 @@ public class HtmlUtil {
 			from = feedback.getAddFrom()!=null ? feedback.getAddFrom() : (plan.getFrom()!=null ? plan.getFrom().getName() : null);
 			to =  feedback.getAddTo()!=null ? feedback.getAddTo() : (plan.getTo()!=null ? plan.getTo().getName() : null);
 
-			date = new Date(plan.getDate()).toString();
+			date = DateFormatUtils.format(plan.getDate(), TpConstants.OTP_DATE_FORMAT);
 			if(plan.getPlanUrlParams()!=null)
 				webUrl = "<a href='"+TpConstants.SERVER_WEB_URL+"#/submit&"+plan.getPlanUrlParams()+"'>"+TpConstants.SERVER_WEB_URL+"</a>";			
 		}
@@ -485,7 +485,7 @@ public class HtmlUtil {
 				.replace("--to--", StringUtils.defaultIfBlank(to, "-"))
 				.replace("--date--", StringUtils.defaultIfBlank(date, "-"))
 				.replace("--weburl--", StringUtils.defaultIfBlank(webUrl, "-"))
-				.replace("--feedbacktime--", new Date()+"")
+				.replace("--feedbacktime--", DateFormatUtils.format(new Date(), TpConstants.OTP_DATE_FORMAT))
 				.replace("--sendermail--",StringUtils.defaultIfBlank(feedback.getEmailId(), "-"))
 				.replace("--txtfb--",StringUtils.defaultIfBlank(feedback.getFbText(), "-"))
 				.replace("--source--", FEEDBACK_SOURCE_TYPE.values()[feedback.getSource()].name());

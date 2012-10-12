@@ -198,6 +198,9 @@ p.signin.button{
 	margin: 5px 0;
 }
 
+p.graph.button {
+	margin: 5px 0;
+}
 
 /* styling the checkbox "keep me logged in"*/
 .keeplogin{

@@ -15,6 +15,7 @@ import com.mongodb.BasicDBObject;
 import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.dbobject.User;
 import com.nimbler.tp.mongo.PersistenceService;
+import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.TpConstants;
 import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
 /**
@@ -39,24 +40,36 @@ public class UserManagementService {
 	 * @param numberOfAlert
 	 * @param deviceToken
 	 * @param maxWalkDistance
+	 * @param enableUrgntNot 
+	 * @param enableStdNot 
 	 */
-	public void saveAlertPreferences(String deviceid, int numberOfAlert, String deviceToken, String maxWalkDistance) {
+	public void saveAlertPreferences(String deviceid, int numberOfAlert, String deviceToken, String maxWalkDistance, int enableStdNot, int enableUrgntNot) {
 		try {
 			BasicDBObject query = new BasicDBObject();
-			query.put(TpConstants.DEVICE_ID, deviceid);
+			query.put(TpConstants.DEVICE_TOKEN, deviceToken);
 			int count = persistenceService.getCount(MONGO_TABLES.users.name(), query, User.class);
+			long time = System.currentTimeMillis();
 			if (count > 0) {
 				Map<String, Object> map = new HashMap<String, Object>();
 				map.put(TpConstants.NUMBER_OF_ALERT, numberOfAlert);
-				map.put(TpConstants.DEVICE_TOKEN, deviceToken);
+				map.put(TpConstants.DEVICE_ID, deviceid);
 				map.put(TpConstants.MAX_WALK_DISTANCE, maxWalkDistance);
-				persistenceService.updateMultiColumn(MONGO_TABLES.users.name(), TpConstants.DEVICE_ID, deviceid, map);
+				map.put(TpConstants.UPDATE_TIME, time);
+				if(enableStdNot!=0)
+					map.put(RequestParam.ENABLE_STD_NOTIFICATION, enableStdNot);
+				if(enableUrgntNot!=0)
+					map.put(RequestParam.ENABLE_URGENT_NOTIFICATION, enableUrgntNot);
+				persistenceService.updateMultiColumn(MONGO_TABLES.users.name(), TpConstants.DEVICE_TOKEN, deviceToken, map);
 			} else {
 				User user = new User();
 				user.setDeviceId(deviceid);
 				user.setNumberOfAlert(numberOfAlert);
 				user.setDeviceToken(deviceToken);
 				user.setMaxWalkDistance(maxWalkDistance);
+				user.setCreateTime(time);
+				user.setUpdateTime(time);
+				user.setEnableStdNotifSound(enableStdNot);
+				user.setEnableUrgntNotifSound(enableUrgntNot);
 				persistenceService.addObject(MONGO_TABLES.users.name(), user);
 			}
 		} catch (DBException e) {

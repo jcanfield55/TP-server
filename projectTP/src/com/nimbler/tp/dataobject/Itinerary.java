@@ -95,8 +95,11 @@ public class Itinerary {
 	 * @param leg
 	 */
 	public void addLeg(Leg leg) {
-		if(leg != null)
-			legs.add(leg);
+		if(leg==null)
+			return;
+		if(legs==null)
+			legs=  new ArrayList<Leg>();
+		legs.add(leg);
 	}
 
 

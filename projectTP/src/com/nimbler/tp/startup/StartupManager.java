@@ -47,7 +47,9 @@ public class StartupManager {
 	private void init() {
 		DOMConfigurator.configure(LoggingService.class.getClassLoader().getResource(TpConstants.FILE_LOG_CONFIGURATION));
 		ComUtils.readHtmlTemplet();
-		TPApplicationContext.getInstance();		
+		TPApplicationContext.getInstance();
+		//BeanUtil.getGtfsDataMonitorService().readGtfsFiles(); Called By Bean initialization
+		System.out.println("\n");
 		System.out.println("Image Repository Relative Path: "+TpConstants.REPO_RELATIVE_PATH);
 		System.out.println("\n==============================================================================");
 		System.out.println("SMTP                           : "+((JavaMailSenderImpl)TPApplicationContext.getBeanByName("mailSender")).getHost());

@@ -3,7 +3,9 @@ package com.nimbler.tp.rest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -81,25 +83,37 @@ public class AdvisoriesRestService {
 	public String getAllTweets(@QueryParam(RequestParam.DEVICE_ID)String deviceid) {
 		TweetResponse response = new TweetResponse();
 		try {
+			List<Tweet> allTweet = new ArrayList<Tweet>(); 
 			List<Tweet> generalTweets = TweetStore.getInstance().getTweet();
-			if (generalTweets ==null ||generalTweets.size()==0) {
-				logger.error(loggerName, "No Tweets are available: "); 
+			if (generalTweets !=null && generalTweets.size()>0)
+				allTweet.addAll(generalTweets);
+
+			List<Tweet> urgentTweets = TweetStore.getInstance().getUrgentTweets();
+			if (urgentTweets !=null &&urgentTweets.size()>0)
+				allTweet.addAll(urgentTweets); 	
+
+			if (allTweet.size()==0) {
+				logger.error(loggerName, "No Tweets are available.");
 				response.setError(TP_CODES.FAIL.getCode());
 				throw new TpException(TP_CODES.DATA_NOT_EXIST.getCode());
 			}
-			Collections.sort(generalTweets, new Comparator<Tweet>() {
+			Collections.sort(allTweet, new Comparator<Tweet>() {
 				@Override
 				public int compare(Tweet o1, Tweet o2) {
 					return ((o1.getTime() > o2.getTime()) ? -1 : (o1.getTime() == o2.getTime()) ? 0 : 1);
 				}
 			});
-			response.setTweet(generalTweets);
+			response.setTweet(allTweet);
 			response.setTweetCount(generalTweets.size());
 			if (deviceid!=null) {
 				PersistenceService persistenceService = BeanUtil.getPersistanceService();
 				long lastSeenTime = System.currentTimeMillis();
-				persistenceService.updateSingleObject(MONGO_TABLES.users.name(), TpConstants.DEVICE_ID, deviceid, TpConstants.LAST_ALERT_TIME, lastSeenTime);
-				persistenceService.updateSingleObject(MONGO_TABLES.users.name(), TpConstants.DEVICE_ID, deviceid, TpConstants.LAST_PUSH_TIME, lastSeenTime);
+				Map<String, Object> columnsToUpdate = new HashMap<String, Object>(); 
+				columnsToUpdate.put(TpConstants.LAST_ALERT_TIME, lastSeenTime);
+				columnsToUpdate.put(TpConstants.LAST_PUSH_TIME, lastSeenTime);
+				persistenceService.updateMultiColumn(MONGO_TABLES.users.name(), TpConstants.DEVICE_ID, deviceid, columnsToUpdate);
+				//				persistenceService.updateSingleObject(MONGO_TABLES.users.name(), TpConstants.DEVICE_ID, deviceid, TpConstants.LAST_ALERT_TIME, lastSeenTime);
+				//				persistenceService.updateSingleObject(MONGO_TABLES.users.name(), TpConstants.DEVICE_ID, deviceid, TpConstants.LAST_PUSH_TIME, lastSeenTime);
 			}
 		} catch (TpException tpe) {
 			logger.error(loggerName, tpe.getErrMsg());
@@ -117,13 +131,13 @@ public class AdvisoriesRestService {
 		try {
 			List<Tweet> list = TweetStore.getInstance().getTweet();
 			if(list == null || list.size() == 0) {
-				logger.error(loggerName, "No Tweets are available: "); 
-				response.setError(TP_CODES.FAIL.getCode());
-				throw new TpException(TP_CODES.FAIL.getCode());
+				logger.debug(loggerName, "No Tweets are available at this time."); 
+				response.setError(TP_CODES.DATA_NOT_EXIST.getCode());
+				throw new TpException(TP_CODES.DATA_NOT_EXIST.getCode());
 			}
 			List<Tweet> latestTweets = new ArrayList<Tweet>();
 			for (Tweet tweet: list) {
-				if (tweet.getTime() > tweetTime){
+				if (tweet.getTime() > tweetTime) {
 					latestTweets.add(tweet);
 				}
 			}
@@ -135,17 +149,50 @@ public class AdvisoriesRestService {
 					persistenceService.updateSingleObject(MONGO_TABLES.users.name(), TpConstants.DEVICE_ID, deviceid, TpConstants.LAST_ALERT_TIME, lastSeenTime);
 					persistenceService.updateSingleObject(MONGO_TABLES.users.name(), TpConstants.DEVICE_ID, deviceid, TpConstants.LAST_PUSH_TIME, lastSeenTime);
 				}
-			} else 
-				response.setErrCode(TP_CODES.DATA_NOT_EXIST.getCode());
+			}
+			//			else 
+			//				response.setErrCode(TP_CODES.DATA_NOT_EXIST.getCode());
 			response.setTweetCount(latestTweets.size());
 		} catch (TpException tpe) {
-			logger.error(loggerName, tpe.getErrMsg());
+			logger.debug(loggerName, tpe.getErrMsg());
 			response.setError(tpe.getErrCode());
 		} catch (Exception e) {
 			logger.error(loggerName, e);
 			response.setError(TP_CODES.FAIL.getCode());
 		}
 		return getJsonResponse(response);
+	}
+	@GET
+	@Path("/reset/")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String resets() {
+		BeanUtil.getCaltrainService().resetAllCounters();
+		return "done";
+	}
+	@GET
+	@Path("/incrementCounters/")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String getIncrementCounters() {
+		return BeanUtil.getCaltrainService().getThresholdBoards().toString();
+	}
+	@GET
+	@Path("/tweets/")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String testGetTweets() {
+		return TweetStore.getInstance().getTweet().toString();
+	}
+
+	
+	public String add(@QueryParam("t") String t) {
+		Tweet tweet = new Tweet();
+		tweet.setIsUrgent(false);
+		tweet.setTime(System.currentTimeMillis());
+		tweet.setTweet(t);		
+		List<Tweet> lst = new ArrayList<Tweet>();
+		lst.add(tweet);
+		lst.addAll(TweetStore.getInstance().getTweet());
+		TweetStore.getInstance().setTweet(lst);
+		return TweetStore.getInstance().getTweet().toString();
 	}
 	/**
 	 * 

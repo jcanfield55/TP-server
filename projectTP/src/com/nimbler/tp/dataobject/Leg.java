@@ -5,8 +5,6 @@ package com.nimbler.tp.dataobject;
 
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlElement;
-
 /**
  * One leg of a trip -- that is, a temporally continuous piece of the journey that takes place on a
  * particular vehicle (or on foot).
@@ -137,6 +135,12 @@ public class Leg {
 
 	private String alightRule;
 
+	private long duration;
+
+	public void setDuration(long duration) {
+		this.duration = duration;
+	}
+
 	/**
 	 * bogus walk/bike/car legs are those that have 0.0 distance, 
 	 * and just one instruction
@@ -155,12 +159,8 @@ public class Leg {
 		return retVal;
 	}
 
-	/** 
-	 * The leg's duration in milliseconds
-	 */
-	@XmlElement
 	public long getDuration() {
-		return endTime - startTime;
+		return duration;
 	}
 
 	public Long getStartTime() {
