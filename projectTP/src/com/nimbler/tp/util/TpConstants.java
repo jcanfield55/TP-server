@@ -96,6 +96,7 @@ public class TpConstants {
 	public static final String TWEET_TIME_DIFF 		= TpProperty.getDefaultProperty("tweet.time.diff");
 	public static final String TWEET_CREATED 		= TpProperty.getDefaultProperty("tweet.created");
 	public static final String TWEET_TEXT 			= TpProperty.getDefaultProperty("tweet.text");
+	@Deprecated
 	public static final String TWEET_MAX_COUNT 		= TpProperty.getDefaultProperty("tweet.max.count");
 	public static final String TWEET_FROM_USER		= TpProperty.getDefaultProperty("tweet.from.user");
 	public static final String APN_PASSWORD 		= TpProperty.getDefaultProperty("apn.password");
@@ -138,7 +139,7 @@ public class TpConstants {
 	public static final String GTFS_DATA_COMPARE_MAIL_SUBJECT = TpProperty.getDefaultProperty("gtfs.compare.mail.subject");
 	public static final String GTFS_DATA_COMPARE_MAIL_ID = TpProperty.getDefaultProperty("gtfs.monitor.notify.emailid");
 	public static final String GRAPH_TEST_MAIL_SUBJECT = TpProperty.getDefaultProperty("graph.test.mail.subject");
-	
+
 	public static final int ROUTE_DIRECTION_OUTBOUND = 0;
 	public static final int ROUTE_DIRECTION_INBOUND = 1;
 }

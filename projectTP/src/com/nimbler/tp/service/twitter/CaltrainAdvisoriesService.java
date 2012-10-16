@@ -73,6 +73,8 @@ public class CaltrainAdvisoriesService {
 
 	private int thresholdToInc = 1;
 
+	public int maxTweetTextSizeToSend = 140;
+
 	private Vector<ThresholdBoard> thresholdBoards = new Vector<ThresholdBoard>();
 
 	private static Object thresholdLock = new  Object(); 
@@ -137,7 +139,7 @@ public class CaltrainAdvisoriesService {
 							maxTweetToIterate = board.getEligibleCount();
 					}
 
-					long latestTweetTime = tweetList.get(0).getTime();
+					Tweet latestTweet = tweetList.get(0);
 					sortThresholdBoards(true); // to get largest eligible count
 					logger.debug(loggerName, "iterate for tweet count max: "+maxTweetToIterate);
 					for (int i = 1; i <= latestTweetCount; i++) {
@@ -146,16 +148,16 @@ public class CaltrainAdvisoriesService {
 							for (ThresholdBoard thresholdBoard : thresholdBoards) {
 
 								if (thresholdBoard.getEligibleCount() == i && !thresholdBoard.isUsed()){									
-									int sentCount = publishTweets(tweet.getTime(), thresholdBoard.getThreshold(),lastTimeLeg,latestTweetTime);
+									int sentCount = publishTweets(tweet.getTime(), thresholdBoard.getThreshold(),lastTimeLeg,latestTweet);
 									logger.debug(loggerName, "threasold - sentCount:"+thresholdBoard.getThreshold()+"-"+sentCount);
 
-									if(sentCount>0 && thresholdBoard.getThreshold() != 1 && latestTweetTime != thresholdBoard.getLatestTweetTimeAtInc() ){
+									if(sentCount>0 && thresholdBoard.getThreshold() != 1 && latestTweet.getTime() != thresholdBoard.getLatestTweetTimeAtInc() ){
 										/*logger.debug(loggerName, "Increamenting counter for: "
 												+thresholdBoard.getThreshold()+"+"+thresholdBoard.getIncreamentCount()
 												+ ", tweet: "+tweet.getTweet()
 												+ ", sent count: "+sentCount);*/
 
-										thresholdBoard.incCounter(latestTweetTime,thresholdToInc);
+										thresholdBoard.incCounter(latestTweet.getTime(),thresholdToInc);
 										thresholdBoard.setUsed(true); // to avoid use of incremented count in next iteration
 									}
 								}
@@ -233,11 +235,11 @@ public class CaltrainAdvisoriesService {
 	 * 
 	 * @param lastSentTime
 	 * @param tweetCount
-	 * @param latestTweetTime 
+	 * @param latestTweet.getTime() 
 	 * @param b 
 	 * @return 
 	 */
-	private int publishTweets(long lastSentTime, int tweetCount, long lastLegTime, long latestTweetTime) {
+	private int publishTweets(long lastSentTime, int tweetCount, long lastLegTime, Tweet latestTweet) {
 		int count = 0;
 		try {
 			String alertMsg = StatusMsgConfig.getInstance().getMsg("CALTRAIN_REGULAR_TWEET");
@@ -273,7 +275,7 @@ public class CaltrainAdvisoriesService {
 						int newTweetCount = TweetStore.getInstance().getTweetCountAfterTime(user.getLastPushTime(), lastLegTime);
 						String formattedMsg = msgCache.get(newTweetCount);
 						if (formattedMsg==null) {
-							formattedMsg = String.format(alertMsg, newTweetCount, TpConstants.TWEET_TIME_DIFF);
+							formattedMsg = String.format(alertMsg, newTweetCount, StringUtils.abbreviate(latestTweet.getTweet(), maxTweetTextSizeToSend) );
 							msgCache.put(newTweetCount, formattedMsg);
 						}
 						pushToPhone(user.getDeviceToken(), newTweetCount, formattedMsg, false, user.isStandardNotifSoundEnable());
@@ -282,7 +284,7 @@ public class CaltrainAdvisoriesService {
 				}
 				//				long sentTime = System.currentTimeMillis();
 				//System.out.println("Push Time: "+sentTime+"-->"+new Date());
-				persistenceService.updateMultiById(MONGO_TABLES.users.name(), pushSuccessDevices , TpConstants.LAST_PUSH_TIME, latestTweetTime);
+				persistenceService.updateMultiById(MONGO_TABLES.users.name(), pushSuccessDevices , TpConstants.LAST_PUSH_TIME, latestTweet.getTime());
 			}
 		} catch (DBException e) {
 			logger.error(loggerName, e.getMessage());

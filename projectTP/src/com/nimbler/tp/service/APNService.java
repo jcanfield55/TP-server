@@ -64,8 +64,8 @@ public class APNService implements ApnsDelegate{
 				serviceBuilder = serviceBuilder.asQueued();
 			if(poolSize!=-1)
 				serviceBuilder = serviceBuilder.asPool(poolSize);
-			if(isNonBlocking)
-				serviceBuilder = serviceBuilder.asNonBlocking();
+			/*if(isNonBlocking)
+				serviceBuilder = serviceBuilder.asNonBlocking();*/
 			service = serviceBuilder.withDelegate(this).build();   
 		} catch (InvalidSSLConfig e) {
 			e.printStackTrace();
@@ -155,7 +155,7 @@ public class APNService implements ApnsDelegate{
 	 * @param customFields the custom fields - optional
 	 * @return true, if successful
 	 */
-	public boolean pushWithCustomFields(String deviceToken,String msg,Integer badge,Map customFields,boolean useSound){
+	private boolean pushWithCustomFields(String deviceToken,String msg,Integer badge,Map customFields,boolean useSound){
 		boolean success = false;
 		String payload = null;
 		try {
