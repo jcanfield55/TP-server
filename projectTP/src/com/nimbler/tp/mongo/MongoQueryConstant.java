@@ -10,4 +10,6 @@ public class MongoQueryConstant {
 	public static final String EQUAL = "$eq";
 	public static final String IN = "$in";
 	public static final String SET = "$set";
+	public static final String AND = "$and";
+	public static final String OR = "$or";
 }

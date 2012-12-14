@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.document.mongodb.query.Order;
 
@@ -152,31 +153,35 @@ public class TpPlanService {
 			}
 			TripPlan plan = response.getPlan();
 			plan.setDeviceId(deviceId);
+			plan.setAppType(NumberUtils.toInt(reqMap.get(TpConstants.APP_TYPE)));
 			plan.setCreateTime(System.currentTimeMillis()); 
 			List<Itinerary> itineraries = plan.getItineraries();
-			plan.setItineraries(null);//set null as we don't want embedded reference in mongo db.
 
-			persistenceService.addObject(TpConstants.MONGO_TABLES.plan.name(), plan);
-
-			if (itineraries == null || itineraries.size()==0) {
-				logger.debug(loggerName, "No itineraries to save for plan Id: "+plan.getId()); 
-				return response;
-			}
-			plan.setItineraries(itineraries);//reset for response purpose
-			for (Itinerary itin: itineraries) {
-				List<Leg> legs = itin.getLegs();
-				itin.setLegs(null);//set null as we don't want embedded reference in mongo db.
-				itin.setPlanId(plan.getId());
-				persistenceService.addObject(TpConstants.MONGO_TABLES.itinerary.name(), itin);
-				if (legs==null || legs.size()==0) {
-					logger.debug(loggerName, "No legs to save for itinerary id: "+itin.getId());
-					continue;
+			String strSavePlan = StringUtils.defaultString(reqMap.get(RequestParam.SAVE_PLAN),"true");
+			boolean savePlan = Boolean.parseBoolean(strSavePlan);
+			if(savePlan){
+				plan.setItineraries(null);//set null as we don't want embedded reference in mongo db.
+				persistenceService.addObject(TpConstants.MONGO_TABLES.plan.name(), plan);
+				if (itineraries == null || itineraries.size()==0) {
+					logger.debug(loggerName, "No itineraries to save for plan Id: "+plan.getId()); 
+					return response;
 				}
-				for (Leg leg: legs) {
-					leg.setItinId(itin.getId());
+				plan.setItineraries(itineraries);//reset for response purpose
+				for (Itinerary itin: itineraries) {
+					List<Leg> legs = itin.getLegs();
+					itin.setLegs(null);//set null as we don't want embedded reference in mongo db.
+					itin.setPlanId(plan.getId());
+					persistenceService.addObject(TpConstants.MONGO_TABLES.itinerary.name(), itin);
+					if (legs==null || legs.size()==0) {
+						logger.debug(loggerName, "No legs to save for itinerary id: "+itin.getId());
+						continue;
+					}
+					for (Leg leg: legs) {
+						leg.setItinId(itin.getId());
+					}
+					persistenceService.addObjects(TpConstants.MONGO_TABLES.leg.name(), legs); 
+					itin.setLegs(legs); //reset for response purpose 
 				}
-				persistenceService.addObjects(TpConstants.MONGO_TABLES.leg.name(), legs); 
-				itin.setLegs(legs); //reset for response purpose 
 			}
 		}  catch (DBException e) {
 			logger.error(loggerName, "Error while saving trip in DB: "+e.getMessage());

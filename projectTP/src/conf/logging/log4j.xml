@@ -71,11 +71,11 @@
 				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
 		</layout>
 	</appender>
-	<appender name="tweetLog" class="org.apache.log4j.RollingFileAppender">
+	<appender name="advisoriesLog" class="org.apache.log4j.RollingFileAppender">
 		<param name="threshold" value="DEBUG" />
 		<param name="maxFileSize" value="2MB" />
 		<param name="maxBackupIndex" value="5" />
-		<param name="File" value="../logs/tplogs/Twitter.log" />
+		<param name="File" value="../logs/tplogs/advisoriesService.log" />
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern"
 				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
@@ -168,11 +168,15 @@
 		<level value="DEBUG" />
 		<appender-ref ref="otpMonitorLog" />
 	</logger>
-	<logger name="com.nimbler.tp.service.twitter">
+	<logger name="com.nimbler.tp.service.advisories.AdvisoriesService">
 		<level value="DEBUG" />
-		<appender-ref ref="tweetLog" />
+		<appender-ref ref="advisoriesLog" />
 	</logger>
 	<logger name="com.nimbler.tp.gtfs.GtfsDataMonitor">
+		<level value="DEBUG" />
+		<appender-ref ref="gtfsmonitoring" />
+	</logger>
+	<logger name="com.nimbler.tp.gtfs.GtfsDataService">
 		<level value="DEBUG" />
 		<appender-ref ref="gtfsmonitoring" />
 	</logger>

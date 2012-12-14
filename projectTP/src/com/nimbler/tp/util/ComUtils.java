@@ -15,10 +15,10 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,11 +34,15 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.jdom.xpath.XPath;
+
+import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
+import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 
 
 /**
@@ -279,6 +283,8 @@ public class ComUtils {
 	 * @return
 	 * @throws JDOMException
 	 * @throws IOException
+	 * @deprecated
+	 * 
 	 */
 	public static String[] getXmlData(String strTrip){
 		String[] otpInfo = new String[4];
@@ -462,9 +468,16 @@ public class ComUtils {
 		return lst;
 	}
 	public static void main(String[] args) {
-		String[] s = new String[]{"\"hello\"","\"hello","hello\"","hello"};
-		removeQuotation(s);
-		System.out.println(Arrays.toString(s));
+		//System.out.println(isWeekEnd());
+		try {
+			DateFormat format = new SimpleDateFormat("MM/dd/yyyy");
+			Date tripDate = format.parse("11/28/2012");
+
+
+			System.out.println(DateUtils.isSameDay(new Date(), tripDate));
+		} catch (Exception es) {
+			es.printStackTrace();
+		}
 	}
 
 	/**
@@ -482,5 +495,45 @@ public class ComUtils {
 		now.set(Calendar.SECOND, legTime.get(Calendar.SECOND));
 		now.set(Calendar.MILLISECOND, legTime.get(Calendar.MILLISECOND));
 		return now.getTimeInMillis();
+	}
+	/**
+	 * Crrently we have one to one mapping for app and agency.
+	 * @param appType
+	 * @return
+	 *//*
+	public static int[] getAgenciesForApp(Integer appType) {
+		//handle special case for current caltrain app with no appType parameter 
+		if (appType == null)
+			return new int[]{AGENCY_TYPE.CALTRAIN.ordinal()};
+
+		NIMBLER_APP_TYPE type = NIMBLER_APP_TYPE.values()[appType];		
+		switch (type) {
+		case CALTRAIN:
+			return new int[]{AGENCY_TYPE.CALTRAIN.ordinal()};
+		case BART:
+			return new int[]{AGENCY_TYPE.BART.ordinal()};
+		default:
+			return new int[]{AGENCY_TYPE.CALTRAIN.ordinal()};
+		}
+	}*/
+	/**
+	 * Crrently we have one to one mapping for app and agency.
+	 * @param agencyType
+	 * @return
+	 */
+	public static Integer[] getAppsSupportingAgency(Integer agencyType) {		
+		AGENCY_TYPE type = AGENCY_TYPE.values()[agencyType];		
+		switch (type) {
+		case CALTRAIN:
+			return new Integer[]{NIMBLER_APP_TYPE.CALTRAIN.ordinal()};
+		case BART:
+			return new Integer[]{NIMBLER_APP_TYPE.BART.ordinal()};
+		default:
+			return new Integer[]{NIMBLER_APP_TYPE.CALTRAIN.ordinal()};
+		}
+	}
+	public static boolean isWeekEnd(){
+		int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK); 
+		return (day==1 || day==7);
 	}
 }

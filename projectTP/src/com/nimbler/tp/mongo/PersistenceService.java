@@ -32,7 +32,7 @@ import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.util.BeanUtil;
 /**
  * 
- * @author suresh
+ * @author suresh,nirmal
  *
  */
 public class PersistenceService {
@@ -269,6 +269,56 @@ public class PersistenceService {
 			throw new DBException(e.getMessage());
 		}
 	}
+	/**
+	 * 
+	 * @param collectionName
+	 * @param lastAlertTimeColumn
+	 * @param lastTimeLeg
+	 * @param alertColumn
+	 * @param tweetCount
+	 * @param never
+	 * @param appTypeColumn
+	 * @param appType
+	 * @param pageSize
+	 * @param clazz
+	 * @return
+	 * @throws DBException
+	 */
+	public List getUserListByPaging(String collectionName, String lastAlertTimeColumn, long lastTimeLeg, String alertColumn, 
+			int tweetCount, String appTypeColumn, int appType, int never,  int pageSize, Class clazz) throws DBException {
+		try {
+
+			Integer[] numberOfAlert = new Integer[]{tweetCount};
+			Criteria criteria = Criteria.where(appTypeColumn).is(appType).and(lastAlertTimeColumn).lt(lastTimeLeg).and(alertColumn).in(numberOfAlert);
+			Query query = new Query();
+			query.addCriteria(criteria).limit(pageSize);
+			return mongoOpetation.find(collectionName, query, clazz);
+		}  catch (DataAccessResourceFailureException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage()); 
+		} catch (MongoException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		}
+	}
+
+	public List findByQuery(String collectionName,Query query , Class clazz) throws DBException {
+		try {
+			return mongoOpetation.find(collectionName, query, clazz);
+		}  catch (DataAccessResourceFailureException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage()); 
+		} catch (MongoException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		}
+	}
 
 	/**
 	 * Find by in.
@@ -326,6 +376,35 @@ public class PersistenceService {
 		}
 	}
 	/**
+	 * 
+	 * @param collectionName
+	 * @param alertColumn
+	 * @param never
+	 * @param appTypes
+	 * @param pageNumber
+	 * @param pageSize
+	 * @param clazz
+	 * @return
+	 * @throws DBException
+	 */
+	public List getUserListByPagging(String collectionName, String alertColumn,int never, String appTypeColumn, Integer[] appTypes, int pageNumber,  int pageSize, Class clazz) throws DBException {
+		try {
+			Criteria criteria = Criteria.where(alertColumn).gt(never).and(appTypeColumn).in(appTypes);
+			Query query = new Query();
+			query.addCriteria(criteria).skip((pageNumber-1)*pageSize).limit(pageSize);
+			return mongoOpetation.find(collectionName, query, clazz);
+		}  catch (DataAccessResourceFailureException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage()); 
+		} catch (MongoException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		}
+	}
+	/**
 	 * Get the count
 	 * @param collectionName
 	 * @param lastAlertTimeColumn
@@ -363,6 +442,29 @@ public class PersistenceService {
 		try {
 			DBCollection collection = mongoOpetation.getCollection(collectionName);
 			BasicDBObject query = new BasicDBObject().append(columnName, columnValue);
+			BasicDBObject columnToUpdate = new BasicDBObject();
+			Iterator iter = map.keySet().iterator();
+			while(iter.hasNext()) {
+				String key = (String) iter.next();
+				Object value = map.get(key);
+				columnToUpdate.append(key, value);
+			}
+			BasicDBObject multipleColumnUpdate = new BasicDBObject().append(MongoQueryConstant.SET, columnToUpdate);
+			collection.update(query, multipleColumnUpdate);
+		}  catch (DataAccessResourceFailureException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage()); 
+		} catch (MongoException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		}
+	}
+	public void update(String collectionName,BasicDBObject query, Map<String, Object> map) throws DBException {
+		try {
+			DBCollection collection = mongoOpetation.getCollection(collectionName);
 			BasicDBObject columnToUpdate = new BasicDBObject();
 			Iterator iter = map.keySet().iterator();
 			while(iter.hasNext()) {

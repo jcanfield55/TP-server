@@ -105,6 +105,7 @@
 			<value>MW9S-E7SL-26DU-VV8V</value>
 		</property>
 		<property name="timeDiffercenceInMin">
+			<!-- In minutes -->
 			<value>3</value>
 		</property>
 		<!--<property name="maxTimeDifference">
@@ -113,36 +114,40 @@
 		</property>-->
 	</bean>
 
-	<bean id="caltrainAdvisoriesService"
-		class="com.nimbler.tp.service.twitter.CaltrainAdvisoriesService"
-		init-method="init">
-		<property name="tweetUrl">
-			<value>http://search.twitter.com/search.json</value>
+	<bean id="advisoriesPushService"
+		class="com.nimbler.tp.service.advisories.AdvisoriesPushService"
+		init-method="init">	
+		<property name="agencyTweetSourceMap"> <!-- keys point to ordinal value of TPCpnstants.AGENCY_TYPE enum, value = comma separated sources -->
+			<map> 
+				<entry key="1" value="caltrain_news,Caltrain" /><!-- CALTRAIN -apprikacaltrain -->
+				<entry key="2" value="SFBARTAlert" /> <!-- BART - apprikabart -->
+				<entry key="3" value="sfmta_muni" /><!-- SFMUNI - apprikasfmta -->
+				<entry key="4" value="rideact" />  <!-- AC_TRANSIT - apprikactransit -->				
+			</map>
+		</property>	
+		<property name="agencyPushThresholdWeight"> 
+		<!-- keys as agency and value as multiplier of user push threshold -->
+			<map>				
+				 <entry key="1" value="1" />
+				<entry key="2" value="1" />  
+				<entry key="3" value="1" />  
+				<entry key="4" value="1" />  
+			</map>
 		</property>
-		<property name="timeIntervalInMin">
-			<value>3</value>
-		</property>
-		<!-- <property name="maxAlertThreshhold">
-			<value>6</value>
-		</property> -->
-		<property name="tweetSources">
-			<list>
-				<value>caltrain_news</value>
-				<value>caltrain</value> 
-				<!-- <value>apprikatest1</value> --> 
-			</list>
-		</property>
-		<property name="loggerName">
-			<value>com.nimbler.tp.service.twitter</value>
-		</property>
-		<property name="pushIntervalStartTime" value="5"/>
-		<property name="pushIntervalEndTime" value="22"/>
-		<property name="validTweetHours" value="6"/>
+	<property name="pushTimeInterval">
+		<map>
+			<entry key="notifTimingMorning" value="300-600" />
+			<entry key="notifTimingMidday" value="600-900" />
+			<entry key="notifTimingEvening" value="900-1170" />
+			<entry key="notifTimingNight" value="1170-1440" />
+		</map>
+	</property>	
+		
 	</bean>
 
 	<bean id="userManagementService" class="com.nimbler.tp.service.UserManagementService">
 		<property name="loggerName">
-			<value>com.nimbler.tp.service.twitter</value>
+			<value>com.nimbler.tp.service.TpEventLoggingService</value>
 		</property>
 	</bean>
 
@@ -157,81 +162,140 @@
 	</bean>
 	<bean id="apnService" class="com.nimbler.tp.service.APNService"
 		init-method="init">
-		<property name="password" value="password@123" />		
-		<property name="KEYSTORE_P12_FILE" value="conf/cert/Certificate_Dev_push.p12" />		
-		<!-- use -1 for ignore pool usage -->
-		<property name="poolSize" value="5" />		
-		<!-- 1- sandbox, 2- production -->		
-		<property name="certType" value="1" />
-		<property name="isQueued" value="false" />
-		<property name="isNonBlocking" value="false" />
+		<property name="lstApnBundles">
+			<list>
+				<bean class="com.nimbler.tp.dataobject.ApnBundle">
+					<property name="password" value="password@123" />
+					<property name="KEYSTORE_P12_FILE" value="conf/cert/Certificate_Dev_push.p12" />
+					<!-- 1- sandbox, 2- production -->
+					<property name="certType" value="1" />
+					<property name="appType" value="CALTRAIN" />
+				</bean>
+				<bean class="com.nimbler.tp.dataobject.ApnBundle">
+					<property name="password" value="password@123" />
+					<property name="KEYSTORE_P12_FILE" value="conf/cert/Certificates_Bart_Dev.p12" />
+					<!-- 1- sandbox, 2- production -->
+					<property name="certType" value="1" />
+					<property name="appType" value="SF_BAY_AREA" />
+				</bean>
+			</list>
+		</property>		
 		<property name="sound" value="default" />
-		<property name="loggerName">
-			<value>com.nimbler.tp.service.APNService</value>
-		</property>
 	</bean>
 
-	<bean id="gtfsMonitoring" class="com.nimbler.tp.gtfs.GtfsDataMonitor" init-method="init">
+	<bean id="gtfsMonitoring" class="com.nimbler.tp.gtfs.GtfsDataMonitor"
+		init-method="init">
 		<property name="downloadDirectory" value="/usr/local/server/otp_build/tmp/" />
 		<property name="loggerName">
 			<value>com.nimbler.tp.gtfs.GtfsDataMonitor</value>
-		</property>
+		</property>		
+	</bean>
+	<bean id="gtfsContext" class="com.nimbler.tp.gtfs.GtfsContext">
 		<property name="gtfsBundles">
 			<list>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="BART" />
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/BART.zip" />
-					<property name="downloadUrl"
-						value="http://bart.gov/dev/schedules/google_transit.zip" />
-					<property name="lastUpdateDate" value="20120815" />
+					<property name="downloadUrl" value="http://bart.gov/dev/schedules/google_transit.zip" />
+					<property name="lastUpdateDate" value="20120910" />
+					<property name="agencyType" value="BART" />
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="Menlo-Midday" />
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/Menlo-Midday.zip" />
 					<property name="downloadUrl"
-						value="http://www.menlopark.org/departments/trn/google/google_transit.zip" />
-					<property name="lastUpdateDate" value="20120815" />
+								value="http://www.menlopark.org/departments/trn/google/google_transit.zip" />
+					<property name="lastUpdateDate" value="20120910" />
+					<property name="agencyType" value="MENLO_MIDDAY" />
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="ACtransit" />
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/ACtransit.zip" />
-					<!--<property name="crackedDataFile" value="C:/OTP_/GTFS/ACtransit_hack.zip" />-->
+					<property name="crackedDataFile" value="/usr/local/server/otp_build/latest_gtfs/ACtransit_hack.zip" />
 					<property name="downloadUrl"
-						value="http://www.actransit.org/wp-content/plugins/download-monitor/download.php?id=5" />
-					<property name="lastUpdateDate" value="20120815" />
-				</bean> 
+								value="http://www.actransit.org/wp-content/plugins/download-monitor/download.php?id=5" />
+					<property name="lastUpdateDate" value="20120910" />
+					<property name="agencyType" value="AC_TRANSIT" />
+				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="Caltrain" />
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/Caltrain.zip" />
 					<property name="downloadUrl"
-						value="http://www.caltrain.com/Assets/GTFS/caltrain/google_transit.zip" />
-					<property name="lastUpdateDate" value="20120815" />
+								value="http://www.caltrain.com/Assets/GTFS/caltrain/google_transit.zip" />
+					<property name="lastUpdateDate" value="20120912" />
+					<property name="agencyType" value="CALTRAIN" />
 				</bean>
-				 <bean class="com.nimbler.tp.gtfs.GtfsBundle">
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="SF-ferries" />
 					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/SF-ferries.zip" />
-					<property name="downloadUrl"
-						value="http://trilliumtransit.com/transit_feeds/sfbay-ferries-ca-us/gtfs.zip" />
-					<property name="lastUpdateDate" value="20120815" />
+					<property name="downloadUrl" value="http://trilliumtransit.com/transit_feeds/sfbay-ferries-ca-us/gtfs.zip" />
+					<property name="lastUpdateDate" value="20120931" />
 					<property name="enableAgency" value="false" />						
+					<property name="agencyType" value="SF_FERRIES" />
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="VTA" />
-					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/VTA.zip" />
+					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/VTA.zip" />					
 					<property name="downloadUrl"
-						value="http://www.vta.org/dev/data/google_transit.zip " />
-					<property name="lastUpdateDate" value="20120815" />
+								value="http://www.vta.org/dev/data/google_transit.zip " />
+					<property name="lastUpdateDate" value="20120931" />
+					<property name="agencyType" value="VTA" />
 				</bean> 
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="SFMTA" />
-					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/SFMTA.zip" />
-					<property name="downloadUrl"
-						value="http://www.sfmta.com/transitdata/google_transit.zip" />
-					<property name="lastUpdateDate" value="20120815" />
-				</bean> 
+					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/SFMTA.zip" />					
+					<property name="downloadUrl" value="http://www.sfmta.com/transitdata/google_transit.zip" />
+					<property name="lastUpdateDate" value="20120931" />
+					<property name="agencyType" value="SFMUNI" />
+				</bean>
 			</list>
 		</property>
 	</bean>
+	
+	<bean id="twitterAdvisoriesService" class="com.nimbler.tp.service.advisories.TwitterAdvisoriesService">
+		<property name="loggerName">
+			<value>com.nimbler.tp.service.advisories.AdvisoriesService</value>
+		</property>
+	</bean>
+	<bean id="gtfsDataService" class="com.nimbler.tp.gtfs.GtfsDataService">
+	<property name="gtfsColums">
+		<map>
+			<entry key="agency" value="agency_id,agency_name,agency_url" />
+			<entry key="stops" value="stop_id,stop_name,stop_desc,stop_lat,stop_lon,zone_id" />
+			<entry key="routes" value="route_id,route_short_name,route_long_name,route_desc,route_type" />
+			<entry key="trips" value="trip_id,route_id,service_id,trip_headsign,direction_id,block_id,shape_id" />
+			<entry key="stop_times" value="trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,shape_dist_traveled" />
+			<entry key="calendar" value="service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date" />
+			<entry key="calendar_dates" value="service_id,date,exception_type" />
+			<entry key="fare_attributes" value="fare_id,price,currency_type,payment_method,transfers,transfer_duration" />
+			<entry key="fare_rules" value="fare_id,route_id,origin_id,destination_id,contains_id" />
+			<entry key="shapes" value="shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled" />
+<!-- 			<entry key="frequencies" value="" />
+			<entry key="transfers" value="" />
+			<entry key="feed_info" value="" /> -->
+		</map>
+	</property>
+	</bean>
+	
+	<bean id="nimblerApps" class="com.nimbler.tp.dataobject.NimblerApps">
+	<!-- keys = app bundle id from xcode, value = ordinal value of TPCpnstants.NIMBLER_APP_TYPE enum -->
+		<property name="appBundleToAppIdentifierMap">
+			<map>
+				<entry key="com.Nimbler.Nimbler-Caltrain" value="1" /> 
+				<entry key="com.Nimbler.Nimbler-BART" value="4" />				
+			</map>
+		</property>
+		<!-- keys = ordinal value of TPCpnstants.NIMBLER_APP_TYPE enum, value = ordinal value of TPCpnstants.AGENCY_TYPE enum -->
+		<property name="appIdentifierToAgenciesMap">
+			<map>
+			      <!-- < NIMBLER_APP_TYPE, AGENCY_TYPE > -->
+				<entry key="1" value="1,2,3,4" /> <!-- comma separated value -->
+				<entry key="4" value="1,2,3,4" />
+			</map>
+		</property>
+	</bean>
+
+	
 	<!-- ====================================== Quarts trigger ================================== -->
 
 	<bean name="gtfsMonitoringJob"
@@ -242,13 +306,13 @@
 	</bean>
 	<bean id="gtfsMonitoringJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="gtfsMonitoringJob" />
-		<property name="cronExpression" value="0 0 21 * * ?" /> 		
+ 		<property name="cronExpression" value="0 0 21 * * ?" /> 		    
 	</bean>
 
 	<bean name="clearAdvisaryCounterJob"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="concurrent" value="false" />
-		<property name="targetBeanName" value="caltrainAdvisoriesService" />
+		<property name="targetBeanName" value="advisoriesPushService" />
 		<property name="targetMethod" value="resetAllCounters" />
 	</bean>
 	<bean id="clearAdvisaryCounterTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
@@ -258,8 +322,8 @@
 	<bean name="fetchTweetsJob"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="concurrent" value="false" />
-		<property name="targetBeanName" value="caltrainAdvisoriesService" />
-		<property name="targetMethod" value="getLatestTweets" />
+		<property name="targetBeanName" value="advisoriesPushService" />
+		<property name="targetMethod" value="fetchAndPushAdvisories" />
 	</bean>
 	<bean id="fetchTweetsTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="fetchTweetsJob" />
@@ -268,7 +332,7 @@
 	<bean name="urgentAdvisoriesClearJob"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="concurrent" value="false" />
-		<property name="targetBeanName" value="caltrainAdvisoriesService" />
+		<property name="targetBeanName" value="advisoriesPushService" />
 		<property name="targetMethod" value="clearUrgentAdvisories" />
 	</bean>
 	<bean id="urgentAdvisoriesClearJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
@@ -287,7 +351,7 @@
 		</property>
 	</bean>
 	<!-- ====================================== Mail configuration  ================================== -->
-	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+ 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
 		<property name="host" value="smtp.gmail.com" />
 		<property name="port" value="587" />
 		<property name="protocol" value="smtp" />
@@ -302,7 +366,7 @@
 			</props>
 		</property>
 	</bean> 
-	<!--<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+<!-- <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
 		<property name="host" value="192.168.3.11" />
         <property name="protocol" value="smtp" />
         <property name="javaMailProperties">
@@ -311,5 +375,5 @@
                 <prop key="mail.smtp.auth">false</prop>
             </props>
         </property>
-	</bean>  -->  
+	</bean> -->   
 </beans>

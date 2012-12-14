@@ -92,6 +92,11 @@ public class TpConstants {
 	public static final String LAST_PUSH_TIME 		= "lastPushTime";
 	public static final String CREATE_TIME 		= "createTime";
 	public static final String UPDATE_TIME 		= "updateTime";
+	public static final String APP_TYPE 		= "appType";
+	public static final String LAST_PUSH_TIME_BART  = "lastPushTimeBart";
+	public static final String LAST_PUSH_TIME_ACT   = "lastPushTimeAct ";
+	public static final String LAST_PUSH_TIME_SFMUNI = "lastPushTimeSfMuni";
+
 
 	public static final String TWEET_TIME_DIFF 		= TpProperty.getDefaultProperty("tweet.time.diff");
 	public static final String TWEET_CREATED 		= TpProperty.getDefaultProperty("tweet.created");
@@ -142,4 +147,142 @@ public class TpConstants {
 
 	public static final int ROUTE_DIRECTION_OUTBOUND = 0;
 	public static final int ROUTE_DIRECTION_INBOUND = 1;
+
+	public enum NIMBLER_APP_TYPE {
+		DEFAULT(""),//0
+		/**
+		 *Ordinal 1 
+		 */
+		CALTRAIN("Caltrain"),//1
+		BART("BART"),//2
+		SFMUNI("SF Muni"),//3
+		/**
+		 * Ordinal 4
+		 */
+		SF_BAY_AREA("SF");//4
+
+		private String text;
+		public String getText() {
+			return text;
+		}
+		public void setText(String text) {
+			this.text = text;
+		}
+		private NIMBLER_APP_TYPE(String text) {
+			this.text = text;
+		}
+	}
+
+	public enum AGENCY_TYPE {
+		DEFAULT("lastPushTime","","",""),
+		CALTRAIN("lastPushTime","enableCaltrainAdv","Caltrain","lastReadTimeCaltrain"),//lastPushTimeCaltrain
+		BART("lastPushTimeBart","enableBartAdv","BART","lastReadTimeBart"),
+		SFMUNI("lastPushTimeSfMuni","enableSfMuniAdv","SF Muni","lastReadTimeSfMuni"),
+		AC_TRANSIT("lastPushTimeAct","enableAcTransitAdv","AC Transit","lastReadTimeAct"),
+		VTA("","","VTA",""),
+		MENLO_MIDDAY("","","Menlo-Midday",""),
+		SF_FERRIES("","","SF-ferries","");
+		private String lastReadTimeColumnName;
+
+		private String pushTimeColumnName;
+		private String enableAdvisoryColumnName;
+		private String text;
+
+		public String getPushTimeColumnName() {
+			return pushTimeColumnName;
+		}
+		private AGENCY_TYPE(String pushTimeColumnName,
+				String enableAdvisoryColumnName,String txt,String readTime) {
+			this.pushTimeColumnName = pushTimeColumnName;
+			this.enableAdvisoryColumnName = enableAdvisoryColumnName;
+			this.text = txt;
+			this.lastReadTimeColumnName = readTime;
+		}
+
+		public String getText() {
+			return text;
+		}
+		public void setText(String text) {
+			this.text = text;
+		}
+		public String getLastReadTimeColumnName() {
+			return lastReadTimeColumnName;
+		}
+		public void setLastReadTimeColumnName(String lastReadTimeColumnName) {
+			this.lastReadTimeColumnName = lastReadTimeColumnName;
+		}
+		public void setPushTimeColumnName(String pushTimeColumnName) {
+			this.pushTimeColumnName = pushTimeColumnName;
+		}
+		public String getEnableAdvisoryColumnName() {
+			return enableAdvisoryColumnName;
+		}
+		public void setEnableAdvisoryColumnName(String enableAdvisoryColumnName) {
+			this.enableAdvisoryColumnName = enableAdvisoryColumnName;
+		}
+	}
+	/**
+	 * Not sequential
+	 * @author nirmal
+	 *
+	 */
+	public enum PUSH_MSG_CONSTANT{
+		CALTRAIN_REGULAR_TWEET,
+		CALTRAIN_REGULAR_TWEET_FOR_1_THRESHOLD,
+		/**
+		 * 1. count  
+		 * 2. agency name
+		 */
+		SF_REGULAR_TWEET,
+		SF_REGULAR_TWEET_FOR_1_THRESHOLD,
+		/**
+		 * 1. Agency name
+		 * 2. Msg
+		 */
+		SF_URGENT_TWEET,
+		/**
+		 * 1. App name
+		 * 2. Msg
+		 */
+		STANDARD_ADMIN_MSG,
+		/**
+		 * 1. agency name
+		 * 2. Msg
+		 */
+		URGENT_TWEET,
+	}
+	public enum GTFS_FILE {
+		UNDEFINED("invalid"),
+		AGENCY         ("agency"),          
+		STOPS          ("stops"),         
+		ROUTES         ("routes"),         
+		TRIPS          ("trips"),          
+		STOP_TIMES     ("stop_times"),      
+		CALENDAR       ("calendar"),    
+		CALENDAR_DATES ("calendar_dates"),  
+		FARE_ATTRIBUTES("fare_attributes"),
+		FARE_RULES     ("fare_rules"),
+		SHAPES         ("shapes"),
+		FREQUENCIES    ("frequencies"),
+		TRANSFERS      ("transfers"),
+		FEED_INFO      ("feed_info");
+
+		private String name;
+		private String ext = ".txt";
+
+		public String getName() {
+			return name;
+		}
+		public String getFileName() {
+			return name+ext;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		private GTFS_FILE(String name) {
+			this.name = name;
+		}
+	}
 }

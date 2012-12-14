@@ -8,6 +8,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
+
 /**
  * A TripPlan is a set of ways to get from point A to point B at time T.
  */
@@ -43,6 +45,8 @@ public class TripPlan implements Cloneable,Serializable{
 	private List<Itinerary> itineraries = new ArrayList<Itinerary>();
 
 	private String planUrlParams;
+
+	private int appType = NIMBLER_APP_TYPE.CALTRAIN.ordinal();
 
 	public TripPlan() {}
 
@@ -132,4 +136,15 @@ public class TripPlan implements Cloneable,Serializable{
 	public Object clone() throws CloneNotSupportedException {
 		return super.clone();
 	}
+
+	public int getAppType() {
+		return appType;
+	}
+
+	public void setAppType(int appType) {
+		if(appType==0)
+			return;
+		this.appType = appType;
+	}
+
 }

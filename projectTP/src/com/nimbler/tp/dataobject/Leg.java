@@ -378,7 +378,7 @@ public class Leg {
 				+ ", walkSteps=" + steps + ", notes=" + notes
 				+ ", routeShortName=" + routeShortName + ", routeLongName="
 				+ routeLongName + ", boardRule=" + boardRule + ", alightRule="
-				+ alightRule + "]";
+				+ alightRule + "]\n";
 	}
 
 	public String getId() {
@@ -398,6 +398,67 @@ public class Leg {
 	}
 
 	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((agencyId == null) ? 0 : agencyId.hashCode());
+		result = prime * result
+				+ ((distance == null) ? 0 : distance.hashCode());
+		result = prime * result + (int) (duration ^ (duration >>> 32));
+		result = prime * result + ((endTime == null) ? 0 : endTime.hashCode());
+		result = prime * result + ((from == null) ? 0 : from.hashCode());
+		result = prime * result
+				+ ((startTime == null) ? 0 : startTime.hashCode());
+		result = prime * result + ((to == null) ? 0 : to.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Leg other = (Leg) obj;
+		if (agencyId == null) {
+			if (other.agencyId != null)
+				return false;
+		} else if (!agencyId.equals(other.agencyId))
+			return false;
+		if (distance == null) {
+			if (other.distance != null)
+				return false;
+		} else if (!distance.equals(other.distance))
+			return false;
+		if (duration != other.duration)
+			return false;
+		if (endTime == null) {
+			if (other.endTime != null)
+				return false;
+		} else if (!endTime.equals(other.endTime))
+			return false;
+		if (from == null) {
+			if (other.from != null)
+				return false;
+		} else if (!from.equals(other.from))
+			return false;
+		if (startTime == null) {
+			if (other.startTime != null)
+				return false;
+		} else if (!startTime.equals(other.startTime))
+			return false;
+		if (to == null) {
+			if (other.to != null)
+				return false;
+		} else if (!to.equals(other.to))
+			return false;
+		return true;
+	}
+
+	/*	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
@@ -440,6 +501,6 @@ public class Leg {
 		} else if (!to.equals(other.to))
 			return false;
 		return true;
-	}
+	}*/
 
 }

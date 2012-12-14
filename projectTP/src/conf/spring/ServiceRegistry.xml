@@ -29,13 +29,13 @@
 
 	<bean id="userManagementRestService" class="com.nimbler.tp.rest.UserManagementRestService">
 		<property name="loggerName">
-			<value>com.nimbler.tp.service.twitter</value>
+			<value>com.nimbler.tp.service.TpEventLoggingService</value>
 		</property>
 	</bean>
 	
 	<bean id="advisoriesService" class="com.nimbler.tp.rest.AdvisoriesRestService">
 		<property name="loggerName">
-			<value>com.nimbler.tp.service.twitter</value>
+			<value>com.nimbler.tp.service.TpEventLoggingService</value>
 		</property>
 	</bean>
 	<bean id="gtfsMedaDataResrService" class="com.nimbler.tp.rest.GtfsMetaDataRestService">

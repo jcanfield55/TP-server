@@ -5,7 +5,9 @@ package com.nimbler.tp.util;
 
 import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.TPApplicationContext.SPRING_BEANS;
+import com.nimbler.tp.dataobject.NimblerApps;
 import com.nimbler.tp.gtfs.GtfsDataMonitor;
+import com.nimbler.tp.gtfs.GtfsDataService;
 import com.nimbler.tp.mongo.PersistenceService;
 import com.nimbler.tp.rest.AdvisoriesRestService;
 import com.nimbler.tp.service.APNService;
@@ -13,11 +15,12 @@ import com.nimbler.tp.service.TpEventLoggingService;
 import com.nimbler.tp.service.TpFeedbackService;
 import com.nimbler.tp.service.TpPlanService;
 import com.nimbler.tp.service.UserManagementService;
+import com.nimbler.tp.service.advisories.AdvisoriesPushService;
+import com.nimbler.tp.service.advisories.AdvisoriesService;
 import com.nimbler.tp.service.livefeeds.BARTApiImpl;
 import com.nimbler.tp.service.livefeeds.NextBusApiImpl;
 import com.nimbler.tp.service.livefeeds.stub.BARTApiClient;
 import com.nimbler.tp.service.livefeeds.stub.NextBusApiClient;
-import com.nimbler.tp.service.twitter.CaltrainAdvisoriesService;
 
 /**
  * The Class BeanUtil.
@@ -97,14 +100,35 @@ public class BeanUtil {
 		return (AdvisoriesRestService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.Advisories_REST_SERVICE.bean());
 	}
 
-	public static final CaltrainAdvisoriesService getCaltrainService() {
-		return (CaltrainAdvisoriesService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.CALTRAIN_ADVISORIES_SERVICE.bean());
-	}
-
 	public static APNService getApnService() {
 		return (APNService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.APN_SERVICE.bean());
 	}
+
 	public static GtfsDataMonitor getGtfsDataMonitorService() {
 		return (GtfsDataMonitor) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.GTFS_DATA_MONITOR.bean());
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static AdvisoriesService getAdvisoriesService() {
+		return (AdvisoriesService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.TWITTER_ADVISORIES_SERVICE.bean());
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static NimblerApps getNimblerAppsBean() {
+		return (NimblerApps) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.NIMBLER_APPS_BEAN.bean());
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static AdvisoriesPushService getAdvisoriesPushServiceBean() {
+		return (AdvisoriesPushService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.ADVISORIES_PUSH_SERVICE.bean());
+	}
+	public static GtfsDataService getGtfsDataServiceBean() {
+		return (GtfsDataService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.GTFS_DATA_SERVICE.bean());
 	}
 }

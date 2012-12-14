@@ -65,6 +65,7 @@ public class TpFeedbackService {
 			FeedBack  feedBack = new FeedBack();
 			int feedbacSource = NumberUtils.toInt(reqParams.get(RequestParam.SOURCE),-1);
 			TripPlan plan = null;
+			feedBack.setAppType(NumberUtils.toInt(reqParams.get(TpConstants.APP_TYPE)));
 			FEEDBACK_SOURCE_TYPE type =  FEEDBACK_SOURCE_TYPE.values()[feedbacSource];
 			String uniqueId = reqParams.get(RequestParam.UNIQUE_ID);
 

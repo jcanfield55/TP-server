@@ -37,7 +37,11 @@ public class TPApplicationContext {
 		USER_MANAGEMENT_SERVICE("userManagementService"),
 		Advisories_REST_SERVICE("advisoriesService"),
 		APN_SERVICE("apnService"),
-		GTFS_DATA_MONITOR("gtfsMonitoring");
+		GTFS_DATA_MONITOR("gtfsMonitoring"),
+		TWITTER_ADVISORIES_SERVICE("twitterAdvisoriesService"),
+		ADVISORIES_PUSH_SERVICE("advisoriesPushService"),
+		NIMBLER_APPS_BEAN("nimblerApps"),
+		GTFS_DATA_SERVICE("gtfsDataService");
 		String name;
 
 		/**

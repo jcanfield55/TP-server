@@ -4,7 +4,9 @@
 package com.nimbler.tp.util;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -16,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -65,9 +67,7 @@ public class GtfsUtils {
 		Map<String, Date> mapServiceIdAndDate = new HashMap<String, Date>();
 		if(file == null || !file.exists())
 			return mapServiceIdAndDate;
-		ZipFile zipFile = new ZipFile(file);		
-		ZipEntry zipEntry = zipFile.getEntry(TpConstants.ZIP_CALENDAR_FILE);		
-		List<String> lstLines = IOUtils.readLines(zipFile.getInputStream(zipEntry),GTFS_ENCODE_FORMAT);
+		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file,TpConstants.ZIP_CALENDAR_FILE),GTFS_ENCODE_FORMAT);
 		if(ComUtils.isEmptyList(lstLines))
 			throw new TpException("Invalid file, No data found in file: "+file);
 		String[] headers = lstLines.get(0).split(",");
@@ -100,6 +100,81 @@ public class GtfsUtils {
 	}
 
 	/**
+	 * Gets the columns from file.
+	 *
+	 * @param file the file
+	 * @param columns the columns
+	 * @param ignoreError the ignore error
+	 * @return the columns from file
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws ParseException the parse exception
+	 * @throws TpException the tp exception
+	 */
+	public List<String> getColumnsFromFile(File file,String[] columns,String entryName) throws IOException, ParseException, TpException {
+		List<String> res = new ArrayList<String>();
+		if(file == null || !file.exists())
+			return res;
+		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file,entryName),GTFS_ENCODE_FORMAT);
+
+		if(ComUtils.isEmptyList(lstLines))
+			throw new TpException("Invalid file, No data found in file: "+file);
+		String[] headers = lstLines.get(0).split(",");
+
+		int[] colIndex = new int[columns.length]; 
+		for (int i = 0; i < columns.length; i++) {
+			colIndex[i] = -1;
+			for (int j = 0; j < headers.length; j++) {
+				if(headers[j].toLowerCase().indexOf(columns[i])!=-1)
+					colIndex[i]=j;
+			}
+		}
+		res.add(StringUtils.join(columns,","));
+		for (int i = 1; i < lstLines.size(); i++) {					
+			try {
+				String line = lstLines.get(i);
+				if(ComUtils.isEmptyString(line)){
+					logger.warn(loggerName, "empty line found in gtfs");
+					continue;
+				}
+				String[] arrLines = line.split(",");
+				String[] temp = new String[columns.length];
+				for (int j = 0; j < colIndex.length; j++) {
+					if(colIndex[j] !=-1 && colIndex[j] < arrLines.length && arrLines[colIndex[j]]!=null)
+						temp[j] = arrLines[colIndex[j]].replace("\"", "").trim();
+				}
+				res.add(StringUtils.join(temp,","));
+			} catch (Exception e) {				
+				logger.error(loggerName,"Malformed data Found at line "+i+", data: "+lstLines.get(i),e);				
+			}
+		}
+		return res;
+	}
+
+	/**
+	 * Gets the zip entry data stream.
+	 *
+	 * @param file the file
+	 * @param fileName the file name
+	 * @return the zip entry data stream
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws TpException the tp exception
+	 */
+	private InputStream getZipEntryDataStream(File file, String fileName) throws IOException, TpException {		
+		ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(file));
+		ZipEntry zipEntry = null;
+		ZipEntry temp = null; 
+		while((temp=zipInputStream.getNextEntry())!=null){
+			if(fileName.equalsIgnoreCase(temp.getName())){
+				zipEntry = temp;
+				return zipInputStream;	
+			}
+		}
+		if(zipEntry == null)
+			throw new TpException("Could not find zip Entry: "+fileName+" in " + file.getAbsolutePath());
+		return null;
+	}
+
+	/**
 	 * Read from gtfs.
 	 *
 	 * @param file the file
@@ -111,9 +186,10 @@ public class GtfsUtils {
 	 */
 	public List<GtfsCalander> readCalanderGtfs(File file) throws IOException, ParseException, TpException {
 		List<GtfsCalander> lstGtfsCalanders = new ArrayList<GtfsCalander>();
-		ZipFile zipFile = new ZipFile(file);
+		/*ZipFile zipFile = new ZipFile(file);
 		ZipEntry zipEntry = zipFile.getEntry(TpConstants.ZIP_CALENDAR_FILE);		
-		List<String> lstLines = IOUtils.readLines(zipFile.getInputStream(zipEntry),GTFS_ENCODE_FORMAT);		
+		List<String> lstLines = IOUtils.readLines(zipFile.getInputStream(zipEntry),GTFS_ENCODE_FORMAT);*/		
+		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file, TpConstants.ZIP_CALENDAR_FILE),GTFS_ENCODE_FORMAT);		
 		if(ComUtils.isEmptyList(lstLines))
 			throw new TpException("Invalid file, No data found in file: "+file);
 		String[] headers = lstLines.get(0).split(",");
@@ -181,9 +257,7 @@ public class GtfsUtils {
 	 */
 	public List<String> readAgencyIds(File file) throws ZipException, IOException, TpException {
 		List<String> lstRes = new ArrayList<String>();
-		ZipFile zipFile = new ZipFile(file);
-		ZipEntry zipEntry = zipFile.getEntry(TpConstants.ZIP_AGENCY_FILE);		
-		List<String> lstLines = IOUtils.readLines(zipFile.getInputStream(zipEntry),GTFS_ENCODE_FORMAT);		
+		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file, TpConstants.ZIP_AGENCY_FILE),GTFS_ENCODE_FORMAT);		
 		if(ComUtils.isEmptyList(lstLines))
 			throw new TpException("Invalid file, No data found in file: "+file);
 		String[] headers = lstLines.get(0).split(",");
@@ -224,13 +298,13 @@ public class GtfsUtils {
 	 */
 	public List<GtfsCalandeDates> readCalanderDatesGtfs(File file) throws IOException, ParseException, TpException {
 		List<GtfsCalandeDates> lstGtfsCalanders = new ArrayList<GtfsCalandeDates>();
-		ZipFile zipFile = new ZipFile(file);
+		/*ZipFile zipFile = new ZipFile(file);
 		ZipEntry zipEntry = zipFile.getEntry(TpConstants.ZIP_CALENDAR_DATES_FILE);
 		if(zipEntry == null){
 			logger.info(loggerName, "No "+TpConstants.ZIP_CALENDAR_DATES_FILE+" file found in "+file.getAbsolutePath());
 			return null;
-		}		
-		List<String> lstLines = IOUtils.readLines(zipFile.getInputStream(zipEntry),GTFS_ENCODE_FORMAT);		
+		}*/		
+		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file,TpConstants.ZIP_CALENDAR_DATES_FILE),GTFS_ENCODE_FORMAT);		
 		if(ComUtils.isEmptyList(lstLines))
 			throw new TpException("Invalid file, No data found in file: "+file);
 		String[] headers = lstLines.get(0).split(",");
@@ -429,9 +503,9 @@ public class GtfsUtils {
 	public List<BartRouteInfo> getBARTRoutes(String filePath) throws ZipException, IOException, TpException {
 		File file = new File(filePath);
 		List<BartRouteInfo> bartRoutes = new ArrayList<BartRouteInfo>();
-		ZipFile zipFile = new ZipFile(file);
-		ZipEntry zipEntry = zipFile.getEntry(TpConstants.ZIP_ROUTES_FILE);		
-		List<String> lstLines = IOUtils.readLines(zipFile.getInputStream(zipEntry),GTFS_ENCODE_FORMAT);		
+		/*ZipFile zipFile = new ZipFile(file);
+		ZipEntry zipEntry = zipFile.getEntry(TpConstants.ZIP_ROUTES_FILE);*/		
+		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file, TpConstants.ZIP_ROUTES_FILE),GTFS_ENCODE_FORMAT);		
 		if (ComUtils.isEmptyList(lstLines))
 			throw new TpException("BART GTFS: Invalid file, No data found in file: "+file);
 		String[] headers = lstLines.get(0).split(",");
@@ -473,9 +547,9 @@ public class GtfsUtils {
 	 */
 	public void updateBARTRouteDetails(String fileName, List<BartRouteInfo> bartRoutes) throws ZipException, IOException, TpException {
 		File file = new File(fileName);
-		ZipFile zipFile = new ZipFile(file);
-		ZipEntry zipEntry = zipFile.getEntry(TpConstants.ZIP_TRIPS_FILE);		
-		List<String> lstLines = IOUtils.readLines(zipFile.getInputStream(zipEntry),GTFS_ENCODE_FORMAT);		
+		/*ZipFile zipFile = new ZipFile(file);
+		ZipEntry zipEntry = zipFile.getEntry(TpConstants.ZIP_TRIPS_FILE);*/		
+		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file, TpConstants.ZIP_TRIPS_FILE),GTFS_ENCODE_FORMAT);		
 		if (ComUtils.isEmptyList(lstLines))
 			throw new TpException("BART GTFS: Invalid file, No data found in file: "+file);
 		String[] headers = lstLines.get(0).split(",");
@@ -512,5 +586,21 @@ public class GtfsUtils {
 				logger.error(loggerName,"BART GTFS: Malformed data Found in file(trips.txt):"+file.getAbsolutePath()+" at line "+i+", data: "+lstLines.get(i),e);				
 			}
 		}
+	}
+
+	/**
+	 * Gets the agency ids from trip id combo.
+	 *
+	 * @param strAgencyId the str agency id
+	 * @return the agency ids from trip id combo
+	 */
+	public static String[] getAgencyIdsFromTripIdCombo(String[] strAgencyId) {
+		if(strAgencyId==null)
+			return null;
+		String[] res = new String[strAgencyId.length];
+		for (int i = 0; i < strAgencyId.length; i++) {
+			res[i] =StringUtils.substringBefore(strAgencyId[i], "_");
+		}
+		return res;
 	}
 }

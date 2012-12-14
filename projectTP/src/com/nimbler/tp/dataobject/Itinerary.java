@@ -304,6 +304,9 @@ public class Itinerary {
 				return false;
 		} else if (legs.size() != other.legs.size())
 			return false;
+		else if(!legs.equals(other.legs)){
+			return false;
+		}
 		if (transfers == null) {
 			if (other.transfers != null)
 				return false;

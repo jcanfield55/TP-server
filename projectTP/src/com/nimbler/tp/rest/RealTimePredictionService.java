@@ -19,6 +19,7 @@ import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.LegLiveFeed;
 import com.nimbler.tp.dataobject.LiveFeedResponse;
 import com.nimbler.tp.dataobject.PlanLiveFeeds;
+import com.nimbler.tp.dataobject.TraverseMode;
 import com.nimbler.tp.dataobject.TripPlan;
 import com.nimbler.tp.mongo.PersistenceService;
 import com.nimbler.tp.service.LoggingService;
@@ -29,6 +30,7 @@ import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.JSONUtil;
 import com.nimbler.tp.util.OperationCode.TP_CODES;
+import com.nimbler.tp.util.PlanUtil;
 import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.TpConstants;
 import com.nimbler.tp.util.TpConstants.ETA_FLAG;
@@ -71,8 +73,8 @@ public class RealTimePredictionService {
 					if (legFeed!=null)
 						response.addLegLiveFeed(legFeed);
 				} catch (FeedsNotFoundException e) {
-					logger.warn(loggerName, e.getMessage()); 
-				}	 
+					logger.warn(loggerName, e.getMessage());
+				}
 			}
 			if (response.getLegLiveFeeds()==null || response.getLegLiveFeeds().size()==0)
 				response.setError(TP_CODES.DATA_NOT_EXIST.getCode());
@@ -103,10 +105,11 @@ public class RealTimePredictionService {
 			List<Itinerary> itineraries =planService.getFullItinerariesByIds(itineraryId.split(","));
 			if ( ComUtils.isEmptyList(itineraries) ) 
 				throw new TpException(TP_CODES.DATA_NOT_EXIST.getCode());
-			if(forToday)
+			if (forToday)
 				updateLegTimeToToday(itineraries);
 
 			for (Itinerary itin: itineraries) {
+				//				System.out.println("Itinerary Start Time:---------->> "+new Date(itin.getStartTime()));
 				LiveFeedResponse itinFeeds = new LiveFeedResponse();
 				itinFeeds.setItineraryId(itin.getId());
 				List<Leg> legs = getApplicableLegs(itin.getLegs());
@@ -125,6 +128,7 @@ public class RealTimePredictionService {
 						logger.info(loggerName, e.getMessage());
 					}
 				}
+				adjustLegOverLap(itin,itinFeeds);
 				if (itinFeeds.getLegLiveFeeds()!=null && itinFeeds.getLegLiveFeeds().size()>0) {
 					updateItineraryTimeFlag(itinFeeds); 
 					response.addItinLiveFeeds(itinFeeds); 
@@ -141,6 +145,7 @@ public class RealTimePredictionService {
 		}
 		return getJsonResponse(response);
 	}
+
 	/**
 	 * Update leg time to today.
 	 *
@@ -288,6 +293,36 @@ public class RealTimePredictionService {
 			itinFeeds.setArrivalTimeFlag(ETA_FLAG.ON_TIME.ordinal());		
 	}
 	/**
+	 * Adjust leg over lap.
+	 *
+	 * @param itin the itin
+	 * @param itinFeeds the itin feeds
+.	 */
+	private void adjustLegOverLap(Itinerary itin, LiveFeedResponse itinFeeds) {
+		try {
+			List<Leg> legs = itin.getLegs();
+			List<LegLiveFeed> lstLegLiveFeeds =  itinFeeds.getLegLiveFeeds();
+			if(lstLegLiveFeeds==null){				
+				//				System.out.println("no life feeds.....");
+				return;
+			}
+			List<LegLiveFeed> lstFeedsToAdd = new ArrayList<LegLiveFeed>();
+			for (LegLiveFeed legLiveFeed : lstLegLiveFeeds) {
+				LegLiveFeed feed = PlanUtil.shiftLeg(legs, legLiveFeed);
+				if(feed!=null){
+					lstFeedsToAdd.add(feed);
+					logger.info(loggerName, "Shifted Walk leg: "+feed);
+					//					System.out.println("Shifted Walk leg: "+feed);
+				}
+			}
+			if(lstFeedsToAdd.size()>0)
+				lstLegLiveFeeds.addAll(lstFeedsToAdd);
+			PlanUtil.validateLegConflict(legs,itinFeeds);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	/**
 	 * 
 	 * @param response
 	 * @return
@@ -305,5 +340,51 @@ public class RealTimePredictionService {
 	}
 	public void setLoggerName(String loggerName) {
 		this.loggerName = loggerName;
+	}
+	public static void main(String[] args) {
+		Leg fistWalk = new Leg();
+		fistWalk.setId("fw");
+		fistWalk.setMode(TraverseMode.WALK.toString());
+		fistWalk.setStartTime(10l);
+		fistWalk.setEndTime(20l);
+
+		Leg transit = new Leg();
+		transit.setId("transit");
+		transit.setMode(TraverseMode.SUBWAY.toString());
+		transit.setStartTime(23l);
+		transit.setEndTime(28l);
+
+
+		Leg lastWalk = new Leg();
+		lastWalk.setId("lw");
+		lastWalk.setMode(TraverseMode.WALK.toString());
+		lastWalk.setStartTime(30l);
+		lastWalk.setEndTime(40l);
+
+		Leg transit1 = new Leg();
+		transit1.setId("transit1");
+		transit1.setMode(TraverseMode.SUBWAY.toString());
+		transit1.setStartTime(1l);
+		transit1.setEndTime(5l);
+
+		Itinerary itinerary = new Itinerary();
+		itinerary.addLeg(transit1);
+		itinerary.addLeg(fistWalk);
+		itinerary.addLeg(transit);
+		itinerary.addLeg(lastWalk);
+
+
+		LegLiveFeed legFeed = new LegLiveFeed();
+		legFeed.setLeg(transit);
+		legFeed.setTimeDiffInMins(6);
+		legFeed.setDepartureTime(transit.getStartTime()-6);
+		legFeed.setArrivalTimeFlag(ETA_FLAG.EARLY.ordinal());
+
+		LiveFeedResponse feedResponse = new LiveFeedResponse();
+		feedResponse.addLegLiveFeed(legFeed);
+		RealTimePredictionService service = new RealTimePredictionService();
+		service.adjustLegOverLap(itinerary, feedResponse);
+		//		System.out.println(getLegAtOffset(itinerary.getLegs(), fistWalk,3));
+		System.out.println(feedResponse);
 	}
 }

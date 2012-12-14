@@ -44,6 +44,9 @@ public class GtfsDataMonitor {
 	private LoggingService logger;
 	@Autowired
 	private MailService mailService;
+	@Autowired
+	private GtfsContext gtfsContext;
+
 	private String loggerName;
 	private String downloadDirectory;
 	List<GtfsBundle> gtfsBundles;
@@ -56,6 +59,7 @@ public class GtfsDataMonitor {
 	 * 
 	 */
 	public void init() {
+		gtfsBundles = gtfsContext.getGtfsBundles();
 		readGtfsFiles();
 		readBartRouteInfo();
 	}
@@ -134,6 +138,12 @@ public class GtfsDataMonitor {
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
+	}
+	public GtfsContext getGtfsContext() {
+		return gtfsContext;
+	}
+	public void setGtfsContext(GtfsContext gtfsContext) {
+		this.gtfsContext = gtfsContext;
 	}
 	/**
 	 * Read BART routes and trip information used in BART prediction.

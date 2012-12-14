@@ -36,6 +36,15 @@
 			return false;
 		}
 	}
+	
+	$(document).ready(function() {
+		$("input[name$='selectiontype']").click(function() {
+			var test = $(this).val();
+			$("div.desc").slideUp('slow');
+			$("#seltype" + test).slideDown('slow');
+			
+		});
+	});
 </script>
 
 <%
@@ -75,23 +84,42 @@
 							onKeyDown="textCounter(document.tweetForm.tweetArea,document.tweetForm.remLen2,120)"
 							onKeyUp="textCounter(document.tweetForm.tweetArea,document.tweetForm.remLen2,120)"></textarea>
 						</p>
-						<div align="left">
-							<input name="chkSendToTestUser" type="checkbox"
-								onclick="$(this).is(':checked') && $('#checked').slideDown('slow') || $('#checked').slideUp('slow');">
-							Send To Test User</input>
+						<div width="100%">
+							<div class="selectionradio" style="margin-bottom: 20px; width: auto;">
+								<input type="radio" name="selectiontype" checked="checked" value="2" style="margin-bottom: 10px; width: auto;">Push To Test Users: </input>
+								<div id="seltype2" class="desc" style="padding: 10px; border-left: .15em solid; background: #E9EAEE">
+									<%
+										PersistantHelper persistantHelper = new PersistantHelper();
+										String deviceToken = persistantHelper.getTestUserDeviceTokens();
+									%>
+
+									<textarea id="deviceTokenArea" name="deviceToken" rows="4" cols="50" placeholder="Enter comma separated device tokens"
+										style="max-width: 100%; min-width: 100%"><%=deviceToken%></textarea>
+									<input type="radio" name="certificate" checked="checked" value="1" style="margin-top: 5px; width: auto;"> Nimbler Caltrain</input> <input
+										type="radio" name="certificate" value="4" style="margin-top: 5px; width: auto;"> Nimbler SF</input><br /> <input align="left"
+										name="chkEnableSound" type="checkbox" style="margin-top: 5px;">Enable Sound</input>
+								</div>
+							</div>
+							<!-- -----------------------push by agency-------------------------- -->
+							<div class="selectionradio" style="margin-bottom: 25px;">
+								<input type="radio" name="selectiontype" value="3" align="left" style="width: auto;">Push By Agency:</input>
+								<div id="seltype3" class="desc" style="display: none; padding: 10px; border-left: .15em solid; background: #E9EAEE">
+									<input type="radio" name="agency" checked="checked" value="1" class="agencyradio" style="width: auto;"> Caltrain</input><br /> 
+									<input type="radio" name="agency" value="2" class="agencyradio" style="width: auto;"> BART</input><br /> 
+									<input type="radio" name="agency" value="3" class="agencyradio" style="width: auto;"> SFMTA</input><br /> 
+									<input type="radio" name="agency" value="4" class="agencyradio" style="width: auto;"> Ac Transit</input>
+								</div>
+							</div>
+							<!-- -----------------------push by App-------------------------- -->
+							<div class="selectionradio" style="margin-bottom: 25px;">
+								<input type="radio" name="selectiontype" value="4" align="left" style="width: auto;">Push By Application (Not as admin tweet): </input>
+								<div id="seltype4" class="desc" style="display: none; padding: 10px; border-left: .15em solid; background: #E9EAEE">
+									<input type="radio" name="apptype" value="1" checked="checked" class="agencyradio" style="width: auto;"> Nimbler Caltrain</input><br /> <input
+										type="radio" name="apptype" value="4" class="agencyradio" style="width: auto;"> Nimbler SF</input><br />
+								</div>
+							</div>
 						</div>
-						<div id="checked" style="display: none;">
-							<%
-								PersistantHelper persistantHelper = new PersistantHelper();
-								String deviceToken = persistantHelper.getTestUserDeviceTokens();
-							%>
-							<p>
-								<textarea id="deviceTokenArea" 	name="deviceToken" rows="4" cols="50" placeholder="Enter comma separated device tokens"
-									style="max-width: 100%; min-width: 100%"><%=deviceToken%></textarea>
-							</p>
-							<br>
-							<input align="left" name="chkEnableSound" type="checkbox" >Enable Sound</input>
-						</div>
+
 
 						<p class="login button">
 							<input readonly type="text" name="remLen2" size="3" maxlength="3"

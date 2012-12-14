@@ -100,9 +100,9 @@ public class PlanCompareResult {
 	}
 	@Override
 	public String toString() {
-		return "PlanCompareResult [fileName=" + fileName + ", url=" 
+		return "PlanCompareResult [ match=" + match +", fileName=" + fileName + ", url="+url 
 				+ ", oldItinerary=" + oldItinerary + ", newItinerary="
-				+ newItinerary + ", match=" + match + ", lstError=" + lstError
+				+ newItinerary + ", lstError=" + lstError
 				+ "]";
 	}
 }

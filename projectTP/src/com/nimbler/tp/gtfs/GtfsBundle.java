@@ -7,6 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
+
 /**
  * The Class GtfsBundle.
  *
@@ -24,6 +28,8 @@ public class GtfsBundle {
 	private List<GtfsCalandeDates> lstCalandeDates;
 	private boolean enableAgency = true;
 	private boolean enableHashing = true;
+
+	private AGENCY_TYPE agencyType = null;
 	/**
 	 * contains array of comma separated string for services that are available for particular day
 	 * e.g <br />
@@ -58,6 +64,9 @@ public class GtfsBundle {
 
 	public String getCrackedDataFile() {
 		return crackedDataFile;
+	}
+	public String getValidFile() {
+		return StringUtils.defaultIfBlank(crackedDataFile, currentDataFile);
 	}
 	public void setCrackedDataFile(String crackedDataFile) {
 		this.crackedDataFile = crackedDataFile;
@@ -125,6 +134,12 @@ public class GtfsBundle {
 		this.agencyIds = agencyIds;
 	}
 
+	public AGENCY_TYPE getAgencyType() {
+		return agencyType;
+	}
+	public void setAgencyType(AGENCY_TYPE agencyType) {
+		this.agencyType = agencyType;
+	}
 	@Override
 	public String toString() {
 		return "GtfsBundle [defaultAgencyId=" + defaultAgencyId

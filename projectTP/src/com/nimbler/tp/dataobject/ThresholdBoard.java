@@ -6,6 +6,8 @@ package com.nimbler.tp.dataobject;
  */
 public class ThresholdBoard {
 
+	private int agencyType;
+
 	private int threshold;
 	private int increamentCount = 0;
 
@@ -18,10 +20,14 @@ public class ThresholdBoard {
 	public ThresholdBoard(int threshold) {
 		this.threshold = threshold;
 	}
-
-	public ThresholdBoard(int threshold, int increamentCount) {
+	/**
+	 * 
+	 * @param agencyType
+	 * @param threshold
+	 */
+	public ThresholdBoard(int agencyType, int threshold) {
+		this.agencyType = agencyType;
 		this.threshold = threshold;
-		this.increamentCount = increamentCount;
 	}
 
 	public int getThreshold() {
@@ -79,10 +85,20 @@ public class ThresholdBoard {
 		this.latestTweetTimeAtInc = latestTweetTimeAtInc;
 	}
 
+
+
+	public int getAgencyType() {
+		return agencyType;
+	}
+	public void setAgencyType(int agencyType) {
+		this.agencyType = agencyType;
+	}
 	@Override
 	public String toString() {
-		return "ThresholdBoard [threshold=" + threshold + ", increamentCount="
-				+ increamentCount + ", lastIncTime=" + lastIncTime
-				+ ", lastResetTime=" + lastResetTime + "]\n";
+		return "ThresholdBoard [agencyType=" + agencyType + ", threshold="
+				+ threshold + ", increamentCount=" + increamentCount
+				+ ", lastIncTime=" + lastIncTime + ", lastResetTime="
+				+ lastResetTime + ", used=" + used + ", latestTweetTimeAtInc="
+				+ latestTweetTimeAtInc + "]";
 	}
 }

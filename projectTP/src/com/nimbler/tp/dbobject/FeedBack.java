@@ -8,6 +8,8 @@ package com.nimbler.tp.dbobject;
 
 import java.io.Serializable;
 
+import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
+
 /**
  * The Class FeedBack.
  * @author nirmal
@@ -47,6 +49,7 @@ public class FeedBack implements Serializable {
 	private String legID;
 	private String addFrom;
 	private String addTo;
+	private int appType = NIMBLER_APP_TYPE.CALTRAIN.ordinal();
 
 	public String getId() {
 		return id;
@@ -140,11 +143,22 @@ public class FeedBack implements Serializable {
 	}
 	@Override
 	public String toString() {
-		return "FeedBack [id=" + id + ", deviceId=" + deviceId + ", source="
-				+ source + ", formatType=" + formatType + ", fbText=" + fbText
-				+ ", audioFileUrl=" + audioFileUrl + ", rating=" + rating
-				+ ", createTime=" + createTime + ", planID=" + planID
-				+ ", itineraryID=" + itineraryID + ", legID=" + legID + "]";
+		return "FeedBack [id=" + id + ", deviceId=" + deviceId + ", emailId="
+				+ emailId + ", source=" + source + ", formatType=" + formatType
+				+ ", fbText=" + fbText + ", audioFileUrl=" + audioFileUrl
+				+ ", rating=" + rating + ", createTime=" + createTime
+				+ ", date=" + date + ", planID=" + planID + ", itineraryID="
+				+ itineraryID + ", legID=" + legID + ", addFrom=" + addFrom
+				+ ", addTo=" + addTo + ", appType=" + appType + "]";
 	}
+	public int getAppType() {
+		return appType;
+	}
+	public void setAppType(int at) {
+		if(at==0)
+			return;
+		this.appType = at;
+	}
+
 
 }

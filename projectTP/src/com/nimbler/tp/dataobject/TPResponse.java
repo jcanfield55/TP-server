@@ -3,6 +3,8 @@
  */
 package com.nimbler.tp.dataobject;
 
+import java.util.Map;
+
 import javax.xml.bind.annotation.XmlRootElement;
 
 import com.nimbler.tp.util.OperationCode.TP_CODES;
@@ -18,10 +20,21 @@ public class TPResponse {
 	private TripPlan plan;
 	private Long planGenerateTime;
 	private PlannerError error = null;
+	private String appType = null;
+	private String appBundleId = null;
+	private Map data = null;
 
 	public TPResponse() {
 
 	}
+	public Map getData() {
+		return data;
+	}
+
+	public void setData(Map data) {
+		this.data = data;
+	}
+
 	public PlannerError getError() {
 		return error;
 	}
@@ -83,6 +96,18 @@ public class TPResponse {
 	}
 	public void setReqId(String reqId) {
 		this.reqId = reqId;
+	}
+	public String getAppType() {
+		return appType;
+	}
+	public void setAppType(String appType) {
+		this.appType = appType;
+	}
+	public String getAppBundleId() {
+		return appBundleId;
+	}
+	public void setAppBundleId(String appBundleId) {
+		this.appBundleId = appBundleId;
 	}
 	@Override
 	public String toString() {

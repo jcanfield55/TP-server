@@ -7,6 +7,14 @@ public class Tweet {
 	private String tweetTime;
 	private Boolean isUrgent;
 
+	public Tweet(String tweet, Long time, Boolean isUrgent) {
+		this.tweet = tweet;
+		this.time = time;
+		this.isUrgent = isUrgent;
+	}
+	public Tweet() {
+	}
+
 	public String getTweet() {
 		return tweet;
 	}

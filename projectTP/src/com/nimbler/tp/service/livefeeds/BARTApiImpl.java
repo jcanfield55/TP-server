@@ -2,8 +2,10 @@ package com.nimbler.tp.service.livefeeds;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.apache.commons.lang3.math.NumberUtils;
@@ -28,12 +30,18 @@ import com.nimbler.tp.util.TpConstants;
  *
  */
 public class BARTApiImpl implements RealTimeAPI {
-
-	private int timeDiffercenceInMin;
+	/**
+	 * in minutes,can be updated from bean
+	 */
+	private int lateThreshold = 2;
+	/**
+	 * in minutes,can be updated from bean
+	 */
+	private int earlyThreshold = 1;
 
 	private String bartAPIRegKey;
 
-	private int maxTimeDifference = 60;//can be updated from bean
+	private int maxTimeDifference = 30;//can be updated from bean
 	private int maxTimeDifferenceForEarly = 10;//can be updated from bean
 
 
@@ -103,50 +111,70 @@ public class BARTApiImpl implements RealTimeAPI {
 			if (estimates==null || estimates.size()==0)
 				throw new RealTimeDataException("Estimates not found in ETD response for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
 
-			Integer minutesToDepart = getClosestEstimation(estimates, scheduledTime);
-			if (minutesToDepart == -1)
-				throw new RealTimeDataException("Valid minutes to departure not found in ETD response for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
+			for (int index=1;index<=estimates.size();index++) {
+				Integer minutesToDepart = getClosestEstimation(estimates, scheduledTime, index);
+				if (minutesToDepart == -1)
+					throw new RealTimeDataException("Valid minutes to departure not found in ETD response for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
 
-			Calendar cal = Calendar.getInstance();
-			cal.add(Calendar.MINUTE, minutesToDepart);
-			Long estimatedDepartureTime = cal.getTimeInMillis();
-			resp = new LegLiveFeed();
+				Calendar cal = Calendar.getInstance();
+				cal.add(Calendar.MINUTE, minutesToDepart);
+				Long estimatedDepartureTime = cal.getTimeInMillis();
 
-			int diff = (int) (estimatedDepartureTime - scheduledTime);
-			diff = Math.abs(diff) /( 1000 * 60);
-//			System.out.println("TO: "+toStopTag+",  From: "+fromStopTag+ "  Route: "+routeTag+" Time Diff: "+diff+
-//					" Schedule Time: "+new Date(scheduledTime)+" Estimated Time: "+new Date(estimatedDepartureTime));			
-			if (diff > maxTimeDifference && maxTimeDifference != -1)
-				throw new RealTimeDataException("Real time differce much higher then expected. Prediction will be ignored.");
+				int diff = (int) (estimatedDepartureTime - scheduledTime);
+				diff = Math.abs(diff) /( 1000 * 60);
+				if (diff > maxTimeDifference && maxTimeDifference != -1)
+					throw new RealTimeDataException("Real time differce much higher then expected. Prediction will be ignored.");
 
-			if (diff >= timeDiffercenceInMin) {
-				if (estimatedDepartureTime > scheduledTime)
-					resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.DELAYED.ordinal());
-				else {
-					if (diff > maxTimeDifferenceForEarly && maxTimeDifferenceForEarly != -1)
-						throw new RealTimeDataException("Early time much higher then expected. Prediction will be ignored.");
-					resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.EARLY.ordinal());
+				System.out.println("TO: "+toStopTag+",  From: "+fromStopTag+ "  Route: "+routeTag+" Time Diff: "+diff+"-"+minutesToDepart+
+						" Schedule Time: "+new Date(scheduledTime)+" Estimated Time: "+new Date(estimatedDepartureTime));		
+				
+				int arrivalFlag = -1;				
+				if (estimatedDepartureTime > scheduledTime) {
+					if (diff > lateThreshold)
+						//resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.DELAYED.ordinal());
+						arrivalFlag = TpConstants.ETA_FLAG.DELAYED.ordinal();
+					else
+						//resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
+						arrivalFlag = TpConstants.ETA_FLAG.ON_TIME.ordinal();
+				} else {
+					System.out.println("Early : "+diff);
+					if (diff > earlyThreshold) {
+						if (estimates.size() == 1)//if only one train then only mark it as early
+							//resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.EARLY.ordinal());
+							arrivalFlag = TpConstants.ETA_FLAG.EARLY.ordinal();						
+						else
+							continue;
+					} else
+						//resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
+						arrivalFlag = TpConstants.ETA_FLAG.ON_TIME.ordinal();
 				}
-			} else
-				resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
-
-			resp.setTimeDiffInMins(diff);
-			resp.setLeg(leg);
-			resp.setDepartureTime(estimatedDepartureTime);
+				if (arrivalFlag != -1) {
+					resp = new LegLiveFeed();
+					resp.setTimeDiffInMins(diff);
+					resp.setLeg(leg);
+					resp.setDepartureTime(estimatedDepartureTime);
+					resp.setArrivalTimeFlag(arrivalFlag);
+ 					System.out.println("Got it!!");	
+				}
+				break;
+			}
 		} catch (RealTimeDataException e) {
-			throw new FeedsNotFoundException(e.getMessage()); 
+			throw new FeedsNotFoundException(e.getMessage());
 		} catch (Exception e) {
 			throw new FeedsNotFoundException("Unknown Exception: "+e);
 		}
+		System.out.println(resp);
 		return resp;
 	}
 	/**
 	 * 
 	 * @param estimates
 	 * @param scheduledTime
+	 * @param index - specifies which closest match you want to get.
+	 * 				  for example, 1 will return the first closest minutes, 2 will return second closest minutes. 	
 	 * @return
 	 */
-	private Integer getClosestEstimation(List<Estimate> estimates, long scheduledTime) {
+	private Integer getClosestEstimation(List<Estimate> estimates, long scheduledTime, int index) {
 		int defaultReturnVal = -1;
 		if (estimates==null || estimates.size()==0)
 			return defaultReturnVal;
@@ -169,7 +197,17 @@ public class BARTApiImpl implements RealTimeAPI {
 			int diff = (int) (estimatedDepartureTime - scheduledTime);
 			diffToMiutes.put(Math.abs(diff), intMins);
 		}
-		return diffToMiutes.size()>0 ? diffToMiutes.entrySet().iterator().next().getValue() : defaultReturnVal;
+		int count = 1;
+		Iterator<Entry<Integer, Integer>> itr = diffToMiutes.entrySet().iterator();
+		while (itr.hasNext()) {
+			Entry<Integer, Integer> entry = itr.next();
+			if (count == index) {
+				return entry.getValue();
+			}
+			count++;
+		}
+		//return diffToMiutes.size()>0 ? diffToMiutes.entrySet().iterator().next().getValue() : defaultReturnVal;
+		return defaultReturnVal;
 	}
 	/**
 	 * 
@@ -205,7 +243,7 @@ public class BARTApiImpl implements RealTimeAPI {
 	 * @param headSign
 	 * @return
 	 */
-	
+
 	private int getRouteDirection(String routeTag, String headSign) {
 		GtfsDataMonitor gtfsBean = BeanUtil.getGtfsDataMonitorService();
 		List<BartRouteInfo> bartRoutes = gtfsBean.getBartRouteInfo();
@@ -222,10 +260,10 @@ public class BARTApiImpl implements RealTimeAPI {
 		return null;
 	}
 	public int getTimeDiffercenceInMin() {
-		return timeDiffercenceInMin;
+		return lateThreshold;
 	}
 	public void setTimeDiffercenceInMin(int timeDiffercenceInMin) {
-		this.timeDiffercenceInMin = timeDiffercenceInMin;
+		this.lateThreshold = timeDiffercenceInMin;
 	}
 	public int getMaxTimeDifference() {
 		return maxTimeDifference;

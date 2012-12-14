@@ -5,12 +5,18 @@ package com.nimbler.tp.service;
 
 
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.nimbler.tp.dataobject.ApnBundle;
 import com.nimbler.tp.util.ComUtils;
+import com.nimbler.tp.util.TpConstants;
+import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 import com.notnoop.apns.APNS;
 import com.notnoop.apns.ApnsDelegate;
 import com.notnoop.apns.ApnsNotification;
@@ -28,16 +34,14 @@ import com.notnoop.exceptions.NetworkIOException;
 public class APNService implements ApnsDelegate{
 	@Autowired
 	private LoggingService logger;
-	private String loggerName;
+	private String loggerName = "com.nimbler.tp.service.APNService";
 
-	private String password;
-	public String KEYSTORE_P12_FILE;
-	private ApnsService service;
-	private int poolSize;
-	private int certType;
-	private boolean isQueued = false;
-	private boolean isNonBlocking = false;
+	private int poolSize = 5;
 	private  String sound = null;
+	private boolean isQueued = false;
+	private List<ApnBundle> lstApnBundles;
+
+	private Map<NIMBLER_APP_TYPE, ApnsService> serviceMap = null;
 
 	public enum APN_CERT_TYPE{
 		UNDEFINED,
@@ -45,18 +49,29 @@ public class APNService implements ApnsDelegate{
 		PRODUCTION
 	}
 
-
 	public APNService() {
 	}
 
 	/**
 	 * On load.
+	 */	
+	public void init(){		
+		serviceMap = new HashMap<TpConstants.NIMBLER_APP_TYPE, ApnsService>();
+		for (ApnBundle bundle : lstApnBundles) {
+			loadService(bundle);
+		}
+	}
+
+	/**
+	 * Load service.
+	 *
+	 * @param bundle the bundle
 	 */
-	public void init(){
+	private void loadService(ApnBundle bundle) {
 		try {   
-			InputStream is = APNService.class.getClassLoader().getResourceAsStream(KEYSTORE_P12_FILE);
-			ApnsServiceBuilder serviceBuilder = APNS.newService().withCert(is, password);
-			if(certType == APN_CERT_TYPE.SAND_BOX.ordinal())
+			InputStream is = APNService.class.getClassLoader().getResourceAsStream(bundle.getKEYSTORE_P12_FILE());
+			ApnsServiceBuilder serviceBuilder = APNS.newService().withCert(is, bundle.getPassword());
+			if(bundle.getCertType() == APN_CERT_TYPE.SAND_BOX.ordinal())
 				serviceBuilder = serviceBuilder.withSandboxDestination();
 			else
 				serviceBuilder = serviceBuilder.withProductionDestination();   
@@ -64,14 +79,16 @@ public class APNService implements ApnsDelegate{
 				serviceBuilder = serviceBuilder.asQueued();
 			if(poolSize!=-1)
 				serviceBuilder = serviceBuilder.asPool(poolSize);
-			/*if(isNonBlocking)
-				serviceBuilder = serviceBuilder.asNonBlocking();*/
-			service = serviceBuilder.withDelegate(this).build();   
+			ApnsService service = serviceBuilder.withDelegate(this).build();			
+			serviceMap.put(bundle.getAppType(), service);
 		} catch (InvalidSSLConfig e) {
 			e.printStackTrace();
+			logger.error(loggerName, "Error Loading Bundle: "+bundle,e);
 		}catch (Exception e) {
 			e.printStackTrace();
+			logger.error(loggerName, "Error Loading Bundle: "+bundle,e);
 		}
+
 	}
 
 	/**
@@ -83,10 +100,10 @@ public class APNService implements ApnsDelegate{
 	 * @param isUrgent the is urgent - optional
 	 * @return true, if successful
 	 */
-	public boolean push(String deviceToken,String msg,Integer badge,Boolean isUrgent,boolean useSound){
+	public boolean push(String deviceToken,String msg,Integer badge,Boolean isUrgent,boolean useSound, NIMBLER_APP_TYPE appType){
 		boolean success = false;
 		String payload = null;  
-		try {
+		try {				 
 			PayloadBuilder payloadBuilder = APNS.newPayload();
 			if(sound!=null && useSound)
 				payloadBuilder.sound(sound);
@@ -97,10 +114,10 @@ public class APNService implements ApnsDelegate{
 			if(isUrgent!=null)
 				payloadBuilder.customField("isUrgent",isUrgent+"");
 			payload = payloadBuilder.build();
-			logger.debug(loggerName,"Sending push notification..."+payload);
-			service.push(deviceToken, payload);   
+			logger.debug(loggerName,"Sending push notification..."+payload+", appType:"+appType);
+			getApnServiceByType(appType).push(deviceToken, payload);   
 			success = true;
-			logger.debug(loggerName,"notification  sent to "+deviceToken);
+			logger.debug(loggerName,"notification  sent to "+deviceToken+", appType:"+appType);
 		} catch (NetworkIOException e) {
 			logger.error(loggerName, "NetworkIOException: "+e.getMessage()+",deviceToken:"+deviceToken+", payload:"+payload);   
 		}catch (RuntimeException e) {
@@ -112,6 +129,19 @@ public class APNService implements ApnsDelegate{
 	}
 
 	/**
+	 * Gets the service.
+	 *
+	 * @param appType the app type
+	 * @return the service
+	 */
+	public ApnsService getApnServiceByType(NIMBLER_APP_TYPE appType) {
+		ApnsService apnsService =  serviceMap.get(appType);
+		if(apnsService == null)
+			throw new IllegalArgumentException("Invalid application type: "+appType+", No matching service found");
+		return apnsService;
+	}
+
+	/**
 	 * Push.
 	 *
 	 * @param list of deviceTokens
@@ -120,7 +150,7 @@ public class APNService implements ApnsDelegate{
 	 * @param isUrgent the is urgent
 	 * @return true, if successful
 	 */
-	public boolean push(List<String> deviceTokens,String msg,Integer badge,Boolean isUrgent,boolean useSound){
+	public boolean push(List<String> deviceTokens,String msg,Integer badge,Boolean isUrgent,boolean useSound, NIMBLER_APP_TYPE appType){
 		boolean success = false;
 		try {
 			PayloadBuilder payloadBuilder = APNS.newPayload();
@@ -133,8 +163,8 @@ public class APNService implements ApnsDelegate{
 			if(isUrgent!=null)
 				payloadBuilder.customField("isUrgent",isUrgent+"");
 			String payload = payloadBuilder.build();
-			logger.debug(loggerName,"Sending push notification..."+payload);
-			service.push(deviceTokens, payload);
+			logger.debug(loggerName,"Sending push notification..."+payload+", appType:"+appType);
+			getApnServiceByType(appType).push(deviceTokens, payload);
 			success = true;
 			logger.debug(loggerName,"notification  sent ");
 		} catch (NetworkIOException e) {
@@ -170,7 +200,7 @@ public class APNService implements ApnsDelegate{
 				payloadBuilder.customFields(customFields);
 			payload = payloadBuilder.build();
 			logger.debug(loggerName,"Sending push notification..."+payload);
-			service.push(deviceToken, payload);
+			//			getService(appType).push(deviceToken, payload);
 			success = true;
 			logger.debug(loggerName,"notification sent to "+deviceToken);
 		} catch (NetworkIOException e) {
@@ -186,9 +216,13 @@ public class APNService implements ApnsDelegate{
 	 */
 	public void close() {
 		try {
-			service.stop();
+			Set<ApnsService> lstApnsServices = new HashSet<ApnsService>(serviceMap.values());
+			for (ApnsService apnsService : lstApnsServices) {
+				if(apnsService != null)
+					apnsService.stop();
+			}
 		} catch (Exception e) {
-			logger.error(loggerName,"Error While closing APN service:"+e.getMessage());   
+			logger.error(loggerName,"Error While closing APN service:",e);   
 		}
 	}
 
@@ -204,44 +238,26 @@ public class APNService implements ApnsDelegate{
 	public void setLoggerName(String loggerName) {
 		this.loggerName = loggerName;
 	}
-	public String getPassword() {
-		return password;
-	}
-	public void setPassword(String password) {
-		this.password = password;
-	}
-	public String getKEYSTORE_P12_FILE() {
-		return KEYSTORE_P12_FILE;
-	}
-	public void setKEYSTORE_P12_FILE(String kEYSTORE_P12_FILE) {
-		KEYSTORE_P12_FILE = kEYSTORE_P12_FILE;
-	}
 	public int getPoolSize() {
 		return poolSize;
 	}
 	public void setPoolSize(int poolSize) {
 		this.poolSize = poolSize;
 	}
-	public ApnsService getService() {
-		return service;
+	public List<ApnBundle> getLstApnBundles() {
+		return lstApnBundles;
 	}
-	public int getCertType() {
-		return certType;
+
+	public void setLstApnBundles(List<ApnBundle> lstApnBundles) {
+		this.lstApnBundles = lstApnBundles;
 	}
-	public void setCertType(int certType) {
-		this.certType = certType;
-	}
+
 	public boolean isQueued() {
 		return isQueued;
 	}
-	public void setIsQueued(boolean isQueued) {
+
+	public void setQueued(boolean isQueued) {
 		this.isQueued = isQueued;
-	}
-	public boolean isNonBlocking() {
-		return isNonBlocking;
-	}
-	public void setIsNonBlocking(boolean isNonBlocking) {
-		this.isNonBlocking = isNonBlocking;
 	}
 
 	public void setSound(String str) {
@@ -255,15 +271,19 @@ public class APNService implements ApnsDelegate{
 
 	@Override
 	public void connectionClosed(DeliveryError deliveryerror, int i) {
+		//		System.out.println("DeliveryError: "+ deliveryerror+", int: "+ i);		
 		logger.error(loggerName, "DeliveryError: "+ deliveryerror+", int: "+ i);		
 	}
 
 	@Override
 	public void messageSendFailed(ApnsNotification apnsnotification,Throwable throwable) {
-		logger.error(loggerName,"ApnsNotification: "+ apnsnotification+", Throwable: "+ throwable);
+		//		System.out.println("ApnsNotification: "+ apnsnotification+", Throwable: "+ throwable);
+		logger.error(loggerName,"ApnsNotification: "+ apnsnotification+", Throwable: "+ throwable+", "+new String(apnsnotification.getDeviceToken()));
 	}
 
 	@Override
 	public void messageSent(ApnsNotification apnsnotification) {
+		//		System.out.println("APNService.messageSent()"+ new String(apnsnotification.getDeviceToken()));
 	}
+
 }

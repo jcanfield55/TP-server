@@ -108,14 +108,37 @@ textarea:-moz-placeholder{
 input {
   outline: none;
 }
+/** nirmal */
+.desc{
+text-align: left;
+
+margin-left: 20px;
+margin-right: 0px;
+margin-top: 10px;
+}
+.agencyradio{
+	margin: 10px;
+
+}
+
+h2 {
+color: #1A5978;
+font: bold;
+}
+.selectionradio{
+text-align: left;
+margin: 5px;
+width: 100%;
+}
 
 /* all the input except submit and checkbox */
 #wrapper input:not([type="checkbox"]){
 	width: 92%;
 	margin-top: 4px;
 	padding: 10px 5px 10px 32px;	
+	
 	border: 1px solid rgb(178, 178, 178);
-	-webkit-appearance: textfield;
+/* 	 -webkit-appearance: textfield; */ 
 	-webkit-box-sizing: content-box;
 	  -moz-box-sizing : content-box;
 	       box-sizing : content-box;

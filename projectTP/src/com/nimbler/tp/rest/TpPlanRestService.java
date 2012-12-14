@@ -112,7 +112,7 @@ public class TpPlanRestService {
 	@Path("/generate/")
 	@Produces({MediaType.APPLICATION_JSON})
 	public String generatePlan(@Context HttpServletRequest httpRequest){
-		TPResponse response = null;
+		TPResponse response = ResponseUtil.createResponse(TP_CODES.FAIL);
 		String reqID = "";
 		//		long time = System.currentTimeMillis();
 		try {
@@ -121,13 +121,15 @@ public class TpPlanRestService {
 				throw new TpException(TP_CODES.INVALID_REQUEST);
 			//			System.out.println(">============================================================");
 			//			System.out.println(reqParams.get("time")+"::"+reqParams.get("date"));
+
 			reqID = reqParams.get(RequestParam.REQ_ID);
 			TpPlanService service = BeanUtil.getPlanService();
 			TripResponse tripResponse = service.genearetePlan(reqParams);
+			//System.out.println(tripResponse);
 			String planId = null;
-			if(tripResponse==null)
+			if (tripResponse==null)
 				throw new TpException("TripResponse is null");
-			if(tripResponse.getPlan()!=null)
+			if (tripResponse.getPlan()!=null)
 				planId = tripResponse.getPlan().getId();
 
 			TpEventLoggingService tpLoggingService = BeanUtil.getTpEventLoggingService();
