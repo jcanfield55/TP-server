@@ -38,7 +38,7 @@ public class APNService implements ApnsDelegate{
 
 	private int poolSize = 5;
 	private  String sound = null;
-	private boolean isQueued = false;
+	private boolean isQueued = false;	
 	private List<ApnBundle> lstApnBundles;
 
 	private Map<NIMBLER_APP_TYPE, ApnsService> serviceMap = null;

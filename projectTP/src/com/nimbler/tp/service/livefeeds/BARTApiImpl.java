@@ -1,7 +1,6 @@
 package com.nimbler.tp.service.livefeeds;
 
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -125,9 +124,9 @@ public class BARTApiImpl implements RealTimeAPI {
 				if (diff > maxTimeDifference && maxTimeDifference != -1)
 					throw new RealTimeDataException("Real time differce much higher then expected. Prediction will be ignored.");
 
-				System.out.println("TO: "+toStopTag+",  From: "+fromStopTag+ "  Route: "+routeTag+" Time Diff: "+diff+"-"+minutesToDepart+
-						" Schedule Time: "+new Date(scheduledTime)+" Estimated Time: "+new Date(estimatedDepartureTime));		
-				
+				//				System.out.println("TO: "+toStopTag+",  From: "+fromStopTag+ "  Route: "+routeTag+" Time Diff: "+diff+"-"+minutesToDepart+
+				//						" Schedule Time: "+new Date(scheduledTime)+" Estimated Time: "+new Date(estimatedDepartureTime));		
+
 				int arrivalFlag = -1;				
 				if (estimatedDepartureTime > scheduledTime) {
 					if (diff > lateThreshold)
@@ -137,7 +136,7 @@ public class BARTApiImpl implements RealTimeAPI {
 						//resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
 						arrivalFlag = TpConstants.ETA_FLAG.ON_TIME.ordinal();
 				} else {
-					System.out.println("Early : "+diff);
+					//					System.out.println("Early : "+diff);
 					if (diff > earlyThreshold) {
 						if (estimates.size() == 1)//if only one train then only mark it as early
 							//resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.EARLY.ordinal());
@@ -154,7 +153,7 @@ public class BARTApiImpl implements RealTimeAPI {
 					resp.setLeg(leg);
 					resp.setDepartureTime(estimatedDepartureTime);
 					resp.setArrivalTimeFlag(arrivalFlag);
- 					System.out.println("Got it!!");	
+					// 					System.out.println("Got it!!");	
 				}
 				break;
 			}
@@ -163,7 +162,7 @@ public class BARTApiImpl implements RealTimeAPI {
 		} catch (Exception e) {
 			throw new FeedsNotFoundException("Unknown Exception: "+e);
 		}
-		System.out.println(resp);
+		//		System.out.println(resp);
 		return resp;
 	}
 	/**

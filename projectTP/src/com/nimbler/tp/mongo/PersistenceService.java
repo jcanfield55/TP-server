@@ -436,9 +436,10 @@ public class PersistenceService {
 	 * @param columnName
 	 * @param columnValue
 	 * @param map
+	 * @return 
 	 * @throws DBException
 	 */
-	public void updateMultiColumn(String collectionName,String columnName, Object columnValue, Map<String, Object> map) throws DBException {
+	public int updateMultiColumn(String collectionName,String columnName, Object columnValue, Map<String, Object> map) throws DBException {
 		try {
 			DBCollection collection = mongoOpetation.getCollection(collectionName);
 			BasicDBObject query = new BasicDBObject().append(columnName, columnValue);
@@ -450,7 +451,11 @@ public class PersistenceService {
 				columnToUpdate.append(key, value);
 			}
 			BasicDBObject multipleColumnUpdate = new BasicDBObject().append(MongoQueryConstant.SET, columnToUpdate);
-			collection.update(query, multipleColumnUpdate);
+			WriteResult res =  collection.update(query, multipleColumnUpdate);
+			if(res.getError()!=null || res.getN()==0){
+				logger.error(loggerName, "Update Failed,  Error:"+res.getError()+", count: "+res.getN()+", LastError"+res.getLastError());
+			}
+			return res.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage()); 
@@ -462,7 +467,17 @@ public class PersistenceService {
 			throw new DBException(e.getMessage());
 		}
 	}
-	public void update(String collectionName,BasicDBObject query, Map<String, Object> map) throws DBException {
+
+	/**
+	 * Update.
+	 *
+	 * @param collectionName the collection name
+	 * @param query the query
+	 * @param map the map
+	 * @return 
+	 * @throws DBException the dB exception
+	 */
+	public int update(String collectionName,BasicDBObject query, Map<String, Object> map) throws DBException {
 		try {
 			DBCollection collection = mongoOpetation.getCollection(collectionName);
 			BasicDBObject columnToUpdate = new BasicDBObject();
@@ -473,7 +488,11 @@ public class PersistenceService {
 				columnToUpdate.append(key, value);
 			}
 			BasicDBObject multipleColumnUpdate = new BasicDBObject().append(MongoQueryConstant.SET, columnToUpdate);
-			collection.update(query, multipleColumnUpdate);
+			WriteResult res =  collection.update(query, multipleColumnUpdate);
+			if(res.getError()!=null || res.getN()==0){
+				logger.error(loggerName, "Update Failed,  Error:"+res.getError()+", count: "+res.getN()+", LastError"+res.getLastError());
+			}
+			return res.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage()); 
@@ -521,7 +540,10 @@ public class PersistenceService {
 			query.addCriteria(criteria);
 
 			Update update = Update.update(updataColumn, updateValue);
-			mongoOpetation.updateMulti(collectionName, query, update);
+			WriteResult res = mongoOpetation.updateMulti(collectionName, query, update);
+			if(res.getError()!=null || res.getN()==0){
+				logger.error(loggerName, "Update Failed,  Error:"+res.getError()+", count: "+res.getN()+", LastError"+res.getLastError());
+			}
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage()); 
@@ -540,16 +562,21 @@ public class PersistenceService {
 	 * @param columnValue
 	 * @param updataColumn
 	 * @param updateValue
+	 * @return 
 	 * @throws DBException
 	 */
-	public void updateSingleIntObject(String collectionName, String column, String columnValue, String updataColumn, int updateValue) throws DBException {
+	public int updateSingleIntObject(String collectionName, String column, String columnValue, String updataColumn, int updateValue) throws DBException {
 		try {
 			Criteria criteria = Criteria.where(column).is(columnValue);
 			Query query = new Query();
 			query.addCriteria(criteria);
 
 			Update update = Update.update(updataColumn, updateValue);
-			mongoOpetation.updateMulti(collectionName, query, update);
+			WriteResult res = mongoOpetation.updateMulti(collectionName, query, update);
+			if(res.getError()!=null || res.getN()==0){
+				logger.error(loggerName, "Update Failed,  Error:"+res.getError()+", count: "+res.getN()+", LastError"+res.getLastError());
+			}
+			return res.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage()); 
@@ -568,14 +595,19 @@ public class PersistenceService {
 	 * @param columnValue
 	 * @param updataColumn
 	 * @param updateValue
+	 * @return 
 	 * @throws DBException
 	 */
-	public void updateSingleObjectById(String collectionName, String id, String updataColumn, long updateValue) throws DBException {
+	public int updateSingleObjectById(String collectionName, String id, String updataColumn, long updateValue) throws DBException {
 		try {
 			Criteria criteria = Criteria.whereId().is((new ObjectId(id)));
 			Query query = new Query().addCriteria(criteria);;
 			Update update = Update.update(updataColumn, updateValue);
-			mongoOpetation.updateMulti(collectionName, query, update);
+			WriteResult res = mongoOpetation.updateMulti(collectionName, query, update);
+			if(res.getError()!=null || res.getN()==0){
+				logger.error(loggerName, "Update Failed,  Error:"+res.getError()+", count: "+res.getN()+", LastError"+res.getLastError());
+			}
+			return res.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage()); 
@@ -593,9 +625,10 @@ public class PersistenceService {
 	 * @param ids
 	 * @param updataColumn
 	 * @param updateValue
+	 * @return 
 	 * @throws DBException
 	 */
-	public void updateMultiById(String collectionName, List<String> ids, String updataColumn, long updateValue) throws DBException {
+	public int updateMultiById(String collectionName, List<String> ids, String updataColumn, long updateValue) throws DBException {
 		try {
 			List<ObjectId> objectIds = new ArrayList<ObjectId>();
 			for (String id: ids) {
@@ -604,7 +637,11 @@ public class PersistenceService {
 			Criteria criteria = Criteria.where("_id").in(objectIds.toArray());
 			Query query = new Query().addCriteria(criteria);;
 			Update update = Update.update(updataColumn, updateValue);
-			WriteResult result = mongoOpetation.updateMulti(collectionName, query, update);
+			WriteResult res = mongoOpetation.updateMulti(collectionName, query, update);
+			if(res.getError()!=null || res.getN()==0){
+				logger.error(loggerName, "Update Failed,  Error:"+res.getError()+", count: "+res.getN()+", LastError"+res.getLastError());
+			}
+			return res.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage()); 

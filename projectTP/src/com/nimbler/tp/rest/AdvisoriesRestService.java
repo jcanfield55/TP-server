@@ -1,7 +1,5 @@
 package com.nimbler.tp.rest;
 
-import java.util.Date;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -80,7 +78,7 @@ public class AdvisoriesRestService {
 	public String getTweetsAfterTime(@QueryParam("tweetTime") long tweetTime, @QueryParam(RequestParam.DEVICE_ID)String deviceid,
 			@QueryParam(RequestParam.NIMBLER_APP_TYPE)Integer appType, @QueryParam(RequestParam.AGENCY_IDS)String reqAgencyIds,
 			@QueryParam(RequestParam.DEVICE_TOKEN)String deviceToken) {
-		System.out.println("getTweetsAfterTime"+"-->"+new Date());
+		//		System.out.println("getTweetsAfterTime"+"-->"+new Date());
 		TweetResponse response = null;  
 		if (appType == null || appType ==0) {
 			appType = NIMBLER_APP_TYPE.CALTRAIN.ordinal();

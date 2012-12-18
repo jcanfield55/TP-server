@@ -69,9 +69,9 @@ public class User implements Serializable {
 
 	/* Nimbler 1.2 */
 
-	private int enableSfMuniAdv = BOOLEAN_VAL.TRUE.ordinal();
+	private int enableSfMuniAdv = BOOLEAN_VAL.FALSE.ordinal();
 	private int enableBartAdv = BOOLEAN_VAL.TRUE.ordinal();
-	private int enableCaltrainAdv = BOOLEAN_VAL.FALSE.ordinal();
+	private int enableCaltrainAdv = BOOLEAN_VAL.TRUE.ordinal();
 	private int enableAcTransitAdv = BOOLEAN_VAL.FALSE.ordinal();
 
 	private int transitMode;
@@ -101,7 +101,7 @@ public class User implements Serializable {
 	/**
 	 *   Weekend 
 	 */
-	private int notifTimingWeekend= BOOLEAN_VAL.TRUE.ordinal(); 
+	private int notifTimingWeekend= BOOLEAN_VAL.FALSE.ordinal(); 
 
 	public User() {
 

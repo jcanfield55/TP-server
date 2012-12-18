@@ -51,25 +51,25 @@ public class UserManagementRestService {
 			@QueryParam(RequestParam.ENABLE_URGENT_NOTIFICATION)int enableUrgntNot,
 			@QueryParam(RequestParam.MAX_DISTANCE)String maxWalkDistance,
 
-			@QueryParam(RequestParam.ADV_ENABLE_SF_MUNI)int enableSfMuniAdv,
-			@QueryParam(RequestParam.ADV_ENABLE_BART)int enableBartAdv,
-			@QueryParam(RequestParam.ADV_ENABLE_CALTRAIN)int enableCaltrainAdv,
-			@QueryParam(RequestParam.ADV_ENABLE_AC_TRANSIT)int enableAcTransitAdv,
+			@DefaultValue("2") @QueryParam(RequestParam.ADV_ENABLE_SF_MUNI)int enableSfMuniAdv,
+			@DefaultValue("2") @QueryParam(RequestParam.ADV_ENABLE_BART)int enableBartAdv,
+			@DefaultValue("1") @QueryParam(RequestParam.ADV_ENABLE_CALTRAIN)int enableCaltrainAdv,
+			@DefaultValue("2") @QueryParam(RequestParam.ADV_ENABLE_AC_TRANSIT)int enableAcTransitAdv,
 
 			@QueryParam(RequestParam.TRANSIT_MODE)int transitMod,
 			@QueryParam(RequestParam.MAX_BIKE_DISTANCE)double maxBikeDist,
 
-			@QueryParam(RequestParam.NOTIF_TIMING_MORNING)int notifTimingMorning,
-			@QueryParam(RequestParam.NOTIF_TIMING_MIDDAY) int notifTimingMidday, 
-			@QueryParam(RequestParam.NOTIF_TIMING_EVENING)int notifTimingEvening,
-			@QueryParam(RequestParam.NOTIF_TIMING_NIGHT)  int notifTimingNight,  
-			@QueryParam(RequestParam.NOTIF_TIMING_WEEKEND)int notifTimingWeekend,
+			@DefaultValue("1") @QueryParam(RequestParam.NOTIF_TIMING_MORNING)int notifTimingMorning,
+			@DefaultValue("2") @QueryParam(RequestParam.NOTIF_TIMING_MIDDAY) int notifTimingMidday, 
+			@DefaultValue("1") @QueryParam(RequestParam.NOTIF_TIMING_EVENING)int notifTimingEvening,
+			@DefaultValue("2") @QueryParam(RequestParam.NOTIF_TIMING_NIGHT)  int notifTimingNight,  
+			@DefaultValue("2") @QueryParam(RequestParam.NOTIF_TIMING_WEEKEND)int notifTimingWeekend,
 
 			@QueryParam(RequestParam.BIKE_TRIANGLE_BIKEFRIENDLY)double bikeTriangleBikeFriendly,
 			@QueryParam(RequestParam.BIKE_TRIANGLE_FLAT)double bikeTriangleFlat,
 			@QueryParam(RequestParam.BIKE_TRIANGLE_QUICK)double bikeTriangleQuick,
 
-			@QueryParam(RequestParam.NIMBLER_APP_TYPE)int appType) throws TpException {
+			@DefaultValue("1") @QueryParam(RequestParam.NIMBLER_APP_TYPE)int appType) throws TpException {
 
 		TPResponse response = new TPResponse();
 		try {

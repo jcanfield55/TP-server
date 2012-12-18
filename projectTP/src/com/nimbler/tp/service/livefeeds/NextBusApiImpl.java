@@ -30,7 +30,7 @@ public class NextBusApiImpl implements RealTimeAPI {
 	public LegLiveFeed getLiveFeeds(Leg leg) throws FeedsNotFoundException {
 		LegLiveFeed resp = null;
 		try {
-			System.out.println(leg.getTripId()+"-->"+new Date(leg.getStartTime()));
+			//			System.out.println(leg.getTripId()+"-->"+new Date(leg.getStartTime()));
 			Long scheduledTime = leg.getStartTime();
 			String agencyId = leg.getAgencyId();
 			String agencyTag = agencyMap.get(agencyId);
@@ -63,12 +63,12 @@ public class NextBusApiImpl implements RealTimeAPI {
 					if (prediction.getTripTag().equalsIgnoreCase(leg.getTripId()) && direction.getTitle().toLowerCase().contains(leg.getHeadsign().toLowerCase())) {						
 						resp = new LegLiveFeed();
 						Long predictedTime = prediction.getEpochTime();
-						System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-						System.out.println("From Stop: "+leg.getFrom().getName()+" -- To Stop: "+leg.getTo().getName()+" -- Route: "+routeTag);
-						System.out.println("Scheduled: "+ scheduledTime+" -- > "+new Date(scheduledTime));
-						System.out.println("Predicted: "+ predictedTime+" -- > "+new Date(predictedTime)+" ("+prediction.getMinutes()+")");
-						System.out.println("Direction: "+leg.getHeadsign()+"-->"+direction.getTitle());
-						System.out.println("");
+						//						System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+						//						System.out.println("From Stop: "+leg.getFrom().getName()+" -- To Stop: "+leg.getTo().getName()+" -- Route: "+routeTag);
+						//						System.out.println("Scheduled: "+ scheduledTime+" -- > "+new Date(scheduledTime));
+						//						System.out.println("Predicted: "+ predictedTime+" -- > "+new Date(predictedTime)+" ("+prediction.getMinutes()+")");
+						//						System.out.println("Direction: "+leg.getHeadsign()+"-->"+direction.getTitle());
+						//						System.out.println("");
 						if (scheduledTime < predictedTime) {
 							int diff = (int) (predictedTime - scheduledTime);
 							diff = diff /( 1000 * 60);
@@ -76,7 +76,7 @@ public class NextBusApiImpl implements RealTimeAPI {
 								resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.DELAYED.ordinal());
 							else
 								resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
-							System.out.println("Difference: "+diff);
+							//							System.out.println("Difference: "+diff);
 							resp.setTimeDiffInMins(diff);
 						} else {
 							int diff = (int) (scheduledTime - predictedTime);
@@ -85,9 +85,9 @@ public class NextBusApiImpl implements RealTimeAPI {
 								resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.EARLY.ordinal());
 							else
 								resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
-							
+
 							resp.setTimeDiffInMins(diff); 
-							System.out.println("Difference: "+diff);
+							//							System.out.println("Difference: "+diff);
 						}
 						/*System.out.println(resp.getArrivalTimeFlag());
 						System.out.println("-----------------------------------------------------------------");*/
@@ -101,9 +101,9 @@ public class NextBusApiImpl implements RealTimeAPI {
 					break;
 			}
 			if (resp == null ) {				
-				System.err.println("Real time feeds not found for Trip: "+leg.getTripId()+", From: "+leg.getFrom()+", To: "
-						+leg.getTo()+", Starting at: "+new Date(leg.getStartTime())+"-->"+sb.toString()+
-						","+ "Direction: "+leg.getHeadsign());
+				//				System.err.println("Real time feeds not found for Trip: "+leg.getTripId()+", From: "+leg.getFrom()+", To: "
+				//						+leg.getTo()+", Starting at: "+new Date(leg.getStartTime())+"-->"+sb.toString()+
+				//						","+ "Direction: "+leg.getHeadsign());
 				throw new RealTimeDataException("Real time feeds not found for Trip: "+leg.getTripId()+", From: "+fromStopTag+", To: "
 						+toStopTag+", Starting at: "+new Date(leg.getStartTime())); 
 			}

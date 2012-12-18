@@ -97,6 +97,8 @@ public class AdvisoriesPushService {
 
 	private int pageSize = 500;
 
+	public boolean enablePushNotification = true;
+
 	/**
 	 *<column name,start-end min of day> 
 	 */
@@ -142,7 +144,11 @@ public class AdvisoriesPushService {
 			logger.debug(loggerName, "Fetching Tweets.......");
 			fetchTweets();
 			if(getCurrentPushIntervalName()==null){
-				logger.debug(loggerName, "Not valid push time, skipping");
+				logger.info(loggerName, "Not valid push time, skipping");
+				return;
+			}
+			if(!enablePushNotification){
+				logger.warn(loggerName, "Push notification Disabled, skipping..");
 				return;
 			}
 			logger.debug(loggerName, "Sending push Advisories......");
@@ -345,7 +351,7 @@ public class AdvisoriesPushService {
 			//logger.debug(loggerName, "User count: "+count+", tweetCount: "+tweetCount+",agency :"+agencyType+", App :"+appType);
 			int totalPages = (int) Math.ceil(count/(double)pageSize);
 			BasicQuery basicQuery = new BasicQuery(queryObject);
-			basicQuery.limit(pageSize);
+			basicQuery.setLimit(pageSize);
 			for (int pageNumber=0; pageNumber<totalPages; pageNumber++) {
 				List<User> resultSet = persistenceService.findByQuery(MONGO_TABLES.users.name(),basicQuery,	User.class);
 
@@ -471,7 +477,7 @@ public class AdvisoriesPushService {
 			BasicQuery basicQuery = new BasicQuery(queryObj);
 			int count = persistenceService.getCount(MONGO_TABLES.users.name(), queryObj, User.class);
 			int totalPage = (int) Math.ceil(count/(double)pageSize);
-			logger.debug(msg, "Sending Admin push for app: "+NIMBLER_APP_TYPE.values()[appType].name()+", count: "+count+", Msg: "+msg);
+			logger.debug(loggerName, "Sending Admin push for app: "+NIMBLER_APP_TYPE.values()[appType].name()+", count: "+count+", Msg: "+msg);
 			for (int pageNumber=0; pageNumber<totalPage; pageNumber++) {
 				basicQuery.setLimit(pageSize);
 				basicQuery.setSkip(pageSize*pageNumber);
@@ -624,7 +630,7 @@ public class AdvisoriesPushService {
 			String[] interval = strInterval.split("-");
 			int start = Integer.parseInt(interval[0]);
 			int end = Integer.parseInt(interval[1]);
-			if(start< currentMins && currentMins<end)
+			if(start<= currentMins && currentMins<end)
 				return name;
 		}
 		return null;
