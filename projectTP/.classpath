@@ -10,5 +10,9 @@
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="C:/All_Library/httpcore-4.0.1.jar"/>
+	<classpathentry kind="lib" path="C:/All_Library/httpclient-4.0.jar"/>
+	<classpathentry kind="lib" path="C:/All_Library/jersey-archive-1.12/jersey-archive-1.12/lib/jersey-client-1.12.jar"/>
+	<classpathentry kind="lib" path="C:/All_Library/IntervalTree.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

@@ -110,26 +110,9 @@ public class RealTimePredictionService {
 
 			for (Itinerary itin: itineraries) {
 				//				System.out.println("Itinerary Start Time:---------->> "+new Date(itin.getStartTime()));
-				LiveFeedResponse itinFeeds = new LiveFeedResponse();
-				itinFeeds.setItineraryId(itin.getId());
-				List<Leg> legs = getApplicableLegs(itin.getLegs());
-				if (legs == null || legs.size()==0) {
-					logger.warn(loggerName, "Live feeds not applicable for any of the legs of Itinerary: "+itin.getId()); 
-					continue;
-				}
-				for (Leg leg : legs) {
-					try {
-						RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg.getMode());
-						LegLiveFeed legFeed = liveFeedAPI.getLiveFeeds(leg);
-						if (legFeed!=null) {
-							itinFeeds.addLegLiveFeed(legFeed);
-						}
-					} catch (FeedsNotFoundException e) {
-						logger.info(loggerName, e.getMessage());
-					}
-				}
-				adjustLegOverLap(itin,itinFeeds);
-				if (itinFeeds.getLegLiveFeeds()!=null && itinFeeds.getLegLiveFeeds().size()>0) {
+				LiveFeedResponse itinFeeds = getRealTimeLegData(itin);
+				if(itinFeeds!=null && !ComUtils.isEmptyList(itinFeeds.getLegLiveFeeds())){
+					adjustLegOverLap(itin,itinFeeds);
 					updateItineraryTimeFlag(itinFeeds); 
 					response.addItinLiveFeeds(itinFeeds); 
 				}
@@ -147,6 +130,65 @@ public class RealTimePredictionService {
 	}
 
 	/**
+	 * Predict real time by legs- all required detailed of legs will be as input.
+	 *
+	 * @param strLegs the str legs
+	 * @return the string
+	 */
+	@GET
+	@Path("/bylegs/")
+	public String predictRealTimeByLegs(@QueryParam(RequestParam.LEGS) String strLegs) {
+		PlanLiveFeeds response = new PlanLiveFeeds();
+		try {
+			Itinerary itin =  JSONUtil.getItineraryJson(strLegs);
+			if(itin==null || ComUtils.isEmptyList(itin.getLegs()))
+				throw new TpException(TP_CODES.INVALID_REQUEST.getCode(),"Error while getting JSON String from plan object.");
+			LiveFeedResponse itinFeeds = getRealTimeLegData(itin);
+			if (itinFeeds!=null && !ComUtils.isEmptyList(itinFeeds.getLegLiveFeeds())) {
+				updateItineraryTimeFlag(itinFeeds); 
+				response.addItinLiveFeeds(itinFeeds); 
+			}
+			if (response.getItinLiveFeeds()==null || response.getItinLiveFeeds().size()==0)
+				response.setError(TP_CODES.DATA_NOT_EXIST.getCode());
+		} catch (TpException tpe) {
+			logger.error(loggerName, tpe.getErrMsg());
+			response.setError(tpe.getErrCode());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			response.setError(TP_CODES.FAIL.getCode());
+		}
+		return getJsonResponse(response);
+	}
+
+	/**
+	 * Gets the real time leg data.
+	 *
+	 * @param itin the itin
+	 * @return the real time leg data
+	 */
+	private LiveFeedResponse getRealTimeLegData(Itinerary itin) {
+		LiveFeedResponse itinFeeds = new LiveFeedResponse();
+		itinFeeds.setItineraryId(itin.getId());
+		List<Leg> legs = getApplicableLegs(itin.getLegs());	
+		if(ComUtils.isEmptyList(legs)){
+			logger.debug(loggerName, "Live feeds not applicable for any of the legs of Itinerary: "+itin.getId()); 
+			return null;
+		}
+		for (Leg leg : legs) {
+			try {
+				RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg.getMode());
+				LegLiveFeed legFeed = liveFeedAPI.getLiveFeeds(leg);
+				if (legFeed!=null) {
+					itinFeeds.addLegLiveFeed(legFeed);
+				}
+			} catch (FeedsNotFoundException e) {
+				logger.info(loggerName, e.getMessage());
+			}
+		}
+		return itinFeeds;
+	}
+
+	/**
 	 * Update leg time to today.
 	 *
 	 * @param itineraries the itineraries
@@ -155,7 +197,7 @@ public class RealTimePredictionService {
 		for (Itinerary itinerary : itineraries) {
 			List<Leg> legs = itinerary.getLegs();
 			if(legs==null){
-				logger.warn(loggerName, "No legs found in itinerary: "+itinerary.getId());
+				logger.debug(loggerName, "No legs found in itinerary: "+itinerary.getId());
 				continue;
 			}
 			for (Leg leg : legs) {
@@ -174,14 +216,14 @@ public class RealTimePredictionService {
 		try {
 			TripPlan plan = getPlanWithItineraries(planId);
 			if (plan == null) {
-				logger.error(loggerName, "Plan not found in DB: "+planId); 
+				logger.warn(loggerName, "Plan not found in DB: "+planId); 
 				response.setError(TP_CODES.FAIL.getCode());
 				throw new TpException(TP_CODES.FAIL.getCode());
 			}
 
 			List<Itinerary> itineraries = plan.getItineraries();
 			if ( itineraries == null || itineraries.size()==0) {
-				logger.error(loggerName, "No itineraries found for Plan in DB: "+planId); 
+				logger.warn(loggerName, "No itineraries found for Plan in DB: "+planId); 
 				response.setError(TP_CODES.FAIL.getCode());
 				throw new TpException(TP_CODES.FAIL.getCode());
 			}
@@ -191,7 +233,7 @@ public class RealTimePredictionService {
 				itinFeeds.setItineraryId(itin.getId());
 				List<Leg> legs = getApplicableLegs(itin.getLegs());
 				if (legs == null || legs.size()==0) {
-					logger.warn(loggerName, "Live feeds not applicable for any of the legs of Itinerary: "+itin.getId()); 
+					logger.debug(loggerName, "Live feeds not applicable for any of the legs of Itinerary: "+itin.getId()); 
 					continue;
 				}
 				for (Leg leg : legs) {
@@ -301,17 +343,17 @@ public class RealTimePredictionService {
 	private void adjustLegOverLap(Itinerary itin, LiveFeedResponse itinFeeds) {
 		try {
 			List<Leg> legs = itin.getLegs();
-			List<LegLiveFeed> lstLegLiveFeeds =  itinFeeds.getLegLiveFeeds();
-			if(lstLegLiveFeeds==null){				
+			if(itinFeeds==null || ComUtils.isEmptyList(itinFeeds.getLegLiveFeeds())){				
 				//				System.out.println("no life feeds.....");
 				return;
 			}
+			List<LegLiveFeed> lstLegLiveFeeds =  itinFeeds.getLegLiveFeeds();
 			List<LegLiveFeed> lstFeedsToAdd = new ArrayList<LegLiveFeed>();
 			for (LegLiveFeed legLiveFeed : lstLegLiveFeeds) {
 				LegLiveFeed feed = PlanUtil.shiftLeg(legs, legLiveFeed);
 				if(feed!=null){
 					lstFeedsToAdd.add(feed);
-					logger.info(loggerName, "Shifted Walk leg: "+feed);
+					logger.debug(loggerName, "Shifted Walk leg: "+feed);
 					//					System.out.println("Shifted Walk leg: "+feed);
 				}
 			}

@@ -1,12 +1,12 @@
 package com.nimbler.tp.util;
 
-import java.util.Calendar;
 import java.util.List;
 
 import com.mongodb.BasicDBObject;
 import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.dbobject.NimblerParams;
+import com.nimbler.tp.dbobject.NimblerParams.NIMBLER_PARAMS;
 import com.nimbler.tp.mongo.MongoQueryConstant;
 import com.nimbler.tp.mongo.PersistenceService;
 import com.nimbler.tp.service.LoggingService;
@@ -21,11 +21,12 @@ public class PersistantHelper {
 	public String getTestUserDeviceTokens() {
 		String deviceTokens = "";
 		try {
-			List<NimblerParams> resultSet = persistenceService.getCollectionList(MONGO_TABLES.nimbler_params.name(), NimblerParams.class);
+			List<NimblerParams> resultSet = (List<NimblerParams>) persistenceService.find(MONGO_TABLES.nimbler_params.name(),TpConstants.NIMBLER_PARAMS_NAME, 
+					NIMBLER_PARAMS.BETA_USERS.name(),NimblerParams.class);
 			if (resultSet != null && resultSet.size() > 0){
 				deviceTokens =  resultSet.get(0).getValue().trim();
 			}
-		} catch (DBException e) {
+		} catch (Exception e) {
 			logger.error(loggerName, e.getMessage());
 		} 
 		return deviceTokens;
@@ -65,7 +66,7 @@ public class PersistantHelper {
 	public int getTotalLegCount() {
 		return getCount(MONGO_TABLES.leg.name(), FIXED_TIME);
 	}
-	
+
 	/**
 	 * get last 24 hour user count
 	 * @return
@@ -80,7 +81,7 @@ public class PersistantHelper {
 	public int getLast24hourFeebackCount() {
 		return getCount(MONGO_TABLES.feedback.name(), getTimeInMilliSecond());	
 	}
-	
+
 	/**
 	 * get last 24 hour plan count
 	 * @return
@@ -104,7 +105,7 @@ public class PersistantHelper {
 		}
 		return count;
 	}
-	
+
 	/**
 	 * get count 
 	 * @param collectionName
@@ -125,7 +126,7 @@ public class PersistantHelper {
 		}
 		return count;
 	}
-	
+
 	/**
 	 * get last 24 hour time
 	 * @return

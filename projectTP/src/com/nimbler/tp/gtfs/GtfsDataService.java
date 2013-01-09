@@ -40,6 +40,11 @@ public class GtfsDataService {
 	private Map<String, String[]> gtfsColums;
 	private Map<String, List<String>> stopTimesByTripId = new HashMap<String, List<String>>();
 
+	/**
+	 * <agencyOrdinal_routeid,list of data>
+	 */
+	private Map<String, List<String>> tripsByRouteId = new HashMap<String, List<String>>();
+
 	private String loggerName = GtfsDataService.class.getName();
 
 	private Map<String,List<String>> gtfsData = null;
@@ -47,8 +52,9 @@ public class GtfsDataService {
 	private String ageciesToLoad ="1,2,3,4";
 	private boolean gtfsReadCompleted = false;
 
-	private boolean useInMemoryGtfs = false;
+	private boolean useInMemoryGtfs = true;
 
+	@SuppressWarnings("unused")
 	@PostConstruct
 	private void init() {
 		List<GtfsBundle> gtfsBundles = gtfsContext.getGtfsBundles();
@@ -75,9 +81,12 @@ public class GtfsDataService {
 			try {
 				long start = System.currentTimeMillis();
 				if(file.equals(GTFS_FILE.STOP_TIMES)){
-					Map<String, List<String>> temp =  readStopTimesByAgency(arrAgencies);
+					Map<String, List<String>> temp =  createIndexForColumnWithAgency(arrAgencies,file,"trip_id");
 					stopTimesByTripId.putAll(temp);
-				}else{
+				}if(file.equals(GTFS_FILE.TRIPS)){
+					Map<String, List<String>> temp =  createIndexForColumnWithAgency(arrAgencies,file,"route_id");
+					tripsByRouteId.putAll(temp);
+				}else{					
 					Map<String, List<String>> temp =  readGtfsDataByAgency(file,arrAgencies);
 					gtfsData.putAll(temp);					
 				}
@@ -106,7 +115,7 @@ public class GtfsDataService {
 		try {
 			GtfsUtils gtfsUtils= new GtfsUtils(loggingService, loggerName);
 			for (int i = 0; i < agencyIdOrdinals.length; i++) {
-				GtfsBundle bundle = bundleMap.get(agencyIdOrdinals[i]);	
+				GtfsBundle bundle = bundleMap.get(agencyIdOrdinals[i]);				
 				if(bundle==null){
 					System.out.println("Could not find bundle for: "+agencyIdOrdinals[i]);
 					continue;
@@ -127,6 +136,7 @@ public class GtfsDataService {
 	 * @param agencyIdOrdinals the agency id ordinals
 	 * @return the map
 	 * @throws TpException the tp exception
+	 * @deprecated
 	 */
 	public Map<String, List<String>> readStopTimesByAgency(String[] agencyIdOrdinals) throws TpException {
 		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
@@ -163,6 +173,49 @@ public class GtfsDataService {
 		return resMap;
 	}
 
+	/**
+	 * Read trips by agency.
+	 *
+	 * @param agencyIdOrdinals the agency id ordinals
+	 * @param columnName 
+	 * @param gtfsFile 
+	 * @return the map
+	 * @throws TpException the tp exception
+	 */
+	public Map<String, List<String>> createIndexForColumnWithAgency(String[] agencyIdOrdinals, GTFS_FILE gtfsFile, String columnName) throws TpException {
+		Map<String, List<String>> resMap = new HashMap<String, List<String>>();		
+		try {
+			GtfsUtils gtfsUtils= new GtfsUtils(loggingService, loggerName);
+			for (int i = 0; i < agencyIdOrdinals.length; i++) {
+				GtfsBundle bundle = bundleMap.get(agencyIdOrdinals[i]);	
+				if(bundle==null){
+					System.out.println("Could not find bundle for: "+agencyIdOrdinals[i]);
+					continue;
+				}
+				int index = getColumnIndexOfGtfsFile(gtfsFile, columnName);
+				if(index==-1){					
+					loggingService.error(loggerName, "Could Not find index of route_id for agency: "+agencyIdOrdinals[i]);
+					continue;
+				}
+				List<String> lstData = gtfsUtils.getColumnsFromFile(new File(bundle.getValidFile()),gtfsColums.get(gtfsFile.getName()), gtfsFile.getFileName());
+				if(lstData!=null){
+					for (String line : lstData) {
+						String key = agencyIdOrdinals[i]+"_"+line.split(",")[index];
+						List<String> data = resMap.get(key);
+						if(data==null){
+							data = new ArrayList<String>();
+							resMap.put(key, data);
+						}
+						data.add(line);
+					}
+				}
+			}
+		} catch (Exception e) {
+			loggingService.error(loggerName, e);
+		}
+		return resMap;
+	}
+
 
 	/**
 	 * Gets the gtfs data by agency.
@@ -176,18 +229,17 @@ public class GtfsDataService {
 		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
 		if(!useInMemoryGtfs){
 			return readGtfsDataByAgency(gtfsFile, agencyIdOrdinals);
-		}else{
-			if(!gtfsReadCompleted)
-				throw new TpException(TP_CODES.DATA_NOT_EXIST);
-			for (int i = 0; i < agencyIdOrdinals.length; i++) {
-				String key = agencyIdOrdinals[i]+"_"+gtfsFile.getName();
-				List<String> fileData = gtfsData.get(key);
-				if(fileData==null){
-					loggingService.warn(loggerName, "Could not find: "+agencyIdOrdinals[i]+"_"+gtfsFile.getName());
-					continue;
-				}
-				resMap.put(key, fileData);
+		}
+		if(!gtfsReadCompleted)
+			throw new TpException(TP_CODES.DATA_NOT_EXIST);
+		for (int i = 0; i < agencyIdOrdinals.length; i++) {
+			String key = agencyIdOrdinals[i]+"_"+gtfsFile.getName();
+			List<String> fileData = gtfsData.get(key);
+			if(fileData==null){
+				loggingService.warn(loggerName, "Could not find: "+agencyIdOrdinals[i]+"_"+gtfsFile.getName());
+				continue;
 			}
+			resMap.put(key, fileData);
 		}
 		return resMap;
 	}
@@ -214,6 +266,32 @@ public class GtfsDataService {
 		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColums.get(GTFS_FILE.STOP_TIMES.getName())));
 		for (int t = 0; t < strAgencyId.length; t++) {
 			String key =  strAgencyId[t];					
+			resMap.put(key, mapToQuery.get(key));
+		}
+		return resMap;
+	}
+
+	/**
+	 * Gets the trips by route id.
+	 *
+	 * @param strAgencyIdAndRouteId the str agency id and route id
+	 * @return the trips by route id
+	 * @throws TpException the tp exception
+	 */
+	public Map<String, List<String>> getTripsByRouteId(String[] strAgencyIdAndRouteId) throws TpException {		
+		Map<String, List<String>> mapToQuery  = null;
+		if(!useInMemoryGtfs){
+			String[] ids = GtfsUtils.getAgencyIdsFromTripIdCombo(strAgencyIdAndRouteId);
+			mapToQuery =   createIndexForColumnWithAgency(ids,GTFS_FILE.TRIPS,"trip_id");
+		}else{
+			if(!gtfsReadCompleted)
+				throw new TpException(TP_CODES.DATA_NOT_EXIST);
+			mapToQuery = tripsByRouteId;
+		}
+		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
+		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColums.get(GTFS_FILE.STOP_TIMES.getName())));
+		for (int t = 0; t < strAgencyIdAndRouteId.length; t++) {
+			String key =  strAgencyIdAndRouteId[t];					
 			resMap.put(key, mapToQuery.get(key));
 		}
 		return resMap;

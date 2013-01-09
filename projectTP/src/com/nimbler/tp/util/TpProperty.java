@@ -44,7 +44,7 @@ public class TpProperty {
 	 * @param prop
 	 * @return
 	 */
-	public static String getDefaultProperty(String prop) {
+	public synchronized static String getDefaultProperty(String prop) {
 		if (defaultProps==null) {
 			defaultProps = new Properties();
 			try {

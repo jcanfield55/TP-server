@@ -257,6 +257,8 @@
 			<value>com.nimbler.tp.service.advisories.AdvisoriesService</value>
 		</property>
 	</bean>
+	<bean id="dBHealthMonitoringService" class="com.nimbler.tp.gtfs.DBHealthMonitoringService" />
+	
 	<bean id="gtfsDataService" class="com.nimbler.tp.gtfs.GtfsDataService">
 	<property name="gtfsColums">
 		<map>
@@ -297,6 +299,18 @@
 
 	
 	<!-- ====================================== Quarts trigger ================================== -->
+
+	<bean name="dBHealthMonitoringJob"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetBeanName" value="dBHealthMonitoringService" />
+		<property name="targetMethod" value="checkHealth" />
+	</bean>
+	<bean id="dBHealthMonitoringTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="dBHealthMonitoringJob" />
+ 		<property name="cronExpression" value="0 0/1 * * * ?" /> 	
+	</bean>
+	
 
 	<bean name="gtfsMonitoringJob"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
@@ -347,6 +361,7 @@
 				<ref bean="fetchTweetsTrigger" />
 				<ref bean="urgentAdvisoriesClearJobTrigger" />
 				<ref bean="clearAdvisaryCounterTrigger" />
+				<ref bean="dBHealthMonitoringTrigger" />
 			</list>
 		</property>
 	</bean>

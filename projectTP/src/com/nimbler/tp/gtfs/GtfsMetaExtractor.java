@@ -75,44 +75,42 @@ public class GtfsMetaExtractor implements Runnable{
 
 			//read and calculate calander_dates.txt			
 			List<GtfsCalandeDates> lstCalanderDates = utils.readCalanderDatesGtfs(gtfsFile);
-			if(lstCalanderDates !=null){
-				//<date, service list>			
-				Map<String, List<String>> tempDateException = new HashMap<String, List<String>>();
-				String[] serviceOnDays = bundle.getServiceOnDays();
-				for (GtfsCalandeDates calDates : lstCalanderDates) {
-					String strDates =  calDates.getDate();
-					List<String> servicesOnDate = tempDateException.get(strDates);
-					if(servicesOnDate==null){				
-						Calendar calendar = Calendar.getInstance();
-						calendar.setTime(gtfsDateFormat.parse(strDates));
-						int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-						String service = serviceOnDays[dayOfWeek-1];	
-						servicesOnDate = service==null? new ArrayList<String>():ComUtils.getListFromArray(service.split(","));
-						tempDateException.put(strDates, servicesOnDate);
-					}
-					if(calDates.getServiceType().equals("1")){ // added
-						servicesOnDate.add(calDates.getServiceName());
-					}else if(calDates.getServiceType().equals("2")){ //removed
-						if(!servicesOnDate.contains(calDates.getServiceName()))
-							logger.warn(loggerName, "No service name found in calander.txt to remove according to calander_dates.txt for :"+
-									bundle.getDefaultAgencyId()+", service name: "+calDates.getServiceName()+", on date: "+calDates.getDate());
-						servicesOnDate.remove(calDates.getServiceName());
-					}else{
-						logger.warn(loggerName, "Invalid service exception type found in calander_dates.txt for :"+
-								bundle.getDefaultAgencyId()+", service name: "+calDates.getServiceName()+", on date:" +
-								calDates.getDate()+",service type:"+calDates.getServiceType());
-					}
+			//<date, service list>			
+			Map<String, List<String>> tempDateException = new HashMap<String, List<String>>();
+			String[] serviceOnDays = bundle.getServiceOnDays();
+			for (GtfsCalandeDates calDates : lstCalanderDates) {
+				String strDates =  calDates.getDate();
+				List<String> servicesOnDate = tempDateException.get(strDates);
+				if(servicesOnDate==null){				
+					Calendar calendar = Calendar.getInstance();
+					calendar.setTime(gtfsDateFormat.parse(strDates));
+					int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+					String service = serviceOnDays[dayOfWeek-1];	
+					servicesOnDate = service==null? new ArrayList<String>():ComUtils.getListFromArray(service.split(","));
+					tempDateException.put(strDates, servicesOnDate);
 				}
-				// sort
-				Map<String, String> datesAndServiceWithException =  new HashMap<String, String>();
-				for (Map.Entry<String, List<java.lang.String>> entry : tempDateException.entrySet()) {
-					String key = entry.getKey();
-					List<String> value = entry.getValue();
-					Collections.sort(value);
-					datesAndServiceWithException.put(key, StringUtils.join(value, ","));
+				if(calDates.getServiceType().equals("1")){ // added
+					servicesOnDate.add(calDates.getServiceName());
+				}else if(calDates.getServiceType().equals("2")){ //removed
+					if(!servicesOnDate.contains(calDates.getServiceName()))
+						logger.warn(loggerName, "No service name found in calander.txt to remove according to calander_dates.txt for :"+
+								bundle.getDefaultAgencyId()+", service name: "+calDates.getServiceName()+", on date: "+calDates.getDate());
+					servicesOnDate.remove(calDates.getServiceName());
+				}else{
+					logger.warn(loggerName, "Invalid service exception type found in calander_dates.txt for :"+
+							bundle.getDefaultAgencyId()+", service name: "+calDates.getServiceName()+", on date:" +
+							calDates.getDate()+",service type:"+calDates.getServiceType());
 				}
-				bundle.setDatesAndServiceWithException(datesAndServiceWithException);
 			}
+			// sort
+			Map<String, String> datesAndServiceWithException =  new HashMap<String, String>();
+			for (Map.Entry<String, List<java.lang.String>> entry : tempDateException.entrySet()) {
+				String key = entry.getKey();
+				List<String> value = entry.getValue();
+				Collections.sort(value);
+				datesAndServiceWithException.put(key, StringUtils.join(value, ","));
+			}
+			bundle.setDatesAndServiceWithException(datesAndServiceWithException);
 			bundle.setExtracted(true);	
 			System.out.println(String.format("Gtfs file read complete for    :      [%-15s]", getBundle().getDefaultAgencyId()));
 		} catch (Exception e) {

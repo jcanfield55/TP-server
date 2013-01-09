@@ -43,7 +43,8 @@ import com.nimbler.tp.util.HtmlUtil.TableRow;
 @SuppressWarnings("unchecked")
 public class GtfsUtils {	
 
-	private static SimpleDateFormat reqDateFormat = new SimpleDateFormat("M/d/yyyy");
+	private static final String strDateFormat = "M/d/yyyy";
+
 	SimpleDateFormat gtfsDateFormat = new SimpleDateFormat(TpConstants.GTFS_DATE_FORMAT);
 	private static final String GTFS_ENCODE_FORMAT = "ISO-8859-1";
 	private LoggingService logger;
@@ -91,7 +92,7 @@ public class GtfsUtils {
 				String key =line[SERVICE_ID_INDEX];
 				String val = line[END_DATE_INDEX];
 				if(ComUtils.isEmptyString(key) || ComUtils.isEmptyString(val));
-				mapServiceIdAndDate.put(key, gtfsDateFormat.parse(StringUtils.remove(val, "\"")));
+					mapServiceIdAndDate.put(key, gtfsDateFormat.parse(StringUtils.remove(val, "\"")));
 			} catch (Exception e) {
 				logger.error(loggerName,"Malformed data Found at line "+i+", data: "+lstLines.get(i));				
 			}
@@ -133,21 +134,40 @@ public class GtfsUtils {
 			try {
 				String line = lstLines.get(i);
 				if(ComUtils.isEmptyString(line)){
-					logger.warn(loggerName, "empty line found in gtfs");
+					//					logger.warn(loggerName, "empty line found in gtfs");
 					continue;
 				}
-				String[] arrLines = line.split(",");
+				String[] arrLines = split(line);
+				if(arrLines==null)
+					continue;
 				String[] temp = new String[columns.length];
 				for (int j = 0; j < colIndex.length; j++) {
 					if(colIndex[j] !=-1 && colIndex[j] < arrLines.length && arrLines[colIndex[j]]!=null)
-						temp[j] = arrLines[colIndex[j]].replace("\"", "").trim();
+						temp[j] =arrLines[colIndex[j]];
 				}
+
 				res.add(StringUtils.join(temp,","));
 			} catch (Exception e) {				
 				logger.error(loggerName,"Malformed data Found at line "+i+", data: "+lstLines.get(i),e);				
 			}
 		}
 		return res;
+	}
+
+	private String[] split(String line) {
+		CSVParser csvParser = new CSVParser();
+		try {
+			String[] arrValues =   csvParser.parseLine(line);
+			if(arrValues!=null){
+				for (int i = 0; i < arrValues.length; i++) {
+					arrValues[i] =  StringUtils.trim(StringUtils.replace(arrValues[i],",", "-"));
+				}
+			}
+			return arrValues;
+		} catch (IOException e) {
+			logger.error(loggerName, e.getMessage()+", line:"+line);			
+		}	
+		return null;
 	}
 
 	/**
@@ -298,45 +318,45 @@ public class GtfsUtils {
 	 */
 	public List<GtfsCalandeDates> readCalanderDatesGtfs(File file) throws IOException, ParseException, TpException {
 		List<GtfsCalandeDates> lstGtfsCalanders = new ArrayList<GtfsCalandeDates>();
-		/*ZipFile zipFile = new ZipFile(file);
-		ZipEntry zipEntry = zipFile.getEntry(TpConstants.ZIP_CALENDAR_DATES_FILE);
-		if(zipEntry == null){
-			logger.info(loggerName, "No "+TpConstants.ZIP_CALENDAR_DATES_FILE+" file found in "+file.getAbsolutePath());
-			return null;
-		}*/		
-		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file,TpConstants.ZIP_CALENDAR_DATES_FILE),GTFS_ENCODE_FORMAT);		
-		if(ComUtils.isEmptyList(lstLines))
-			throw new TpException("Invalid file, No data found in file: "+file);
-		String[] headers = lstLines.get(0).split(",");
-		int EXCEPTION_TYPE_INDEX = -1;
-		int DATE_INDEX = -1;
-		int SERVICE_ID_INDEX = -1;
-		for (int i = 0; i < headers.length; i++) {
-			if(headers[i].toLowerCase().indexOf("service_id")!=-1)
-				SERVICE_ID_INDEX = i;
-			else if (headers[i].toLowerCase().indexOf("date")!=-1)
-				DATE_INDEX =i;
-			else if (headers[i].toLowerCase().indexOf("exception_type")!=-1)
-				EXCEPTION_TYPE_INDEX =i;
-		}
-		if(DATE_INDEX == -1 || EXCEPTION_TYPE_INDEX==-1 || SERVICE_ID_INDEX==-1 )
-			throw new TpException("No service_id,start_date or end_date found in data for file:"+file);
-		for (int i = 1; i < lstLines.size(); i++) {					
-			try {
-				GtfsCalandeDates calanderDates = new GtfsCalandeDates();
-				String[] line = lstLines.get(i).split(",");
-				ComUtils.removeQuotation(line);
-				if(line==null || SERVICE_ID_INDEX > (line.length-1) || EXCEPTION_TYPE_INDEX > (line.length-1) ||  DATE_INDEX > (line.length-1)){
-					logger.warn(loggerName, "empty line found in gtfs file:"+file);
-					continue;					
-				}
-				calanderDates.setServiceName(line[SERVICE_ID_INDEX]);
-				calanderDates.setDate(line[DATE_INDEX]);
-				calanderDates.setServiceType(line[EXCEPTION_TYPE_INDEX]);
-				lstGtfsCalanders.add(calanderDates);
-			} catch (Exception e) {
-				logger.error(loggerName,"Malformed data Found in file(calander_dates.txt):"+file.getAbsolutePath()+" at line "+i+", data: "+lstLines.get(i),e);					
+		try {
+			List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file,TpConstants.ZIP_CALENDAR_DATES_FILE),GTFS_ENCODE_FORMAT);		
+			if(ComUtils.isEmptyList(lstLines))
+				throw new TpException("Invalid file, No data found in file: "+file);
+			String[] headers = lstLines.get(0).split(",");
+			int EXCEPTION_TYPE_INDEX = -1;
+			int DATE_INDEX = -1;
+			int SERVICE_ID_INDEX = -1;
+			for (int i = 0; i < headers.length; i++) {
+				if(headers[i].toLowerCase().indexOf("service_id")!=-1)
+					SERVICE_ID_INDEX = i;
+				else if (headers[i].toLowerCase().indexOf("date")!=-1)
+					DATE_INDEX =i;
+				else if (headers[i].toLowerCase().indexOf("exception_type")!=-1)
+					EXCEPTION_TYPE_INDEX =i;
 			}
+			if(DATE_INDEX == -1 || EXCEPTION_TYPE_INDEX==-1 || SERVICE_ID_INDEX==-1 )
+				throw new TpException("No service_id,start_date or end_date found in data for file:"+file);
+			for (int i = 1; i < lstLines.size(); i++) {					
+				try {
+					GtfsCalandeDates calanderDates = new GtfsCalandeDates();
+					String[] line = lstLines.get(i).split(",");
+					ComUtils.removeQuotation(line);
+					if(line==null || SERVICE_ID_INDEX > (line.length-1) || EXCEPTION_TYPE_INDEX > (line.length-1) ||  DATE_INDEX > (line.length-1)){
+						logger.warn(loggerName, "empty line found in gtfs file:"+file);
+						continue;					
+					}
+					calanderDates.setServiceName(line[SERVICE_ID_INDEX]);
+					calanderDates.setDate(line[DATE_INDEX]);
+					calanderDates.setServiceType(line[EXCEPTION_TYPE_INDEX]);
+					lstGtfsCalanders.add(calanderDates);
+				} catch (Exception e) {
+					logger.error(loggerName,"Malformed data Found in file(calander_dates.txt):"+file.getAbsolutePath()+" at line "+i+", data: "+lstLines.get(i),e);					
+				}
+			}
+		} catch (TpException e) {
+			logger.error(loggerName, e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
 		}
 		return lstGtfsCalanders;
 	}
@@ -448,6 +468,7 @@ public class GtfsUtils {
 		StringBuffer sbUrl = new StringBuffer().append(baseUrl);
 		sbUrl.append(StringUtils.join(lstParams,"&"));
 		sbUrl.append("&mode="+mode);
+		SimpleDateFormat reqDateFormat = new SimpleDateFormat(strDateFormat);
 		if(date!=null)
 			sbUrl.append("&date="+reqDateFormat.format(new Date()));
 		else

@@ -3,6 +3,7 @@
 	<name>TPServer</name>
 	<comment></comment>
 	<projects>
+		<project>TestOTP</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

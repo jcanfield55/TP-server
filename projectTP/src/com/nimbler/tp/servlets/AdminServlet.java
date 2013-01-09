@@ -15,7 +15,6 @@ import org.apache.commons.lang3.math.NumberUtils;
 import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.dbobject.Login;
-import com.nimbler.tp.dbobject.NimblerParams;
 import com.nimbler.tp.dbobject.NimblerParams.NIMBLER_PARAMS;
 import com.nimbler.tp.gtfs.GraphAcceptanceTest;
 import com.nimbler.tp.mongo.PersistenceService;
@@ -176,15 +175,7 @@ public class AdminServlet extends HttpServlet {
 	 */
 	private void storeDeviceToken(String betaUsers) {
 		try {
-			NimblerParams nimblerParam= new NimblerParams();
-			nimblerParam.setName(NIMBLER_PARAMS.BETA_USERS.name());
-			nimblerParam.setValue(betaUsers);
-			List<NimblerParams> listParams = persistenceService.getCollectionList(MONGO_TABLES.nimbler_params.name(), NimblerParams.class);
-			if (listParams.size() > 0) {
-				persistenceService.updateSingleObject(MONGO_TABLES.nimbler_params.name(), TpConstants.NIMBLER_PARAMS_NAME, NIMBLER_PARAMS.BETA_USERS.name(), TpConstants.NIMBLER_PARAMS_VALUE, nimblerParam.getValue());
-			} else {
-				persistenceService.addObject(MONGO_TABLES.nimbler_params.name(), nimblerParam);
-			}
+			persistenceService.upsertNimblerParam(NIMBLER_PARAMS.BETA_USERS.name(), betaUsers);
 		} catch (Exception e) {
 			logger.error(loggerName, e.getMessage());
 		}

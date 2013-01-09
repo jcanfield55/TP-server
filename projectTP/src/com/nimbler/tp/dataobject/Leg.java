@@ -47,6 +47,13 @@ public class Leg {
 	 */
 	private String route = "";
 
+	/**
+	 * For transit legs, the ID of the route.
+	 * For non-transit legs, null.
+	 */
+	public String routeId = null;
+
+
 	private String agencyName;
 
 	private String agencyUrl;

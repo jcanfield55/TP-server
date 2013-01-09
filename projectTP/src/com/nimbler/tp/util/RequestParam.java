@@ -93,8 +93,10 @@ public class RequestParam {
 	public static final String NOTIF_TIMING_NIGHT  = "notifTimingNight";  
 	public static final String NOTIF_TIMING_WEEKEND= "notifTimingWeekend"; 
 	public static final String AGENCY_IDS = "agencyIds";
+	public static final String AGENCY_AND_ROUTE_IDS = "agencyAndRouteIds";
 	public static final String ENTITY = "entity";
 	public static final String TRIP_ID = "tripId";
 	public static final String HEADERS = "headers";
+	public static final String LEGS = "legs";
 
 }

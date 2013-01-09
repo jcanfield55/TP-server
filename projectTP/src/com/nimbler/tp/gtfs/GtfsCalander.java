@@ -3,15 +3,13 @@
  */
 package com.nimbler.tp.gtfs;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 
 
 public class GtfsCalander {
 
-	public static SimpleDateFormat gtfsDateFormat = new SimpleDateFormat("yyyyMMdd");
+	//	public static SimpleDateFormat gtfsDateFormat = new SimpleDateFormat("yyyyMMdd");
 	public String serviceName;
 	public Date startDate;
 	public Date endDate;
@@ -57,18 +55,5 @@ public class GtfsCalander {
 				+ startDate + ", endDate=" + endDate
 				+ ", weeklyStatusForService="
 				+ Arrays.toString(weeklyStatusForService) + "]";
-	}
-	public static void main(String[] args) {
-		try {
-			String strstartDate = "20120810";
-			String strCompareDate = "20120831";
-			String strEndDate = "20120830";
-			GtfsCalander calander = new GtfsCalander();
-			calander.setStartDate(gtfsDateFormat.parse(strstartDate));
-			calander.setEndDate(gtfsDateFormat.parse(strEndDate));
-			System.out.println(calander.isServiceEnabled(gtfsDateFormat.parse(strCompareDate)));
-		} catch (ParseException e) {
-			e.printStackTrace();
-		}
 	}
 }

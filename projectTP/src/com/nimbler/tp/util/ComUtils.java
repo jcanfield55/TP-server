@@ -330,13 +330,14 @@ public class ComUtils {
 	public static long convertIntoTime(String date) {
 		SimpleDateFormat sdf = new SimpleDateFormat("E, dd MMM yyyy HH:mm:ss");
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		Date time =null;
+		long res = 0;
 		try {
-			time = sdf.parse(date);			
+			Date time = sdf.parse(date);	
+			res= time.getTime();
 		} catch (ParseException e) {
 			System.err.println("Error in to convert Time in milliseconds: "+e.getMessage());
 		}
-		return time.getTime();
+		return res;
 	}
 	/**
 	 * 

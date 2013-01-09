@@ -69,9 +69,6 @@ public class TpConstants {
 	public static final String OTP_DATE_FORMAT = "dd/MM/yyyy hh:mm:ss a";
 	SimpleDateFormat gtfsDateFormat = new SimpleDateFormat(TpConstants.GTFS_DATE_FORMAT);
 
-	public static final String PUBLIC_RESPONSE_URL =  SERVER_DEFAULT+"/survey.jsp?sessid=%s";
-	public static final String PUBLIC_SHARED_RESPONSE_URL =  SERVER_DEFAULT+"/shareSurvey.jsp";
-
 	public static final String FEEDBACK_EMAIL_ID = TpProperty.getDefaultProperty("feedback.email.id");
 	public static final String OTP_FAIL_NOTIFY_EMAIL_ID = TpProperty.getDefaultProperty("otp.fail.notify.emailid");
 	public static final String OTP_FAIL_NOTIFY_EMAIL_SUBJECT = TpProperty.getDefaultProperty("otp.fail.notify.subject");

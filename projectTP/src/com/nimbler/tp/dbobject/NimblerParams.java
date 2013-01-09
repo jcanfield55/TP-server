@@ -14,7 +14,7 @@ public class NimblerParams implements Serializable{
 	private String id;
 	private String name;
 	private String value;
-	
+
 	public String getName() {
 		return name;
 	}
@@ -27,7 +27,7 @@ public class NimblerParams implements Serializable{
 	public void setValue(String value) {
 		this.value = value;
 	}
-	
+
 	public String getId() {
 		return id;
 	}
@@ -36,6 +36,8 @@ public class NimblerParams implements Serializable{
 	}
 
 	public enum NIMBLER_PARAMS {
-		BETA_USERS
+		BETA_USERS,
+		LAST_HEALTH_CHECK_TIME
+
 	}
 }

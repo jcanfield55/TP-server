@@ -112,7 +112,7 @@ public class AdvisoriesPushService {
 		for (AGENCY_TYPE agency : agencyTypes) {
 			if(agency.ordinal()==0)
 				continue;
-			Vector<ThresholdBoard> boards =  thresholdBoards.get(agency);
+			Vector<ThresholdBoard> boards =  thresholdBoards.get(agency.ordinal());
 			if(boards==null){
 				boards = new Vector<ThresholdBoard>();
 				thresholdBoards.put(agency.ordinal(), boards);
@@ -161,7 +161,7 @@ public class AdvisoriesPushService {
 	 * 
 	 */
 	private void fetchTweets() {
-		Iterator<Integer> agencies = agencyTweetSourceMap.keySet().iterator();
+		Iterator<Integer> agencies = agencyTweetSourceMap.keySet().iterator();		
 		while (agencies.hasNext()) {
 			Integer agency = agencies.next();
 			String commaSeparatedSource = agencyTweetSourceMap.get(agency);
@@ -170,14 +170,21 @@ public class AdvisoriesPushService {
 			for (String source: tweetSources){
 				list.add("from:"+source.trim());
 			}
-			try {
-				String queryParam = StringUtils.join(list,"+OR+")+ " since:" + ComUtils.getFormatedDate("yyyy-MM-dd");
-				String response = getTwitterResponse(queryParam);
-				List<Tweet> tweetList = getTweets(response);
-				if (tweetList!=null)
-					TweetStore.getInstance().setTweet(tweetList, agency);
-			} catch (Exception e) {
-				logger.error(loggerName, "Error while getting twitter response for source: "+commaSeparatedSource+": "+e.getMessage());
+			for (int i = 0; i < 3; i++) {
+				try {
+					String queryParam = StringUtils.join(list,"+OR+")+ " since:" + ComUtils.getFormatedDate("yyyy-MM-dd");
+					String response = getTwitterResponse(queryParam);
+					List<Tweet> tweetList = getTweets(response);
+					if (tweetList!=null)
+						TweetStore.getInstance().setTweet(tweetList, agency);
+					break;
+				} catch (Exception e) {
+					String retry="";
+					if(i<2)
+						retry = " - retrying....";
+					logger.error(loggerName, "Error while getting twitter response for source: "+commaSeparatedSource+": "+e.getMessage()+retry);
+					ComUtils.sleep(2000);
+				}
 			}
 		}
 	}

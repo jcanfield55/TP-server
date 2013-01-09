@@ -218,6 +218,39 @@ public class GtfsMetaDataRestService {
 		//		System.out.println("GetStopTimes took " + (end - start) + "mill sec");
 		return res;
 	}
+
+	/**
+	 * Gets the trips.
+	 *
+	 * @param strAgencyId the str agency id
+	 * @return the trips
+	 * @throws UnsupportedEncodingException the unsupported encoding exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws ClassNotFoundException the class not found exception
+	 */
+	@GET
+	@Path("/trips/")	
+	public String getTrips(@QueryParam(RequestParam.AGENCY_AND_ROUTE_IDS)String strAgencyIdAndRouteId) throws UnsupportedEncodingException, IOException, ClassNotFoundException {
+		TPResponse response = ResponseUtil.createResponse(TP_CODES.SUCESS);
+		long start = System.currentTimeMillis();
+		try {		
+			if(ComUtils.isEmptyString(strAgencyIdAndRouteId))
+				throw new TpException(TP_CODES.INVALID_REQUEST);
+			GtfsDataService gtfsDataService =  BeanUtil.getGtfsDataServiceBean();			
+			Map<String, List<String>> map =  gtfsDataService.getTripsByRouteId(strAgencyIdAndRouteId.split(","));
+			response.setData(map);
+		} catch (TpException e) {
+			logger.error(loggerName, e);
+			response = ResponseUtil.createResponse(e);			
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			response = ResponseUtil.createResponse(TP_CODES.INTERNAL_SERVER_ERROR);
+		}
+		String res =  JSONUtil.getResponseJSON(response);
+		long end = System.currentTimeMillis();		
+		//		System.out.println("GetStopTimes took " + (end - start) + "mill sec");
+		return res;
+	}
 	public LoggingService getLogger() {
 		return logger;
 	}

@@ -45,7 +45,7 @@ public class MailService {
 	private String loggerName;
 	@Autowired
 	private JavaMailSenderImpl mailSender;
-	
+
 
 	private MailService() {
 	}
@@ -191,6 +191,18 @@ public class MailService {
 		mailMsg.setMessage(msg);
 		mailMsg.setHtml(isHtml);
 		sendMail(mailMsg, lstAttachmentPaths,lstFilesToDelete);
+	}
+
+	/**
+	 * Send mail.
+	 *
+	 * @param to the to
+	 * @param subject the subject
+	 * @param msg the msg
+	 * @param isHtml the is html
+	 */
+	public void sendMail(String to,String subject,String msg,boolean isHtml){
+		sendMail(to, subject,msg,isHtml,null,null);
 	}
 	/**
 	 * Send feed back mail.

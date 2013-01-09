@@ -25,11 +25,14 @@ import org.springframework.data.document.mongodb.query.Update;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 import com.mongodb.WriteResult;
 import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.util.BeanUtil;
+import com.nimbler.tp.util.TpConstants;
+import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
 /**
  * 
  * @author suresh,nirmal
@@ -116,6 +119,40 @@ public class PersistenceService {
 	public Object findOne(String collectionName, String column ,String columnValue, Class clazz) throws DBException {
 		try {
 			return mongoOpetation.findOne(collectionName, new Query(Criteria.where(column).is(columnValue)), clazz);
+		}  catch (DataAccessResourceFailureException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage()); 
+		} catch (MongoException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		}
+	}
+
+	/**
+	 * Up sert nimbler param.
+	 *
+	 * @param name the name
+	 * @param value the value
+	 * @return the object
+	 * @throws DBException the dB exception
+	 */
+	public int upsertNimblerParam(String name ,String value) throws DBException {
+		try {
+			DBObject queryObject = new BasicDBObject();
+			queryObject.put(TpConstants.NIMBLER_PARAMS_NAME, name);
+			DBObject data = new BasicDBObject();
+			data.put(TpConstants.NIMBLER_PARAMS_NAME, name);
+			data.put(TpConstants.NIMBLER_PARAMS_VALUE, value);
+			DBCollection collection = mongoOpetation.getCollection(MONGO_TABLES.nimbler_params.name());
+			WriteResult rr =   collection.update(queryObject, data, true, false);
+			if(rr.getError()!=null || rr.getN() == 0){
+				logger.error(loggerName, "Error inserting Nimbler param name: "+ name + " value: " + value+", WriteResult: "+rr);
+				throw new DBException("Error:"+rr.getError()+",count:"+rr.getN()+", LastError: "+rr.getLastError());
+			}
+			return rr.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage()); 

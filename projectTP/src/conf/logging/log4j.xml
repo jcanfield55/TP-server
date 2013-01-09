@@ -176,6 +176,10 @@
 		<level value="DEBUG" />
 		<appender-ref ref="gtfsmonitoring" />
 	</logger>
+	<logger name="com.nimbler.tp.gtfs.DBHealthMonitoringService">
+		<level value="DEBUG" />
+		<appender-ref ref="gtfsmonitoring" />
+	</logger>
 	<logger name="com.nimbler.tp.gtfs.GtfsDataService">
 		<level value="DEBUG" />
 		<appender-ref ref="gtfsmonitoring" />
