@@ -1,7 +1,7 @@
 /**
  * 
  * All rights reserved.
- * Copyright (C) 2012 Apprika Systems   Pvt. Ltd. 
+ * Copyright (C) 2012 Apprika Systems   Pvt. Ltd.
  *
  */
 package com.nimbler.tp.dbobject;
@@ -41,7 +41,7 @@ public class User implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -8231065322203477262L;
-	private String id; 
+	private String id;
 	private String deviceId;
 	private int numberOfAlert;
 	private String deviceToken;
@@ -52,12 +52,14 @@ public class User implements Serializable {
 	private long lastReadTimeBart;
 	private long lastReadTimeAct;
 	private long lastReadTimeSfMuni;
+	private long lastReadTimeWmata;
 
 	private long lastPushTime;//caltrain app
 	private long lastPushTimeCaltrain;
 	private long lastPushTimeBart;
 	private long lastPushTimeAct;
 	private long lastPushTimeSfMuni;
+	private long lastPushTimeWmata;
 
 	private long createTime;
 	private long updateTime;
@@ -73,6 +75,7 @@ public class User implements Serializable {
 	private int enableBartAdv = BOOLEAN_VAL.TRUE.ordinal();
 	private int enableCaltrainAdv = BOOLEAN_VAL.TRUE.ordinal();
 	private int enableAcTransitAdv = BOOLEAN_VAL.FALSE.ordinal();
+	private int enableWmataAdv = BOOLEAN_VAL.FALSE.ordinal();
 
 	private int transitMode;
 	private double maxBikeDist;
@@ -92,16 +95,16 @@ public class User implements Serializable {
 	/**
 	 *  Weekday Evening peak (3 - 7:30pm)
 	 */
-	private int notifTimingEvening= BOOLEAN_VAL.TRUE.ordinal(); 
+	private int notifTimingEvening= BOOLEAN_VAL.TRUE.ordinal();
 
 	/**
 	 *  Weekday Night (7:30 - 12:00)
 	 */
-	private int notifTimingNight= BOOLEAN_VAL.FALSE.ordinal(); 
+	private int notifTimingNight= BOOLEAN_VAL.FALSE.ordinal();
 	/**
-	 *   Weekend 
+	 *   Weekend
 	 */
-	private int notifTimingWeekend= BOOLEAN_VAL.FALSE.ordinal(); 
+	private int notifTimingWeekend= BOOLEAN_VAL.FALSE.ordinal();
 
 	public User() {
 
@@ -166,6 +169,55 @@ public class User implements Serializable {
 	public void setNotifTimingNight(int notifTimingNight) {
 		this.notifTimingNight = notifTimingNight;
 	}
+
+
+
+	public long getLastReadTimeWmata() {
+		return lastReadTimeWmata;
+	}
+
+
+
+	public void setLastReadTimeWmata(long lastReadTimeWmata) {
+		this.lastReadTimeWmata = lastReadTimeWmata;
+	}
+
+
+
+	public long getLastPushTimeCaltrain() {
+		return lastPushTimeCaltrain;
+	}
+
+
+
+	public void setLastPushTimeCaltrain(long lastPushTimeCaltrain) {
+		this.lastPushTimeCaltrain = lastPushTimeCaltrain;
+	}
+
+
+
+	public long getLastPushTimeWmata() {
+		return lastPushTimeWmata;
+	}
+
+
+
+	public void setLastPushTimeWmata(long lastPushTimeWmata) {
+		this.lastPushTimeWmata = lastPushTimeWmata;
+	}
+
+
+
+	public int getEnableWmataAdv() {
+		return enableWmataAdv;
+	}
+
+
+
+	public void setEnableWmataAdv(int enableWmataAdv) {
+		this.enableWmataAdv = enableWmataAdv;
+	}
+
 
 
 	public int getNotifTimingWeekend() {
@@ -422,7 +474,7 @@ public class User implements Serializable {
 	 *
 	 * @return true, if is standard notification enable
 	 */
-	public boolean isStandardNotifSoundEnable() {  
+	public boolean isStandardNotifSoundEnable() {
 		if(enableStdNotifSound == BOOLEAN_VAL.TRUE.ordinal())
 			return true;
 		else if(enableStdNotifSound == BOOLEAN_VAL.FALSE.ordinal())

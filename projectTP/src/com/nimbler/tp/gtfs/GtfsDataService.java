@@ -29,8 +29,8 @@ public class GtfsDataService {
 	@Autowired
 	private GtfsContext gtfsContext;
 
-	/** 
-	 * AGENCY_TYPE, BUNDLE 
+	/**
+	 * AGENCY_TYPE, BUNDLE
 	 */
 	private Map<String, GtfsBundle> bundleMap = new HashMap<String, GtfsBundle>();
 
@@ -52,7 +52,7 @@ public class GtfsDataService {
 	private String ageciesToLoad ="1,2,3,4";
 	private boolean gtfsReadCompleted = false;
 
-	private boolean useInMemoryGtfs = true;
+	private boolean useInMemoryGtfs = false;
 
 	@SuppressWarnings("unused")
 	@PostConstruct
@@ -86,9 +86,9 @@ public class GtfsDataService {
 				}if(file.equals(GTFS_FILE.TRIPS)){
 					Map<String, List<String>> temp =  createIndexForColumnWithAgency(arrAgencies,file,"route_id");
 					tripsByRouteId.putAll(temp);
-				}else{					
+				}else{
 					Map<String, List<String>> temp =  readGtfsDataByAgency(file,arrAgencies);
-					gtfsData.putAll(temp);					
+					gtfsData.putAll(temp);
 				}
 				long end = System.currentTimeMillis();
 				System.out.println("read done for: "+file.getFileName()+", Time:"+(end - start) / 1000+ " sec");
@@ -97,7 +97,7 @@ public class GtfsDataService {
 			}
 		}
 		long end1 = System.currentTimeMillis();
-		gtfsReadCompleted = true;		
+		gtfsReadCompleted = true;
 		System.out.println("All Gtfs read done in "+ (end1 - start1) / 1000 + "sec");
 	}
 
@@ -115,7 +115,7 @@ public class GtfsDataService {
 		try {
 			GtfsUtils gtfsUtils= new GtfsUtils(loggingService, loggerName);
 			for (int i = 0; i < agencyIdOrdinals.length; i++) {
-				GtfsBundle bundle = bundleMap.get(agencyIdOrdinals[i]);				
+				GtfsBundle bundle = bundleMap.get(agencyIdOrdinals[i]);
 				if(bundle==null){
 					System.out.println("Could not find bundle for: "+agencyIdOrdinals[i]);
 					continue;
@@ -144,13 +144,13 @@ public class GtfsDataService {
 		try {
 			GtfsUtils gtfsUtils= new GtfsUtils(loggingService, loggerName);
 			for (int i = 0; i < agencyIdOrdinals.length; i++) {
-				GtfsBundle bundle = bundleMap.get(agencyIdOrdinals[i]);	
+				GtfsBundle bundle = bundleMap.get(agencyIdOrdinals[i]);
 				if(bundle==null){
 					System.out.println("Could not find bundle for: "+agencyIdOrdinals[i]);
 					continue;
 				}
 				int index = getColumnIndexOfGtfsFile(GTFS_FILE.STOP_TIMES, "trip_id");
-				if(index==-1){					
+				if(index==-1){
 					loggingService.error(loggerName, "Could Not find index of trip_id for agency: "+agencyIdOrdinals[i]);
 					continue;
 				}
@@ -177,23 +177,23 @@ public class GtfsDataService {
 	 * Read trips by agency.
 	 *
 	 * @param agencyIdOrdinals the agency id ordinals
-	 * @param columnName 
-	 * @param gtfsFile 
+	 * @param columnName
+	 * @param gtfsFile
 	 * @return the map
 	 * @throws TpException the tp exception
 	 */
 	public Map<String, List<String>> createIndexForColumnWithAgency(String[] agencyIdOrdinals, GTFS_FILE gtfsFile, String columnName) throws TpException {
-		Map<String, List<String>> resMap = new HashMap<String, List<String>>();		
+		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
 		try {
 			GtfsUtils gtfsUtils= new GtfsUtils(loggingService, loggerName);
 			for (int i = 0; i < agencyIdOrdinals.length; i++) {
-				GtfsBundle bundle = bundleMap.get(agencyIdOrdinals[i]);	
+				GtfsBundle bundle = bundleMap.get(agencyIdOrdinals[i]);
 				if(bundle==null){
 					System.out.println("Could not find bundle for: "+agencyIdOrdinals[i]);
 					continue;
 				}
 				int index = getColumnIndexOfGtfsFile(gtfsFile, columnName);
-				if(index==-1){					
+				if(index==-1){
 					loggingService.error(loggerName, "Could Not find index of route_id for agency: "+agencyIdOrdinals[i]);
 					continue;
 				}
@@ -252,7 +252,7 @@ public class GtfsDataService {
 	 * @return the stop times by agency
 	 * @throws TpException the tp exception
 	 */
-	public Map<String, List<String>> getStopTimesByAgency(String[] strAgencyId) throws TpException {		
+	public Map<String, List<String>> getStopTimesByAgency(String[] strAgencyId) throws TpException {
 		Map<String, List<String>> mapToQuery  = null;
 		if(!useInMemoryGtfs){
 			String[] ids = GtfsUtils.getAgencyIdsFromTripIdCombo(strAgencyId);
@@ -265,7 +265,7 @@ public class GtfsDataService {
 		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
 		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColums.get(GTFS_FILE.STOP_TIMES.getName())));
 		for (int t = 0; t < strAgencyId.length; t++) {
-			String key =  strAgencyId[t];					
+			String key =  strAgencyId[t];
 			resMap.put(key, mapToQuery.get(key));
 		}
 		return resMap;
@@ -278,7 +278,7 @@ public class GtfsDataService {
 	 * @return the trips by route id
 	 * @throws TpException the tp exception
 	 */
-	public Map<String, List<String>> getTripsByRouteId(String[] strAgencyIdAndRouteId) throws TpException {		
+	public Map<String, List<String>> getTripsByRouteId(String[] strAgencyIdAndRouteId) throws TpException {
 		Map<String, List<String>> mapToQuery  = null;
 		if(!useInMemoryGtfs){
 			String[] ids = GtfsUtils.getAgencyIdsFromTripIdCombo(strAgencyIdAndRouteId);
@@ -291,7 +291,7 @@ public class GtfsDataService {
 		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
 		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColums.get(GTFS_FILE.STOP_TIMES.getName())));
 		for (int t = 0; t < strAgencyIdAndRouteId.length; t++) {
-			String key =  strAgencyIdAndRouteId[t];					
+			String key =  strAgencyIdAndRouteId[t];
 			resMap.put(key, mapToQuery.get(key));
 		}
 		return resMap;
@@ -360,5 +360,5 @@ public class GtfsDataService {
 
 	public void setUseInMemoryGtfs(boolean useInMemoryGtfs) {
 		this.useInMemoryGtfs = useInMemoryGtfs;
-	}	
+	}
 }

@@ -1,6 +1,6 @@
 /**
  * 
- * Copyright (C) 2012 Apprika Systems   Pvt. Ltd. 
+ * Copyright (C) 2012 Apprika Systems   Pvt. Ltd.
  * All rights reserved.
  *
  */
@@ -55,14 +55,15 @@ public class UserManagementRestService {
 			@DefaultValue("2") @QueryParam(RequestParam.ADV_ENABLE_BART)int enableBartAdv,
 			@DefaultValue("1") @QueryParam(RequestParam.ADV_ENABLE_CALTRAIN)int enableCaltrainAdv,
 			@DefaultValue("2") @QueryParam(RequestParam.ADV_ENABLE_AC_TRANSIT)int enableAcTransitAdv,
+			@DefaultValue("1") @QueryParam(RequestParam.ADV_ENABLE_WMATA)int enableWmata,
 
 			@QueryParam(RequestParam.TRANSIT_MODE)int transitMod,
 			@QueryParam(RequestParam.MAX_BIKE_DISTANCE)double maxBikeDist,
 
 			@DefaultValue("1") @QueryParam(RequestParam.NOTIF_TIMING_MORNING)int notifTimingMorning,
-			@DefaultValue("2") @QueryParam(RequestParam.NOTIF_TIMING_MIDDAY) int notifTimingMidday, 
+			@DefaultValue("2") @QueryParam(RequestParam.NOTIF_TIMING_MIDDAY) int notifTimingMidday,
 			@DefaultValue("1") @QueryParam(RequestParam.NOTIF_TIMING_EVENING)int notifTimingEvening,
-			@DefaultValue("2") @QueryParam(RequestParam.NOTIF_TIMING_NIGHT)  int notifTimingNight,  
+			@DefaultValue("2") @QueryParam(RequestParam.NOTIF_TIMING_NIGHT)  int notifTimingNight,
 			@DefaultValue("2") @QueryParam(RequestParam.NOTIF_TIMING_WEEKEND)int notifTimingWeekend,
 
 			@QueryParam(RequestParam.BIKE_TRIANGLE_BIKEFRIENDLY)double bikeTriangleBikeFriendly,
@@ -92,6 +93,7 @@ public class UserManagementRestService {
 			reqUserValue.setEnableBartAdv(enableBartAdv);
 			reqUserValue.setEnableCaltrainAdv(enableCaltrainAdv);
 			reqUserValue.setEnableSfMuniAdv(enableSfMuniAdv);
+			reqUserValue.setEnableWmataAdv(enableWmata);
 
 			reqUserValue.setNotifTimingMorning(notifTimingMorning);
 			reqUserValue.setNotifTimingMidday(notifTimingMidday);
@@ -107,10 +109,10 @@ public class UserManagementRestService {
 			reqUserValue.setMaxBikeDist(maxBikeDist);
 
 			alertService.saveAlertPreferences(reqUserValue);
-			response.setCode(TP_CODES.SUCESS.getCode()); 
+			response.setCode(TP_CODES.SUCESS.getCode());
 		} catch (TpException e) {
 			logger.error(loggerName, e.getErrMsg());
-			response.setCode(e.getErrCode()); 
+			response.setCode(e.getErrCode());
 		} catch (Exception e) {
 			logger.error(loggerName, e);
 			response.setCode(TP_CODES.FAIL.ordinal());
@@ -157,7 +159,7 @@ public class UserManagementRestService {
 			response.setLast24hourFeedbackCount(persistanceHelper.getLast24hourFeebackCount());
 
 			logger.debug(loggerName, response.toString());
-			response.setCode(TP_CODES.SUCESS.getCode()); 
+			response.setCode(TP_CODES.SUCESS.getCode());
 		} catch (Exception e) {
 			logger.error(loggerName, e);
 			response.setCode(TP_CODES.FAIL.ordinal());
@@ -202,7 +204,7 @@ public class UserManagementRestService {
 		try {
 			return JSONUtil.getJsonFromObj(response);
 		} catch (TpException e) {
-			logger.error(loggerName, e.getMessage());  
+			logger.error(loggerName, e.getMessage());
 		}
 		return "";
 	}

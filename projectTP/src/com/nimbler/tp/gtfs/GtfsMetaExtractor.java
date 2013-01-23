@@ -42,11 +42,11 @@ public class GtfsMetaExtractor implements Runnable{
 	}
 
 	@Override
-	public void run() {		
+	public void run() {
 		File gtfsFile = null;
 		try {
 			if(!ComUtils.isEmptyString(bundle.getCrackedDataFile()))
-				gtfsFile = new File(bundle.getCrackedDataFile()); 
+				gtfsFile = new File(bundle.getCrackedDataFile());
 			else
 				gtfsFile = new File(bundle.getCurrentDataFile());
 			GtfsUtils utils = new GtfsUtils(logger, loggerName);
@@ -56,37 +56,41 @@ public class GtfsMetaExtractor implements Runnable{
 			bundle.setAgencyIds(lstAgencyIds);
 
 			//read and calculate calander.txt
-			List<GtfsCalander> lstCalanders = utils.readCalanderGtfs(gtfsFile);			
-			bundle.setLstCalanders(lstCalanders);
-			for (GtfsCalander gtfsCalander : lstCalanders) {
-				int[] weekServiceStatus = gtfsCalander.getWeeklyStatusForService();// all weekday status for particular service
-				String[] serviceOnDays = bundle.getServiceOnDays();
+			try {
+				List<GtfsCalander> lstCalanders = utils.readCalanderGtfs(gtfsFile);
+				bundle.setLstCalanders(lstCalanders);
+				for (GtfsCalander gtfsCalander : lstCalanders) {
+					int[] weekServiceStatus = gtfsCalander.getWeeklyStatusForService();// all weekday status for particular service
+					String[] serviceOnDays = bundle.getServiceOnDays();
 
-				for (int i = 0; i < weekServiceStatus.length; i++) {
-					if(weekServiceStatus[i] == 1){ // available
-						if(ComUtils.isEmptyString(serviceOnDays[i]))
-							serviceOnDays[i]= gtfsCalander.getServiceName();
-						else
-							serviceOnDays[i]= serviceOnDays[i]+","+gtfsCalander.getServiceName();
+					for (int i = 0; i < weekServiceStatus.length; i++) {
+						if(weekServiceStatus[i] == 1){ // available
+							if(ComUtils.isEmptyString(serviceOnDays[i]))
+								serviceOnDays[i]= gtfsCalander.getServiceName();
+							else
+								serviceOnDays[i]= serviceOnDays[i]+","+gtfsCalander.getServiceName();
+						}
 					}
 				}
+			} catch (Exception e) {
+				logger.error(loggerName, e);
 			}
 			sortAndHashServices();
 
-			//read and calculate calander_dates.txt			
+			//read and calculate calander_dates.txt
 			List<GtfsCalandeDates> lstCalanderDates = utils.readCalanderDatesGtfs(gtfsFile);
-			//<date, service list>			
+			//<date, service list>
 			Map<String, List<String>> tempDateException = new HashMap<String, List<String>>();
 			String[] serviceOnDays = bundle.getServiceOnDays();
 			for (GtfsCalandeDates calDates : lstCalanderDates) {
 				String strDates =  calDates.getDate();
 				List<String> servicesOnDate = tempDateException.get(strDates);
-				if(servicesOnDate==null){				
+				if(servicesOnDate==null){
 					Calendar calendar = Calendar.getInstance();
 					calendar.setTime(gtfsDateFormat.parse(strDates));
 					int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-					String service = serviceOnDays[dayOfWeek-1];	
-					servicesOnDate = service==null? new ArrayList<String>():ComUtils.getListFromArray(service.split(","));
+					String service = serviceOnDays[dayOfWeek-1];
+					servicesOnDate = ComUtils.isEmptyString(service)? new ArrayList<String>():ComUtils.getListFromArray(service.split(","));
 					tempDateException.put(strDates, servicesOnDate);
 				}
 				if(calDates.getServiceType().equals("1")){ // added
@@ -111,10 +115,10 @@ public class GtfsMetaExtractor implements Runnable{
 				datesAndServiceWithException.put(key, StringUtils.join(value, ","));
 			}
 			bundle.setDatesAndServiceWithException(datesAndServiceWithException);
-			bundle.setExtracted(true);	
+			bundle.setExtracted(true);
 			System.out.println(String.format("Gtfs file read complete for    :      [%-15s]", getBundle().getDefaultAgencyId()));
 		} catch (Exception e) {
-			logger.error(loggerName, e);			
+			logger.error(loggerName, e);
 		}
 	}
 
@@ -122,8 +126,8 @@ public class GtfsMetaExtractor implements Runnable{
 	 * Sort services.
 	 */
 	private void sortAndHashServices() {
-		String[] serviceOnDays = bundle.getServiceOnDays();		
-		String[] hash = bundle.getServiceOnDaysHash();		
+		String[] serviceOnDays = bundle.getServiceOnDays();
+		String[] hash = bundle.getServiceOnDaysHash();
 		for (int i = 0; i < serviceOnDays.length; i++) {
 			if(ComUtils.isEmptyString(serviceOnDays[i]))
 				continue;
@@ -167,7 +171,7 @@ public class GtfsMetaExtractor implements Runnable{
 	 * @param text the text
 	 * @return the string
 	 */
-	public String hash(String text) {		 
+	public String hash(String text) {
 		try {
 			if(bundle.isEnableHashing()){
 				byte[] bytesOfMessage = text.getBytes("UTF-8");

@@ -156,7 +156,8 @@ public class TpConstants {
 		/**
 		 * Ordinal 4
 		 */
-		SF_BAY_AREA("SF");//4
+		SF_BAY_AREA("SF"),//4
+		WDC("DC");//5
 
 		private String text;
 		public String getText() {
@@ -178,7 +179,8 @@ public class TpConstants {
 		AC_TRANSIT("lastPushTimeAct","enableAcTransitAdv","AC Transit","lastReadTimeAct"),
 		VTA("","","VTA",""),
 		MENLO_MIDDAY("","","Menlo-Midday",""),
-		SF_FERRIES("","","SF-ferries","");
+		SF_FERRIES("","","SF-ferries",""),
+		WMATA("lastPushTimeWmata","enableWmataAdv","WMATA","lastReadTimeWmata");
 		private String lastReadTimeColumnName;
 
 		private String pushTimeColumnName;

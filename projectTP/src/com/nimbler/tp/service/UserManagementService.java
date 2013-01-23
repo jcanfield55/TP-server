@@ -1,6 +1,6 @@
 /**
  * 
- * Copyright (C) 2012 Apprika Systems   Pvt. Ltd. 
+ * Copyright (C) 2012 Apprika Systems   Pvt. Ltd.
  * All rights reserved.
  *
  */
@@ -48,7 +48,7 @@ public class UserManagementService {
 		try {
 			if (usr.getAppType() == 0)
 				usr.setAppType(NIMBLER_APP_TYPE.CALTRAIN.ordinal());
-			BasicDBObject query = new BasicDBObject();			
+			BasicDBObject query = new BasicDBObject();
 			query.put(TpConstants.DEVICE_TOKEN, usr.getDeviceToken());
 			if(usr.getAppType() == NIMBLER_APP_TYPE.CALTRAIN.ordinal())
 				query.put(TpConstants.APP_TYPE, new BasicDBObject(MongoQueryConstant.IN, new Object[]{null,NIMBLER_APP_TYPE.CALTRAIN.ordinal()}));
@@ -66,12 +66,14 @@ public class UserManagementService {
 				map.put(RequestParam.ADV_ENABLE_AC_TRANSIT,usr.getEnableAcTransitAdv());
 				map.put(RequestParam.ADV_ENABLE_BART,usr.getEnableBartAdv());
 				map.put(RequestParam.ADV_ENABLE_CALTRAIN,usr.getEnableCaltrainAdv());
-				map.put(RequestParam.ADV_ENABLE_SF_MUNI,usr.getEnableSfMuniAdv());                             
+				map.put(RequestParam.ADV_ENABLE_SF_MUNI,usr.getEnableSfMuniAdv());
+				map.put(RequestParam.ADV_ENABLE_WMATA,usr.getEnableWmataAdv());
+
 				map.put(RequestParam.NOTIF_TIMING_MORNING,usr.getNotifTimingMorning());
 				map.put(RequestParam.NOTIF_TIMING_MIDDAY,usr.getNotifTimingMidday());
 				map.put(RequestParam.NOTIF_TIMING_EVENING,usr.getNotifTimingEvening());
 				map.put(RequestParam.NOTIF_TIMING_NIGHT,usr.getNotifTimingNight());
-				map.put(RequestParam.NOTIF_TIMING_WEEKEND,usr.getNotifTimingWeekend());                             
+				map.put(RequestParam.NOTIF_TIMING_WEEKEND,usr.getNotifTimingWeekend());
 				map.put(RequestParam.TRANSIT_MODE,usr.getTransitMode());
 				map.put(RequestParam.MAX_BIKE_DISTANCE,usr.getMaxBikeDist());
 
@@ -109,14 +111,14 @@ public class UserManagementService {
 	 * @param numberOfAlert
 	 * @param deviceToken
 	 * @param maxWalkDistance
-	 * @param enableUrgntNot 
+	 * @param enableUrgntNot
 	 * @param enableStdNot
-	 * @deprecated 
+	 * @deprecated
 	 */
 	public void saveAlertPreferences(String deviceid, int numberOfAlert, String deviceToken, String maxWalkDistance, int enableStdNot, int enableUrgntNot,
 			int appType) {
 		try {
-			BasicDBObject query = new BasicDBObject();			
+			BasicDBObject query = new BasicDBObject();
 			query.put(TpConstants.DEVICE_TOKEN, deviceToken);
 			int count = persistenceService.getCount(MONGO_TABLES.users.name(), query, User.class);
 			long time = System.currentTimeMillis();
@@ -144,7 +146,7 @@ public class UserManagementService {
 				user.setUpdateTime(time);
 				user.setEnableStdNotifSound(enableStdNot);
 				user.setEnableUrgntNotifSound(enableUrgntNot);
-				user.setAppType(appType); 
+				user.setAppType(appType);
 				persistenceService.addObject(MONGO_TABLES.users.name(), user);
 			}
 		} catch (DBException e) {

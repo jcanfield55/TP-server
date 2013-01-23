@@ -19,6 +19,7 @@ import com.nimbler.tp.service.advisories.AdvisoriesPushService;
 import com.nimbler.tp.service.advisories.AdvisoriesService;
 import com.nimbler.tp.service.livefeeds.BARTApiImpl;
 import com.nimbler.tp.service.livefeeds.NextBusApiImpl;
+import com.nimbler.tp.service.livefeeds.WmataApiImpl;
 import com.nimbler.tp.service.livefeeds.stub.BARTApiClient;
 import com.nimbler.tp.service.livefeeds.stub.NextBusApiClient;
 
@@ -92,6 +93,10 @@ public class BeanUtil {
 		return (BARTApiImpl) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.BART_API_IMPL.bean());
 	}
 
+	public static WmataApiImpl getWMATAApiImpl() {
+		return (WmataApiImpl) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.WMATA_API_IMPL.bean());
+	}
+
 	public static final UserManagementService getUserManagementService() {
 		return (UserManagementService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.USER_MANAGEMENT_SERVICE.bean());
 	}
@@ -131,4 +136,5 @@ public class BeanUtil {
 	public static GtfsDataService getGtfsDataServiceBean() {
 		return (GtfsDataService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.GTFS_DATA_SERVICE.bean());
 	}
+
 }

@@ -1,6 +1,6 @@
 /**
  * 
- * Copyright (C) 2012 Apprika Systems   Pvt. Ltd. 
+ * Copyright (C) 2012 Apprika Systems   Pvt. Ltd.
  * All rights reserved.
  *
  */
@@ -63,7 +63,7 @@ public class RequestParam {
 
 	public static final String ENABLE_STD_NOTIFICATION 		= "enableStdNotifSound";
 	public static final String ENABLE_URGENT_NOTIFICATION 	= "enableUrgntNotifSound";
-	public static final String FOR_TODAY = "forToday";	
+	public static final String FOR_TODAY = "forToday";
 	public static final String REQ_ID = "reqId";
 
 	public static final String SAVE_PLAN = "savePlan";
@@ -72,31 +72,33 @@ public class RequestParam {
 	public static final String NIMBLER_APP_BUNDLE_ID = "appBundleId";
 
 	public static final String ADV_ENABLE_SF_MUNI    =  "enableSfMuniAdv";
-	public static final String ADV_ENABLE_BART       =  "enableBartAdv";	
-	public static final String ADV_ENABLE_CALTRAIN   =  "enableCaltrainAdv"; 
+	public static final String ADV_ENABLE_BART       =  "enableBartAdv";
+	public static final String ADV_ENABLE_CALTRAIN   =  "enableCaltrainAdv";
 	public static final String ADV_ENABLE_AC_TRANSIT =  "enableAcTransitAdv";
+	public static final String ADV_ENABLE_WMATA =  "enableWmataAdv";
 
-	public static final String  TRANSIT_MODE     = "transitMode" ;     
+	public static final String  TRANSIT_MODE     = "transitMode" ;
 	public static final String  MAX_BIKE_DISTANCE = "maxBikeDist";
 
 	public static final String SAFE_WEIGHT = "safeWeight";
 	public static final String FAST_WEIGHT = "fastWeight";
 	public static final String FLAT_WEIGHT = "flatWeight";
 
-	public static final String BIKE_TRIANGLE_FLAT         = "bikeTriangleFlat";        
+	public static final String BIKE_TRIANGLE_FLAT         = "bikeTriangleFlat";
 	public static final String BIKE_TRIANGLE_BIKEFRIENDLY = "bikeTriangleBikeFriendly";
 	public static final String BIKE_TRIANGLE_QUICK        = "bikeTriangleQuick";
 
-	public static final String NOTIF_TIMING_MORNING= "notifTimingMorning"; 
-	public static final String NOTIF_TIMING_MIDDAY = "notifTimingMidday"; 
-	public static final String NOTIF_TIMING_EVENING= "notifTimingEvening"; 
-	public static final String NOTIF_TIMING_NIGHT  = "notifTimingNight";  
-	public static final String NOTIF_TIMING_WEEKEND= "notifTimingWeekend"; 
+	public static final String NOTIF_TIMING_MORNING= "notifTimingMorning";
+	public static final String NOTIF_TIMING_MIDDAY = "notifTimingMidday";
+	public static final String NOTIF_TIMING_EVENING= "notifTimingEvening";
+	public static final String NOTIF_TIMING_NIGHT  = "notifTimingNight";
+	public static final String NOTIF_TIMING_WEEKEND= "notifTimingWeekend";
 	public static final String AGENCY_IDS = "agencyIds";
 	public static final String AGENCY_AND_ROUTE_IDS = "agencyAndRouteIds";
 	public static final String ENTITY = "entity";
 	public static final String TRIP_ID = "tripId";
 	public static final String HEADERS = "headers";
 	public static final String LEGS = "legs";
+	public static final String ROURER_ID = "routerId";
 
 }

@@ -1,12 +1,13 @@
 /**
  * 
- * Copyright (C) 2012 Apprika Systems   Pvt. Ltd. 
+ * Copyright (C) 2012 Apprika Systems   Pvt. Ltd.
  * All rights reserved.
  *
  */
 package com.nimbler.tp.rest;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,7 +20,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.nimbler.tp.TPApplicationContext;
+import com.nimbler.tp.dataobject.Itinerary;
+import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.TPResponse;
 import com.nimbler.tp.dataobject.TripPlan;
 import com.nimbler.tp.dataobject.TripResponse;
@@ -61,8 +66,8 @@ public class TpPlanRestService {
 		TPResponse response = null;
 		try {
 			ComUtils.parseMultipartRequest(request, reqMap, null, null);
-			String deviceid =reqMap.get(RequestParam.DEVICE_ID) ; 
-			String planJsonString = reqMap.get(RequestParam.PLAN_JSON); 
+			String deviceid =reqMap.get(RequestParam.DEVICE_ID) ;
+			String planJsonString = reqMap.get(RequestParam.PLAN_JSON);
 
 			TpPlanService service = BeanUtil.getPlanService();
 			TripPlan plan = service.savePlan(deviceid, planJsonString);
@@ -87,8 +92,8 @@ public class TpPlanRestService {
 			TpPlanService planService = BeanUtil.getPlanService();
 			TripPlan plan = planService.getLatestPlanOfDevice(deviceId);
 			if (plan==null)
-				throw new TpException(TP_CODES.DATA_NOT_EXIST);		
-			plan = planService.getFullPlanFromDB(plan.getId()); 
+				throw new TpException(TP_CODES.DATA_NOT_EXIST);
+			plan = planService.getFullPlanFromDB(plan.getId());
 			plan = planService.getResponsePlanFromFullPlan(plan);
 			return JSONUtil.getJsonFromObj(new TripResponse(plan));
 		}catch (TpException e) {
@@ -106,7 +111,7 @@ public class TpPlanRestService {
 	 *
 	 * @param httpRequest the http request
 	 * @return the tP response
-	 * @throws TpException 
+	 * @throws TpException
 	 */
 	@POST
 	@Path("/generate/")
@@ -131,6 +136,7 @@ public class TpPlanRestService {
 				throw new TpException("TripResponse is null");
 			if (tripResponse.getPlan()!=null)
 				planId = tripResponse.getPlan().getId();
+			printWMataDetails(tripResponse.getPlan());
 
 			TpEventLoggingService tpLoggingService = BeanUtil.getTpEventLoggingService();
 			reqParams.put(RequestParam.TIME_TRIP_PLAN, tripResponse.getPlanGenerateTime()+"");
@@ -157,6 +163,41 @@ public class TpPlanRestService {
 		return res;
 	}
 
+	private void printWMataDetails(TripPlan plan) {
+		try {
+			List<Itinerary> lstItineraries = plan.getItineraries();
+			for (Itinerary itinerary : lstItineraries) {
+				System.out.println("Itineraty ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+				List<Leg> legs = itinerary.getLegs();
+				for (Leg leg : legs) {
+					if(leg.getFrom()!=null){
+						//						System.out.println("     Start Time: "+leg.getStartTime());
+						//						System.out.println("     Trip id   : "+leg.getTripId());
+						//						System.out.println("     Stop Id   : "+leg.getFrom().getStopId().getId());
+						//						System.out.println("     Route     : "+leg.getRoute());
+						System.out.println("     From  : "+leg.getFrom().getName());
+						System.out.println("     To    : "+leg.getTo().getName());
+						System.out.println("     Head  : "+leg.getHeadsign());
+					}
+					//					"1305","Red","35229",1358771160000l
+					String arg = "";
+					if(StringUtils.equalsIgnoreCase("SUBWAY", leg.getMode())){
+						arg=leg.getFrom().getStopId().getId()+","+leg.getRoute()+","+leg.getTripId()+","+leg.getStartTime();
+					}
+					if(StringUtils.equalsIgnoreCase("BUS", leg.getMode())){
+						String ar="BUS:------>  "+leg.getFrom().getStopId().getId()+","+leg.getTripId()+","+leg.getRoute()+","+leg.getStartTime();
+						System.out.println(ar);
+					}
+					System.out.println("---------------------"+arg);
+				}
+				System.out.println("</Itineraty.............................................................\n");
+			}
+		} catch (Exception e) {
+			System.out.println("can't print:");
+			e.printStackTrace();
+		}
+
+	}
 	/**
 	 * 
 	 * @return

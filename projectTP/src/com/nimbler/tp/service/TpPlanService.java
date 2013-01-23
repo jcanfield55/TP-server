@@ -1,6 +1,6 @@
 /**
  * 
- * Copyright (C) 2012 Apprika Systems   Pvt. Ltd. 
+ * Copyright (C) 2012 Apprika Systems   Pvt. Ltd.
  * All rights reserved.
  *
  */
@@ -26,6 +26,7 @@ import com.nimbler.tp.dataobject.TripPlan;
 import com.nimbler.tp.dataobject.TripResponse;
 import com.nimbler.tp.gtfs.PlanCompareTask;
 import com.nimbler.tp.mongo.PersistenceService;
+import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.GtfsUtils;
 import com.nimbler.tp.util.HttpUtils;
 import com.nimbler.tp.util.JSONUtil;
@@ -42,13 +43,17 @@ import com.nimbler.tp.util.TpException;
 public class TpPlanService {
 
 	@Autowired
-	private LoggingService logger; 
+	private LoggingService logger;
 	@Autowired
 	private PersistenceService persistenceService;
 	/**
 	 * 
 	 */
 	private String loggerName;
+	/**
+	 * <apptype, routerid>
+	 */
+	private Map<String, String> appTypeToRouterID;
 
 	/**
 	 * 
@@ -66,7 +71,7 @@ public class TpPlanService {
 			setPlanUrl(tripResponse);
 
 			plan.setDeviceId(deviceId);
-			plan.setCreateTime(System.currentTimeMillis()); 
+			plan.setCreateTime(System.currentTimeMillis());
 			List<Itinerary> itineraries = plan.getItineraries();
 			plan.setItineraries(null);//set null as we don't want embedded reference in mongo db.
 
@@ -74,7 +79,7 @@ public class TpPlanService {
 			persistenceService.addObject(TpConstants.MONGO_TABLES.plan.name(), plan);
 
 			if (itineraries == null || itineraries.size()==0) {
-				logger.debug(loggerName, "No itineraries to save for plan Id: "+plan.getId()); 
+				logger.debug(loggerName, "No itineraries to save for plan Id: "+plan.getId());
 				return getResponsePlanFromFullPlan(plan);
 			}
 			plan.setItineraries(itineraries);//reset for response purpose
@@ -91,7 +96,7 @@ public class TpPlanService {
 				for (Leg leg: legs) {
 					leg.setItinId(itin.getId());
 				}
-				persistenceService.addObjects(TpConstants.MONGO_TABLES.leg.name(), legs); 
+				persistenceService.addObjects(TpConstants.MONGO_TABLES.leg.name(), legs);
 				itin.setLegs(legs); //reset for response purpose
 			}
 			return getResponsePlanFromFullPlan(plan);
@@ -109,11 +114,11 @@ public class TpPlanService {
 	 * @param tripResponse the new plan url
 	 */
 	private void setPlanUrl(TripResponse tripResponse) {
-		try {			
+		try {
 			String url = GtfsUtils.getPlanUrlFromResponse("",tripResponse,PlanCompareTask.arrParams,null);
 			tripResponse.getPlan().setPlanUrlParams(url);
 		} catch (TpException e) {
-			logger.error(loggerName, e.getErrMsg());				
+			logger.error(loggerName, e.getErrMsg());
 		}
 
 
@@ -137,15 +142,24 @@ public class TpPlanService {
 				String val = reqMap.get( TpConstants.OTP_PARAMETERS[i]);
 				if(val!=null)
 					lstOtpParams.add( TpConstants.OTP_PARAMETERS[i]+"="+URLEncoder.encode(val));
-			}			
+			}
+			String appType = reqMap.get(RequestParam.NIMBLER_APP_TYPE);
+			if(!ComUtils.isEmptyString(appType)){
+				String routerId = appTypeToRouterID.get(appType);
+				if(!ComUtils.isEmptyString(routerId)){
+					lstOtpParams.add(RequestParam.ROURER_ID+"="+URLEncoder.encode(routerId));
+				}
+			}
 			String url = TpConstants.SERVER_URL+"ws/plan?"+StringUtils.join(lstOtpParams, "&");
 			long start = System.currentTimeMillis();
-			//System.out.println(url);
+			//			logger.debug(loggerName, url);
+			System.out.println(url);
 			String planJsonString = HttpUtils.getHttpResponse(url);
-			//System.out.println(planJsonString);
+			//			logger.debug(loggerName, planJsonString);
+			System.out.println(planJsonString);
 			long planGenerationTime = System.currentTimeMillis()-start;
 			reqMap.put(RequestParam.TIME_TRIP_PLAN, planGenerationTime+"");
-			response= JSONUtil.getFullPlanObjFromJson(planJsonString);			
+			response= JSONUtil.getFullPlanObjFromJson(planJsonString);
 			response.setPlanGenerateTime(planGenerationTime);
 			if(response.getPlan()==null){
 				logger.debug(loggerName, "No plan found, possoble error:"+response.getError());
@@ -154,7 +168,7 @@ public class TpPlanService {
 			TripPlan plan = response.getPlan();
 			plan.setDeviceId(deviceId);
 			plan.setAppType(NumberUtils.toInt(reqMap.get(TpConstants.APP_TYPE)));
-			plan.setCreateTime(System.currentTimeMillis()); 
+			plan.setCreateTime(System.currentTimeMillis());
 			List<Itinerary> itineraries = plan.getItineraries();
 
 			String strSavePlan = StringUtils.defaultString(reqMap.get(RequestParam.SAVE_PLAN),"true");
@@ -163,7 +177,7 @@ public class TpPlanService {
 				plan.setItineraries(null);//set null as we don't want embedded reference in mongo db.
 				persistenceService.addObject(TpConstants.MONGO_TABLES.plan.name(), plan);
 				if (itineraries == null || itineraries.size()==0) {
-					logger.debug(loggerName, "No itineraries to save for plan Id: "+plan.getId()); 
+					logger.debug(loggerName, "No itineraries to save for plan Id: "+plan.getId());
 					return response;
 				}
 				plan.setItineraries(itineraries);//reset for response purpose
@@ -179,8 +193,8 @@ public class TpPlanService {
 					for (Leg leg: legs) {
 						leg.setItinId(itin.getId());
 					}
-					persistenceService.addObjects(TpConstants.MONGO_TABLES.leg.name(), legs); 
-					itin.setLegs(legs); //reset for response purpose 
+					persistenceService.addObjects(TpConstants.MONGO_TABLES.leg.name(), legs);
+					itin.setLegs(legs); //reset for response purpose
 				}
 			}
 		}  catch (DBException e) {
@@ -188,7 +202,7 @@ public class TpPlanService {
 		}catch (Exception e) {
 			logger.error(loggerName, e);
 		}
-		return response;	
+		return response;
 	}
 
 	/**
@@ -202,9 +216,9 @@ public class TpPlanService {
 			if (list!=null && list.size()>0)
 				return (TripPlan)list.get(0);
 			else
-				logger.warn(loggerName, "Trip plan for DeviceID: "+deviceId+" not found in DB."); 
+				logger.warn(loggerName, "Trip plan for DeviceID: "+deviceId+" not found in DB.");
 		} catch (DBException e) {
-			logger.error(loggerName, e.getMessage()); 
+			logger.error(loggerName, e.getMessage());
 		}
 		return null;
 	}
@@ -213,11 +227,11 @@ public class TpPlanService {
 	 * @param plan
 	 * @return
 	 */
-	public TripPlan getResponsePlanFromFullPlan (TripPlan plan){		
+	public TripPlan getResponsePlanFromFullPlan (TripPlan plan){
 		TripPlan responsePlan = new TripPlan();
 		responsePlan.setId(plan.getId());
 		if (plan.getItineraries()==null)
-			return responsePlan;	
+			return responsePlan;
 
 		List<Itinerary> newItinis = new ArrayList<Itinerary>();
 		for (Itinerary itin: plan.getItineraries()) {
@@ -225,7 +239,7 @@ public class TpPlanService {
 			newItin.setId(itin.getId());
 			newItin.setPlanId(itin.getPlanId());
 			newItin.setDuration(itin.getDuration());
-			newItin.setStartTime(itin.getStartTime()); 
+			newItin.setStartTime(itin.getStartTime());
 
 			if (itin.getLegs() == null || itin.getLegs().size()==0)
 				continue;
@@ -238,13 +252,13 @@ public class TpPlanService {
 				newLeg.setItinId(leg.getItinId());
 				newLeg.setDistance(leg.getDistance());
 				newLeg.setStartTime(leg.getStartTime());
-				newLegs.add(newLeg); 
+				newLegs.add(newLeg);
 			}
 			newItin.setLegs(newLegs);
 			newItinis.add(newItin);
 		}
-		responsePlan.setItineraries(newItinis); 
-		return responsePlan; 
+		responsePlan.setItineraries(newItinis);
+		return responsePlan;
 	}
 	/**
 	 * 
@@ -262,14 +276,14 @@ public class TpPlanService {
 				for (Itinerary itin: itineraries) {
 					List resultSetLegs = persistenceService.find(TpConstants.MONGO_TABLES.leg.name(), "itinId", itin.getId(), Leg.class);
 					if (resultSetLegs!=null && resultSetLegs.size()>0) {
-						itin.setLegs(new ArrayList<Leg>(resultSetLegs)); 
+						itin.setLegs(new ArrayList<Leg>(resultSetLegs));
 					}
 				}
-				plan.setItineraries(itineraries); 
+				plan.setItineraries(itineraries);
 			}
 			return plan;
 		} catch (DBException e) {
-			logger.error(loggerName, e.getMessage()); 
+			logger.error(loggerName, e.getMessage());
 		}
 		return null;
 	}
@@ -285,7 +299,7 @@ public class TpPlanService {
 				return null;
 			return getFullPlanOfItinerary(leg.getItinId());
 		} catch (DBException e) {
-			logger.error(loggerName, e.getMessage()); 
+			logger.error(loggerName, e.getMessage());
 		}
 		return null;
 	}
@@ -315,7 +329,7 @@ public class TpPlanService {
 		TripPlan plan = getPlanFromDB(itinerary.getPlanId());
 		if (plan==null)
 			return null;
-		List<Itinerary> itineraries = getFullItinerariesOfPlan(itinerary.getPlanId()); 
+		List<Itinerary> itineraries = getFullItinerariesOfPlan(itinerary.getPlanId());
 		plan.setItineraries(itineraries);
 		return plan;
 	}
@@ -331,7 +345,7 @@ public class TpPlanService {
 			for (Itinerary itin: itineraries) {
 				List resultSetLegs = persistenceService.find(TpConstants.MONGO_TABLES.leg.name(), "itinId", itin.getId(), Leg.class);
 				if (resultSetLegs!=null && resultSetLegs.size()>0) {
-					itin.setLegs(new ArrayList<Leg>(resultSetLegs)); 
+					itin.setLegs(new ArrayList<Leg>(resultSetLegs));
 				}
 			}
 			return itineraries;
@@ -353,14 +367,14 @@ public class TpPlanService {
 		if (resultSet!=null && resultSet.size()>0) {
 			List<Itinerary> itineraries = new ArrayList<Itinerary>(resultSet);
 			Map<String, Itinerary> map = new HashMap<String, Itinerary>();
-			for (Itinerary itin: itineraries) 
+			for (Itinerary itin: itineraries)
 				map.put(itin.getId(), itin);
 					List<Leg> resultSetLegs = persistenceService.findByIn(MONGO_TABLES.leg.name(), "itinId", itineraryIds, Leg.class);
 					if (resultSetLegs!=null && resultSetLegs.size()>0) {
 						for (Leg leg : resultSetLegs) {
 							Itinerary it = map.get(leg.getItinId());
 							if(it!=null)
-								it.addLeg(leg); 
+								it.addLeg(leg);
 						}
 					}
 					return itineraries;
@@ -385,4 +399,13 @@ public class TpPlanService {
 	public void setLoggerName(String loggerName) {
 		this.loggerName = loggerName;
 	}
+
+	public Map<String, String> getAppTypeToRouterID() {
+		return appTypeToRouterID;
+	}
+
+	public void setAppTypeToRouterID(Map<String, String> appTypeToRouterID) {
+		this.appTypeToRouterID = appTypeToRouterID;
+	}
+
 }

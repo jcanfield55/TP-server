@@ -32,6 +32,7 @@ public class TPApplicationContext {
 
 		NEXT_BUS_API_Impl("nextBusApiImpl"),
 		BART_API_IMPL("bartApiImpl"),
+		WMATA_API_IMPL("wmataApiImpl"),
 
 		CALTRAIN_ADVISORIES_SERVICE("caltrainAdvisoriesService"),
 		USER_MANAGEMENT_SERVICE("userManagementService"),

@@ -1,6 +1,6 @@
 /**
  * 
- * Copyright (C) 2012 Apprika Systems   Pvt. Ltd. 
+ * Copyright (C) 2012 Apprika Systems   Pvt. Ltd.
  * All rights reserved.
  *
  */
@@ -192,14 +192,14 @@ public class ComUtils {
 	public static void parseMultipartRequest(HttpServletRequest request,Map<String,String> map,List<File> lst, String filePattern) throws Exception {
 		if(filePattern==null)
 			filePattern = "%s";
-		if (ServletFileUpload.isMultipartContent(request)) { 
+		if (ServletFileUpload.isMultipartContent(request)) {
 			DiskFileItemFactory  fileItemFactory = new DiskFileItemFactory();
 			ServletFileUpload uploadHandler = new ServletFileUpload(fileItemFactory);
 			List items = uploadHandler.parseRequest(request);
 			Iterator itr = items.iterator();
 			while(itr.hasNext()) {
 				FileItem item = (FileItem) itr.next();
-				if(item.isFormField()) {						
+				if(item.isFormField()) {
 					map.put(item.getFieldName(), item.getString());
 				} else if(lst!=null){
 					File file = new File(TpConstants.FILE_REPOSITORY,String.format(filePattern, item.getName()));
@@ -209,7 +209,7 @@ public class ComUtils {
 			}
 		}
 	}
-	public static Map parseMultipartRequest(HttpServletRequest request) throws Exception {	
+	public static Map parseMultipartRequest(HttpServletRequest request) throws Exception {
 		Map map = null;
 		if (ServletFileUpload.isMultipartContent(request)) {
 			map = new HashMap();
@@ -219,9 +219,9 @@ public class ComUtils {
 			Iterator itr = items.iterator();
 			while(itr.hasNext()) {
 				FileItem item = (FileItem) itr.next();
-				if(item.isFormField()) {						
+				if(item.isFormField()) {
 					map.put(item.getFieldName(), item.getString());
-				} 
+				}
 			}
 		}
 		return map;
@@ -251,10 +251,10 @@ public class ComUtils {
 	 * @param feedbackTime
 	 * @param source
 	 * @return
-	 * @throws URISyntaxException 
+	 * @throws URISyntaxException
 	 * @throws IOException
-	 * @throws URISyntaxException 
-	 * @throws IOException 
+	 * @throws URISyntaxException
+	 * @throws IOException
 	 */
 	public static void readHtmlTemplet(){
 		try {
@@ -274,7 +274,7 @@ public class ComUtils {
 			TpConstants.GRAPH_TEST_SUMMERY_HTML_STRING = FileUtils.readFileToString(file, "UTF-8");
 		} catch (Exception e) {
 			e.printStackTrace();
-		}	
+		}
 	}
 
 	/**
@@ -332,7 +332,7 @@ public class ComUtils {
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 		long res = 0;
 		try {
-			Date time = sdf.parse(date);	
+			Date time = sdf.parse(date);
 			res= time.getTime();
 		} catch (ParseException e) {
 			System.err.println("Error in to convert Time in milliseconds: "+e.getMessage());
@@ -343,7 +343,7 @@ public class ComUtils {
 	 * 
 	 * @param date
 	 * @return
-	 * @throws TpException 
+	 * @throws TpException
 	 * @author suresh
 	 */
 	public static Date convertIntoDate(String date) throws TpException {
@@ -371,7 +371,7 @@ public class ComUtils {
 		try{
 			HttpURLConnection url  = (HttpURLConnection) new URL(strUrl).openConnection();
 			url.setConnectTimeout(15000);
-			in = url.getInputStream();					
+			in = url.getInputStream();
 			fout = new FileOutputStream(downloadFile);
 			IOUtils.copy(in, fout);
 		}finally{
@@ -386,9 +386,9 @@ public class ComUtils {
 	 * @param millSec the mill sec
 	 */
 	public static void sleep(long millSec) {
-		try {			
+		try {
 			Thread.sleep(millSec);
-		} catch (InterruptedException e) {}		
+		} catch (InterruptedException e) {}
 	}
 
 	/**
@@ -398,7 +398,7 @@ public class ComUtils {
 	 * @param timzone the timzone
 	 * @return the week start time in millis
 	 */
-	public static long getWeekStartTimeInMillis(long time, String timzone) {		
+	public static long getWeekStartTimeInMillis(long time, String timzone) {
 		Calendar calendar = null;
 		if(!isEmptyString(timzone))
 			calendar = Calendar.getInstance(TimeZone.getTimeZone(timzone));
@@ -503,11 +503,11 @@ public class ComUtils {
 	 * @return
 	 *//*
 	public static int[] getAgenciesForApp(Integer appType) {
-		//handle special case for current caltrain app with no appType parameter 
+		//handle special case for current caltrain app with no appType parameter
 		if (appType == null)
 			return new int[]{AGENCY_TYPE.CALTRAIN.ordinal()};
 
-		NIMBLER_APP_TYPE type = NIMBLER_APP_TYPE.values()[appType];		
+		NIMBLER_APP_TYPE type = NIMBLER_APP_TYPE.values()[appType];
 		switch (type) {
 		case CALTRAIN:
 			return new int[]{AGENCY_TYPE.CALTRAIN.ordinal()};
@@ -522,8 +522,8 @@ public class ComUtils {
 	 * @param agencyType
 	 * @return
 	 */
-	public static Integer[] getAppsSupportingAgency(Integer agencyType) {		
-		AGENCY_TYPE type = AGENCY_TYPE.values()[agencyType];		
+	public static Integer[] getAppsSupportingAgency(Integer agencyType) {
+		AGENCY_TYPE type = AGENCY_TYPE.values()[agencyType];
 		switch (type) {
 		case CALTRAIN:
 			return new Integer[]{NIMBLER_APP_TYPE.CALTRAIN.ordinal()};
@@ -534,7 +534,10 @@ public class ComUtils {
 		}
 	}
 	public static boolean isWeekEnd(){
-		int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK); 
+		int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
 		return (day==1 || day==7);
+	}
+	public static boolean isFileExist(String file) {
+		return new File(file).exists();
 	}
 }
