@@ -125,6 +125,20 @@
 				<entry key="4" value="rideact" />  <!-- AC_TRANSIT - apprikactransit -->				
 			</map>
 		</property>	
+		<property name="agencyTweetSourceIconMap"> <!-- keys point to ordinal value of TPCpnstants.AGENCY_TYPE enum, value = comma separated sources -->
+			<map>				
+				<entry key="caltrain_news" value="caltrain_news.png" />								
+				<entry key="caltrain" value="caltrain.png" />								
+				<entry key="sfbartalert" value="bart.png" />								
+				<entry key="sfmta_muni" value="sfmta.png" />								
+				<entry key="rideact" value="actransit.png" />	
+				<!-- test 
+				<entry key="apprikacaltrain" value="caltrain.png" />	
+				<entry key="apprikabart" value="bart.png" />	
+				<entry key="apprikasfmta" value="sfmta.png" />	
+				<entry key="apprikactransit" value="actransit.png" />-->
+			</map>
+		</property>	
 		<property name="agencyPushThresholdWeight"> 
 		<!-- keys as agency and value as multiplier of user push threshold -->
 			<map>				
@@ -153,8 +167,8 @@
 
 	<bean id="gat" class="com.nimbler.tp.gtfs.GraphAcceptanceTest"
 		init-method="startTest">
-		<property name="sourceDir" value="/usr/local/server/GAT/src/" />
-		<property name="destDir" value="/usr/local/server/GAT/dest/" />
+		<property name="sourceDir" value="/server-ebs/nimbler/server/GAT/src/" />
+		<property name="destDir" value="/server-ebs/nimbler/server/GAT/dest/" />
 		<property name="threads" value="5" />
 		<property name="loggerName">
 			<value>com.nimbler.tp.gtfs.GraphAcceptanceTest</value>
@@ -166,9 +180,9 @@
 			<list>
 				<bean class="com.nimbler.tp.dataobject.ApnBundle">
 					<property name="password" value="password@123" />
-					<property name="KEYSTORE_P12_FILE" value="conf/cert/Certificate_Dev_push.p12" />
+					<property name="KEYSTORE_P12_FILE" value="conf/cert/certificateForProduction.p12" />
 					<!-- 1- sandbox, 2- production -->
-					<property name="certType" value="1" />
+					<property name="certType" value="2" />
 					<property name="appType" value="CALTRAIN" />
 				</bean>
 				<bean class="com.nimbler.tp.dataobject.ApnBundle">
@@ -185,7 +199,7 @@
 
 	<bean id="gtfsMonitoring" class="com.nimbler.tp.gtfs.GtfsDataMonitor"
 		init-method="init">
-		<property name="downloadDirectory" value="/usr/local/server/otp_build/tmp/" />
+		<property name="downloadDirectory" value="/server-ebs/nimbler/otp_build/tmp/" />
 		<property name="loggerName">
 			<value>com.nimbler.tp.gtfs.GtfsDataMonitor</value>
 		</property>		
@@ -195,14 +209,14 @@
 			<list>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="BART" />
-					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/BART.zip" />
+					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/BART.zip" />
 					<property name="downloadUrl" value="http://bart.gov/dev/schedules/google_transit.zip" />
 					<property name="lastUpdateDate" value="20120910" />
 					<property name="agencyType" value="BART" />
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="Menlo-Midday" />
-					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/Menlo-Midday.zip" />
+					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/Menlo-Midday.zip" />
 					<property name="downloadUrl"
 								value="http://www.menlopark.org/departments/trn/google/google_transit.zip" />
 					<property name="lastUpdateDate" value="20120910" />
@@ -210,8 +224,8 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="ACtransit" />
-					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/ACtransit.zip" />
-					<property name="crackedDataFile" value="/usr/local/server/otp_build/latest_gtfs/ACtransit_hack.zip" />
+					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/ACtransit.zip" />
+					<property name="crackedDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/ACtransit_hack.zip" />
 					<property name="downloadUrl"
 								value="http://www.actransit.org/wp-content/plugins/download-monitor/download.php?id=5" />
 					<property name="lastUpdateDate" value="20120910" />
@@ -219,7 +233,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="Caltrain" />
-					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/Caltrain.zip" />
+					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/Caltrain.zip" />
 					<property name="downloadUrl"
 								value="http://www.caltrain.com/Assets/GTFS/caltrain/google_transit.zip" />
 					<property name="lastUpdateDate" value="20120912" />
@@ -227,25 +241,25 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="SF-ferries" />
-					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/SF-ferries.zip" />
+					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/SF-ferries.zip" />
 					<property name="downloadUrl" value="http://trilliumtransit.com/transit_feeds/sfbay-ferries-ca-us/gtfs.zip" />
-					<property name="lastUpdateDate" value="20120931" />
+					<property name="lastUpdateDate" value="20130106" />
 					<property name="enableAgency" value="false" />						
 					<property name="agencyType" value="SF_FERRIES" />
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="VTA" />
-					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/VTA.zip" />					
+					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/VTA.zip" />					
 					<property name="downloadUrl"
 								value="http://www.vta.org/dev/data/google_transit.zip " />
-					<property name="lastUpdateDate" value="20120931" />
+					<property name="lastUpdateDate" value="20130106" />
 					<property name="agencyType" value="VTA" />
 				</bean> 
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="SFMTA" />
-					<property name="currentDataFile" value="/usr/local/server/otp_build/latest_gtfs/SFMTA.zip" />					
+					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/SFMTA.zip" />					
 					<property name="downloadUrl" value="http://www.sfmta.com/transitdata/google_transit.zip" />
-					<property name="lastUpdateDate" value="20120931" />
+					<property name="lastUpdateDate" value="20130106" />
 					<property name="agencyType" value="SFMUNI" />
 				</bean>
 			</list>

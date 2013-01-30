@@ -15,9 +15,9 @@ public class LiveFeedResponse {
 	private String itineraryId;
 	private Integer errCode;
 	private String errMsg;
-	private int arrivalTimeFlag;//if any of the legs in this Itinerary is delayed, then mark whole itinerary status as delayed.
+	private Integer arrivalTimeFlag;//if any of the legs in this Itinerary is delayed, then mark whole itinerary status as delayed.
 	private List<LegLiveFeed> legLiveFeeds;
-	private boolean isDirty = false;
+	private Boolean isDirty = false;
 
 	/**
 	 * 
@@ -90,7 +90,7 @@ public class LiveFeedResponse {
 	public boolean isDirty() {
 		return isDirty;
 	}
-	public void setDirty(boolean isDirty) {
+	public void setDirty(Boolean isDirty) {
 		this.isDirty = isDirty;
 	}
 	@Override

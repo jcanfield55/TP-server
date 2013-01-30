@@ -15,6 +15,7 @@ public class PlanLiveFeeds {
 	private int errCode;
 	private String errMsg;
 	private List<LiveFeedResponse> itinLiveFeeds;
+	List<LegLiveFeed> legLiveFeeds;
 
 	/**
 	 * 
@@ -26,6 +27,14 @@ public class PlanLiveFeeds {
 
 	public PlanLiveFeeds() {
 		this.errCode = TP_CODES.SUCESS.getCode();	
+	}
+
+	public List<LegLiveFeed> getLegLiveFeeds() {
+		return legLiveFeeds;
+	}
+
+	public void setLegLiveFeeds(List<LegLiveFeed> legLiveFeeds) {
+		this.legLiveFeeds = legLiveFeeds;
 	}
 
 	public String getPlanId() {

@@ -3,9 +3,15 @@
  */
 package com.nimbler.tp.util;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.jayway.jsonpath.JsonPath;
 import com.nimbler.tp.dataobject.Itinerary;
+import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.TPResponse;
 import com.nimbler.tp.dataobject.TripPlan;
 import com.nimbler.tp.dataobject.TripResponse;
@@ -36,6 +42,14 @@ public class JSONUtil {
 			return null;
 		Gson gson = new Gson();
 		Itinerary response =  gson.fromJson(jSon,Itinerary.class);
+		return response;
+	}
+	public static List<Leg> getLegsJson(String jSon) {
+		if(jSon == null)
+			return null;
+		Gson gson = new Gson();
+		Type token = new TypeToken<ArrayList<Leg>>() {}.getType();
+		List<Leg> response =  gson.fromJson(jSon,token);
 		return response;
 	}
 	/**

@@ -103,6 +103,7 @@ public class TpConstants {
 	public static final String TWEET_FROM_USER		= TpProperty.getDefaultProperty("tweet.from.user");
 	public static final String APN_PASSWORD 		= TpProperty.getDefaultProperty("apn.password");
 	public static final String TWEET_TO_USER_NAME 	= TpProperty.getDefaultProperty("tweet.to.user.name");
+	public static final String DOWNLOAD_IMAGE_PATH = TpProperty.getDefaultProperty("download.folder.path");
 
 	public static String  GTFS_COMPARE_HTML_STRING;
 	public static String  GTFS_COMPARE_HTML_SUMMERY_STRING;

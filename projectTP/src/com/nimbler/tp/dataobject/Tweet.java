@@ -5,6 +5,7 @@ public class Tweet {
 	private String tweet;
 	private Long time;
 	private String tweetTime;
+	private String source;
 	private Boolean isUrgent;
 
 	public Tweet(String tweet, Long time, Boolean isUrgent) {
@@ -29,7 +30,12 @@ public class Tweet {
 		return time;
 	}
 
-
+	public String getSource() {
+		return source;
+	}
+	public void setSource(String source) {
+		this.source = source;
+	}
 	public void setTime(Long time) {
 		this.time = time;
 	}
@@ -58,7 +64,8 @@ public class Tweet {
 	@Override
 	public String toString() {
 		return "Tweet [tweet=" + tweet + ", time=" + time + ", tweetTime="
-				+ tweetTime + ", isUrgent=" + isUrgent + "]\n";
+				+ tweetTime + ", source=" + source + ", isUrgent=" + isUrgent
+				+ "]";
 	}
 
 

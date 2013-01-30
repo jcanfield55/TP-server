@@ -58,7 +58,7 @@ public class Leg {
 
 	private String agencyUrl;
 
-	private int agencyTimeZoneOffset;
+	private Integer agencyTimeZoneOffset;
 
 	/**
 	 * For transit leg, the route's (background) color (if one exists). For non-transit legs, null.
@@ -142,7 +142,7 @@ public class Leg {
 
 	private String alightRule;
 
-	private long duration;
+	private Long duration;
 
 	public void setDuration(long duration) {
 		this.duration = duration;
@@ -465,6 +465,14 @@ public class Leg {
 		return true;
 	}
 
+	public String getRouteId() {
+		return routeId;
+	}
+
+	public void setRouteId(String routeId) {
+		this.routeId = routeId;
+	}
+
 	/*	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -509,5 +517,6 @@ public class Leg {
 			return false;
 		return true;
 	}*/
+
 
 }

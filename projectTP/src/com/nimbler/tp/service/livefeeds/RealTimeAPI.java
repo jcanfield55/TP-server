@@ -1,3 +1,6 @@
+/*
+ * @author nirmal
+ */
 package com.nimbler.tp.service.livefeeds;
 
 import java.util.List;
@@ -18,6 +21,15 @@ public interface RealTimeAPI {
 	 * @throws FeedsNotFoundException
 	 */
 	public abstract LegLiveFeed getLiveFeeds(Leg leg) throws FeedsNotFoundException;
+
+	/**
+	 * Gets the all real time feeds.
+	 *
+	 * @param leg the leg
+	 * @return the all real time feeds
+	 * @throws FeedsNotFoundException the feeds not found exception
+	 */
+	public abstract LegLiveFeed getAllRealTimeFeeds(Leg leg) throws FeedsNotFoundException;
 	/**
 	 * Will return real time departure data for multiple legs.
 	 * @param leg

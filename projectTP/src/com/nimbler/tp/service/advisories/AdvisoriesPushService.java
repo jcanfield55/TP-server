@@ -91,13 +91,15 @@ public class AdvisoriesPushService {
 	 */
 	private Map<Integer, Integer> agencyPushThresholdWeight = new HashMap<Integer, Integer>();
 
+	private Map<String, String>  agencyTweetSourceIconMap;
+
 	private static Object thresholdLock = new  Object(); 
 
 	public int maxTweetTextSizeToSend = 140;
 
 	private int pageSize = 500;
 
-	public boolean enablePushNotification = true;
+	private boolean enablePushNotification = true;
 
 	/**
 	 *<column name,start-end min of day> 
@@ -282,6 +284,7 @@ public class AdvisoriesPushService {
 				tweet.setTweetTime(createdDate.get(i));
 				tweet.setTime(tweetTime.get(i));
 				tweet.setTweet("@"+fromUser.get(i)+":"+tweets.get(i));
+				tweet.setSource(agencyTweetSourceIconMap.get(StringUtils.lowerCase(fromUser.get(i))));
 				tweetList.add(tweet);
 			}
 		}
@@ -847,5 +850,20 @@ public class AdvisoriesPushService {
 			return true;
 		}
 	}
+	public boolean isEnablePushNotification() {
+		return enablePushNotification;
+	}
 
+	public void setEnablePushNotification(boolean enablePushNotification) {
+		this.enablePushNotification = enablePushNotification;
+	}
+
+	public Map<String, String> getAgencyTweetSourceIconMap() {
+		return agencyTweetSourceIconMap;
+	}
+
+	public void setAgencyTweetSourceIconMap(
+			Map<String, String> agencyTweetSourceIconMap) {
+		this.agencyTweetSourceIconMap = agencyTweetSourceIconMap;
+	}
 }
