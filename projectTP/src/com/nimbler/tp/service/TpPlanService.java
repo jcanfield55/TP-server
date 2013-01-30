@@ -155,7 +155,7 @@ public class TpPlanService {
 			//			logger.debug(loggerName, url);
 			System.out.println(url);
 			String planJsonString = HttpUtils.getHttpResponse(url);
-			//			logger.debug(loggerName, planJsonString);
+			logger.debug(loggerName, planJsonString);
 			System.out.println(planJsonString);
 			long planGenerationTime = System.currentTimeMillis()-start;
 			reqMap.put(RequestParam.TIME_TRIP_PLAN, planGenerationTime+"");

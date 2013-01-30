@@ -3,10 +3,15 @@
  */
 package com.nimbler.tp.rest;
 
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -23,6 +28,7 @@ import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.LegLiveFeed;
 import com.nimbler.tp.dataobject.LiveFeedResponse;
 import com.nimbler.tp.dataobject.PlanLiveFeeds;
+import com.nimbler.tp.dataobject.RealTimePrediction;
 import com.nimbler.tp.dataobject.TraverseMode;
 import com.nimbler.tp.dataobject.TripPlan;
 import com.nimbler.tp.dataobject.wmata.GtfsStop;
@@ -120,6 +126,10 @@ public class RealTimePredictionService {
 			for (Itinerary itin: itineraries) {
 				//				System.out.println("Itinerary Start Time:---------->> "+new Date(itin.getStartTime()));
 				LiveFeedResponse itinFeeds = getRealTimeLegData(itin);
+				//				System.out.println("=======>"+JSONUtil.getJsonFromObj(itin.getLegs()));
+				String real = predictRealTimeByLegs(JSONUtil.getJsonFromObj(itin.getLegs()));
+				//				System.out.println("------>"+predictRealTimeByLegs(JSONUtil.getJsonFromObj(itin.getLegs())));
+				printData(itin.getLegs(),(PlanLiveFeeds)JSONUtil.getObjectFromJson(real,PlanLiveFeeds.class));
 				if(itinFeeds!=null && !ComUtils.isEmptyList(itinFeeds.getLegLiveFeeds())){
 					adjustLegOverLap(itin,itinFeeds);
 					updateItineraryTimeFlag(itinFeeds);
@@ -138,6 +148,34 @@ public class RealTimePredictionService {
 		return getJsonResponse(response);
 	}
 
+	private void printData(List<Leg> legs, PlanLiveFeeds objectFromJson) {
+		SimpleDateFormat dateFormat = new SimpleDateFormat();
+		dateFormat.setTimeZone(TimeZone.getTimeZone("US/Eastern"));
+		List<LegLiveFeed> liveLegs = objectFromJson.getLegLiveFeeds();
+		for (Leg leg : legs) {
+			System.out.println("-------------------------------------------");
+			int time = (int) ((leg.getStartTime()-System.currentTimeMillis())/1000/60);
+			System.out.println("startDate: "+dateFormat.format(new Date(leg.getStartTime()))+", min:"+time);
+			if(liveLegs==null){
+				System.out.println("No Live Feeds..");
+				continue;
+			}
+			for (LegLiveFeed legLiveFeed : liveLegs) {
+				if(equalsIgnoreCase(leg.getId(),legLiveFeed.getLeg().getId())){
+					List<RealTimePrediction> predictions = legLiveFeed.getLstPredictions();
+					if(predictions!=null){
+						for (RealTimePrediction rp : predictions) {
+							System.out.println("VehicleId"+rp.getVehicleId()+",Min: "+rp.getSeconds()/60+",Trip: "+rp.getTripId());
+						}
+					}
+					//					System.out.println(legLiveFeed.getLstPredictions());
+				}
+			}
+			System.out.println("++++++++++++++++++++++++++++++++++++++++++++\n\n");
+		}
+
+	}
+
 	/**
 	 * Predict real time by legs- all required detailed of legs will be as input.
 	 *
@@ -149,15 +187,16 @@ public class RealTimePredictionService {
 	public String predictRealTimeByLegs(@QueryParam(RequestParam.LEGS) String strLegs) {
 		PlanLiveFeeds response = new PlanLiveFeeds();
 		try {
-			Itinerary itin =  JSONUtil.getItineraryJson(strLegs);
-			if(itin==null || ComUtils.isEmptyList(itin.getLegs()))
+			//			Map<String,String> reqParam = ComUtils.parseMultipartRequest(httpRequest);
+			//			String strLegs = reqParam.get(RequestParam.LEGS);
+			System.out.println(strLegs);
+			List lstLegs =  JSONUtil.getLegsJson(strLegs);
+			if(ComUtils.isEmptyList(lstLegs))
 				throw new TpException(TP_CODES.INVALID_REQUEST.getCode(),"Error while getting JSON String from plan object.");
-			LiveFeedResponse itinFeeds = getRealTimeLegData(itin);
-			if (itinFeeds!=null && !ComUtils.isEmptyList(itinFeeds.getLegLiveFeeds())) {
-				updateItineraryTimeFlag(itinFeeds);
-				response.addItinLiveFeeds(itinFeeds);
-			}
-			if (response.getItinLiveFeeds()==null || response.getItinLiveFeeds().size()==0)
+			List<LegLiveFeed> legLiveFeeds = getAllRealTimeFeedsForLegs(lstLegs);
+			if (!ComUtils.isEmptyList(legLiveFeeds))
+				response.setLegLiveFeeds(legLiveFeeds);
+			else
 				response.setError(TP_CODES.DATA_NOT_EXIST.getCode());
 		} catch (TpException tpe) {
 			logger.error(loggerName, tpe.getErrMsg());
@@ -166,7 +205,9 @@ public class RealTimePredictionService {
 			logger.error(loggerName, e);
 			response.setError(TP_CODES.FAIL.getCode());
 		}
-		return getJsonResponse(response);
+		String res =  getJsonResponse(response);
+		//		System.out.println(res);
+		return res;
 	}
 
 	/**
@@ -196,7 +237,26 @@ public class RealTimePredictionService {
 		}
 		return itinFeeds;
 	}
-
+	private List<LegLiveFeed> getAllRealTimeFeedsForLegs(List<Leg> legs) {
+		List<LegLiveFeed> lstRes = new ArrayList<LegLiveFeed>();
+		legs = getApplicableLegs(legs);
+		if(ComUtils.isEmptyList(legs)){
+			logger.debug(loggerName, "Live feeds not applicable for any of the legs: "+legs);
+			return null;
+		}
+		for (Leg leg : legs) {
+			try {
+				RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg);
+				LegLiveFeed legFeed = liveFeedAPI.getAllRealTimeFeeds(leg);
+				if (legFeed!=null) {
+					lstRes.add(legFeed);
+				}
+			} catch (FeedsNotFoundException e) {
+				logger.info(loggerName, e.getMessage());
+			}
+		}
+		return lstRes;
+	}
 	/**
 	 * Update leg time to today.
 	 *
@@ -421,6 +481,9 @@ public class RealTimePredictionService {
 			List<LegLiveFeed> lstLegLiveFeeds =  itinFeeds.getLegLiveFeeds();
 			List<LegLiveFeed> lstFeedsToAdd = new ArrayList<LegLiveFeed>();
 			for (LegLiveFeed legLiveFeed : lstLegLiveFeeds) {
+				if(legLiveFeed==null){
+					System.out.println("........"+legLiveFeed);
+				}
 				LegLiveFeed feed = PlanUtil.shiftLeg(legs, legLiveFeed);
 				if(feed!=null){
 					lstFeedsToAdd.add(feed);

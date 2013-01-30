@@ -3,12 +3,11 @@ package com.nimbler.tp.dataobject.wmata;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.tuple.MutablePair;
-
-import com.sun.jersey.client.impl.CopyOnWriteHashMap;
 
 /**
  * The Class StopMapping.
@@ -29,7 +28,7 @@ public class StopMapping implements Serializable{
 	private Map<String, GtfsStop> railGtfsStopsById;
 	private Map<RailLine, List<RailStation>> railStationByRailLine;
 
-	private Map<String, String> busFinalStopMap = new CopyOnWriteHashMap<String, String>();
+	private Map<String, String> busStopFinalMap = new Hashtable<String, String>();
 
 	/**
 	 * <Trip,LastStop id, head>
@@ -79,7 +78,7 @@ public class StopMapping implements Serializable{
 		return railStationByRailLine;
 	}
 	public void addFinalStopMappingForBus(String gtfsStop,String apiStop) {
-		busFinalStopMap.put(gtfsStop, apiStop);
+		busStopFinalMap.put(gtfsStop, apiStop);
 	}
 
 	public void setRailStationByRailLine(
@@ -95,4 +94,15 @@ public class StopMapping implements Serializable{
 			Map<String, MutablePair<String, String>> tripLastStopAndHead) {
 		this.tripLastStopAndHead = tripLastStopAndHead;
 	}
+
+	public Map<String, String> getBusStopFinalMap() {
+		return busStopFinalMap;
+	}
+
+	public void setBusStopFinalMap(Map<String, String> busStopFinalMap) {
+		this.busStopFinalMap = busStopFinalMap;
+	}
+
+
+
 }

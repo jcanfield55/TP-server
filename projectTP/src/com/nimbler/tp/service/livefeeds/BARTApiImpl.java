@@ -55,9 +55,9 @@ public class BARTApiImpl implements RealTimeAPI {
 			String agencyId = leg.getAgencyId();
 			String fromStopTag = leg.getFrom().getStopId().getId();
 			String toStopTag = leg.getTo().getStopId().getId();
-			String routeTag = leg.getRoute().trim();			
+			String routeTag = leg.getRoute().trim();
 			BartResponse response = BartETDCache.getInstance().getEstimateTimeOfDepart(fromStopTag);
-			List<Station> lstStation = response.getStation();  
+			List<Station> lstStation = response.getStation();
 			if (lstStation == null || lstStation.size()==0)
 				throw new RealTimeDataException("Stations not found in ETD response for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
 
@@ -85,7 +85,7 @@ public class BARTApiImpl implements RealTimeAPI {
 					}
 				}
 			}*/
-			//2. Find TO stop in route(using head sign) and compare with ETD 
+			//2. Find TO stop in route(using head sign) and compare with ETD
 			if (targetETD == null) {
 				String routeHeadSign = leg.getHeadsign().trim();
 				int routeDirection  = getRouteDirection(routeTag, routeHeadSign);
@@ -125,9 +125,9 @@ public class BARTApiImpl implements RealTimeAPI {
 					throw new RealTimeDataException("Real time differce much higher then expected. Prediction will be ignored.");
 
 				//				System.out.println("TO: "+toStopTag+",  From: "+fromStopTag+ "  Route: "+routeTag+" Time Diff: "+diff+"-"+minutesToDepart+
-				//						" Schedule Time: "+new Date(scheduledTime)+" Estimated Time: "+new Date(estimatedDepartureTime));		
+				//						" Schedule Time: "+new Date(scheduledTime)+" Estimated Time: "+new Date(estimatedDepartureTime));
 
-				int arrivalFlag = -1;				
+				int arrivalFlag = -1;
 				if (estimatedDepartureTime > scheduledTime) {
 					if (diff > lateThreshold)
 						//resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.DELAYED.ordinal());
@@ -140,7 +140,7 @@ public class BARTApiImpl implements RealTimeAPI {
 					if (diff > earlyThreshold) {
 						if (estimates.size() == 1)//if only one train then only mark it as early
 							//resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.EARLY.ordinal());
-							arrivalFlag = TpConstants.ETA_FLAG.EARLY.ordinal();						
+							arrivalFlag = TpConstants.ETA_FLAG.EARLY.ordinal();
 						else
 							continue;
 					} else
@@ -153,7 +153,7 @@ public class BARTApiImpl implements RealTimeAPI {
 					resp.setLeg(leg);
 					resp.setDepartureTime(estimatedDepartureTime);
 					resp.setArrivalTimeFlag(arrivalFlag);
-					// 					System.out.println("Got it!!");	
+					// 					System.out.println("Got it!!");
 				}
 				break;
 			}
@@ -170,7 +170,7 @@ public class BARTApiImpl implements RealTimeAPI {
 	 * @param estimates
 	 * @param scheduledTime
 	 * @param index - specifies which closest match you want to get.
-	 * 				  for example, 1 will return the first closest minutes, 2 will return second closest minutes. 	
+	 * 				  for example, 1 will return the first closest minutes, 2 will return second closest minutes.
 	 * @return
 	 */
 	private Integer getClosestEstimation(List<Estimate> estimates, long scheduledTime, int index) {
@@ -178,11 +178,11 @@ public class BARTApiImpl implements RealTimeAPI {
 		if (estimates==null || estimates.size()==0)
 			return defaultReturnVal;
 		//key = difference between scheduled and estimated time, value = estimated time in min
-		Map<Integer, Integer> diffToMiutes = new TreeMap<Integer, Integer>();		
+		Map<Integer, Integer> diffToMiutes = new TreeMap<Integer, Integer>();
 		for (Estimate estimate: estimates) {
 			int intMins = NumberUtils.toInt(estimate.getMinutes(), -1);
 			if (intMins == -1) {
-				//if BART vehicle is in leaving state and scheduled time is nearby current time, then mark it as on-time. 
+				//if BART vehicle is in leaving state and scheduled time is nearby current time, then mark it as on-time.
 				long currentTime = System.currentTimeMillis();
 				long diff = (scheduledTime - currentTime) / (1000 * 60);
 				if (Math.abs(diff) <= 3)
@@ -249,14 +249,10 @@ public class BARTApiImpl implements RealTimeAPI {
 		for (BartRouteInfo info: bartRoutes) {
 			if (info.getRouteTag().equals(routeTag)) {
 				String dir = info.getHeadSignToDirectionMap().get(headSign);
-				return NumberUtils.toInt(dir, -1); 
+				return NumberUtils.toInt(dir, -1);
 			}
 		}
 		return -1;
-	}
-	@Override
-	public List<LegLiveFeed> getLiveFeeds(List<Leg> leg) {
-		return null;
 	}
 	public int getTimeDiffercenceInMin() {
 		return lateThreshold;
@@ -281,5 +277,9 @@ public class BARTApiImpl implements RealTimeAPI {
 	}
 	public void setBartAPIRegKey(String bartAPIRegKey) {
 		this.bartAPIRegKey = bartAPIRegKey;
+	}
+	@Override
+	public LegLiveFeed getAllRealTimeFeeds(Leg leg)	throws FeedsNotFoundException {
+		return null;
 	}
 }

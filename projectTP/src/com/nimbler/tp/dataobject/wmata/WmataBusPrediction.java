@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName;
  * The Class Predictions.
  * @author nirmal
  */
-public class Predictions {
+public class WmataBusPrediction {
 
 	@SerializedName("DirectionNum")
 	private String directionNum;

@@ -33,6 +33,7 @@ public class Test {
 				.replace("--feedbacktime--", feedbackTime)
 				.replace("--source--", source);
 		System.out.println(otpFeedback);
+
 		return otpFeedback;
 	}
 
@@ -47,8 +48,10 @@ public class Test {
 		}
 		String strTrip = sb.toString();
 		getXmlData(strTrip.replace("&", "and"));*/
-		testJson();
+		//		testJson();
+
 	}
+
 
 	private static void testJson() {
 

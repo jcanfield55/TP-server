@@ -107,6 +107,8 @@ public class PlanUtil {
 	 * @return the leg index
 	 */
 	public static int getLegIndex(List<Leg> legs, Leg leg) {
+		if(legs==null || leg==null)
+			return -1;
 		if(!ComUtils.isEmptyList(legs) && leg.getId()!=null){
 			for (int i = 0; i < legs.size(); i++) {
 				if(leg.getId().equals(legs.get(i).getId()))

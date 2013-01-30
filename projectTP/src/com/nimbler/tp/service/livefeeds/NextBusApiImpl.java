@@ -26,6 +26,8 @@ public class NextBusApiImpl implements RealTimeAPI {
 
 	private int timeDiffercenceInMin;
 
+	private List<String> suportedAgencyNames;
+
 	@Override
 	public LegLiveFeed getLiveFeeds(Leg leg) throws FeedsNotFoundException {
 		LegLiveFeed resp = null;
@@ -46,21 +48,21 @@ public class NextBusApiImpl implements RealTimeAPI {
 			if (predictionsList==null || predictionsList.size()==0)
 				throw new RealTimeDataException("Prediction results not found for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
 
-			Predictions predictions = predictionsList.get(0);			
-			List<Direction> directions = predictions.getDirection();			
+			Predictions predictions = predictionsList.get(0);
+			List<Direction> directions = predictions.getDirection();
 			if (directions==null)
 				throw new RealTimeDataException("Directions not found in Prediction response " +
 						"for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
 			StringBuilder sb = new StringBuilder();
-			for (Direction direction : directions) {				
+			for (Direction direction : directions) {
 				List<Prediction> predictionList = direction.getPrediction();
 				if (predictionList==null || predictionList.size()==0)
 					throw new RealTimeDataException("Predictions objects not found in Prediction response " +
-							"for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);	
+							"for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
 
 				for (Prediction prediction : predictionList) {
 					sb.append(prediction.getTripTag()+"--"+prediction.getMinutes()+", ");
-					if (prediction.getTripTag().equalsIgnoreCase(leg.getTripId()) && direction.getTitle().toLowerCase().contains(leg.getHeadsign().toLowerCase())) {						
+					if (prediction.getTripTag().equalsIgnoreCase(leg.getTripId()) && direction.getTitle().toLowerCase().contains(leg.getHeadsign().toLowerCase())) {
 						resp = new LegLiveFeed();
 						Long predictedTime = prediction.getEpochTime();
 						//						System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
@@ -86,7 +88,7 @@ public class NextBusApiImpl implements RealTimeAPI {
 							else
 								resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
 
-							resp.setTimeDiffInMins(diff); 
+							resp.setTimeDiffInMins(diff);
 							//							System.out.println("Difference: "+diff);
 						}
 						/*System.out.println(resp.getArrivalTimeFlag());
@@ -100,25 +102,21 @@ public class NextBusApiImpl implements RealTimeAPI {
 				if (resp!=null)
 					break;
 			}
-			if (resp == null ) {				
+			if (resp == null ) {
 				//				System.err.println("Real time feeds not found for Trip: "+leg.getTripId()+", From: "+leg.getFrom()+", To: "
 				//						+leg.getTo()+", Starting at: "+new Date(leg.getStartTime())+"-->"+sb.toString()+
 				//						","+ "Direction: "+leg.getHeadsign());
 				throw new RealTimeDataException("Real time feeds not found for Trip: "+leg.getTripId()+", From: "+fromStopTag+", To: "
-						+toStopTag+", Starting at: "+new Date(leg.getStartTime())); 
+						+toStopTag+", Starting at: "+new Date(leg.getStartTime()));
 			}
 			return resp;
 		} catch (RealTimeDataException e) {
-			throw new FeedsNotFoundException(e.getMessage());  
+			throw new FeedsNotFoundException(e.getMessage());
 		} catch (Exception e) {
 			throw new FeedsNotFoundException("Unknown Exception: "+e);
 		}
 	}
 
-	@Override
-	public List<LegLiveFeed> getLiveFeeds(List<Leg> legs) {
-		return null;
-	}
 	public Map<String, String> getAgencyMap() {
 		return agencyMap;
 	}
@@ -130,5 +128,17 @@ public class NextBusApiImpl implements RealTimeAPI {
 	}
 	public void setTimeDiffercenceInMin(int timeDiffercenceInMin) {
 		this.timeDiffercenceInMin = timeDiffercenceInMin;
+	}
+
+	@Override
+	public LegLiveFeed getAllRealTimeFeeds(Leg leg)	throws FeedsNotFoundException {
+		return null;
+	}
+	public List<String> getSuportedAgencyNames() {
+		return suportedAgencyNames;
+	}
+
+	public void setSuportedAgencyNames(List<String> suportedAgencyNames) {
+		this.suportedAgencyNames = suportedAgencyNames;
 	}
 }

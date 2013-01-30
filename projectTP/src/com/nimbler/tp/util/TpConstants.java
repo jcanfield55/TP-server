@@ -1,6 +1,6 @@
 /**
  * 
- * Copyright (C) 2012 Apprika Systems   Pvt. Ltd. 
+ * Copyright (C) 2012 Apprika Systems   Pvt. Ltd.
  * All rights reserved.
  *
  */
@@ -15,8 +15,8 @@ import java.text.SimpleDateFormat;
  */
 public class TpConstants {
 
-	public static final String FILE_OTP_PROPERTY          = "conf/tp.properties";	
-	public static final String FILE_SPRING_CONFIGURATION  = "conf/spring/ApplicationContext.xml";	
+	public static final String FILE_OTP_PROPERTY          = "conf/tp.properties";
+	public static final String FILE_SPRING_CONFIGURATION  = "conf/spring/ApplicationContext.xml";
 	public static final String FILE_LOG_CONFIGURATION     = "conf/logging/log4j.xml";
 	public static final String FILE_USER_CREDENTIAL       = "conf/user.xml";
 
@@ -29,7 +29,7 @@ public class TpConstants {
 
 	public static final String STRING_SEPARATOR = ",";
 
-	public static final String SERVER_DEFAULT     = TpProperty.getDefaultProperty("server.default");  
+	public static final String SERVER_DEFAULT     = TpProperty.getDefaultProperty("server.default");
 	public static final String REPO_RELATIVE_PATH = TpProperty.getDefaultProperty("file.repo.path");
 	public static final File FILE_REPOSITORY      = new File(TpConstants.REPO_RELATIVE_PATH);
 	public static final String TEMP_DIR_PATH =System.getProperty("java.io.tmpdir");
@@ -63,6 +63,7 @@ public class TpConstants {
 	public static final String PLAN_TO_PATH = TpProperty.getDefaultProperty("plan.to.path");
 	public static final String PLAN_START_TIME_PATH = TpProperty.getDefaultProperty("plan.stattime.path");
 	public static final String PLAN_END_TIME_PATH = TpProperty.getDefaultProperty("plan.entime.path");
+	public static final String MAX_REALTIME_LIMIT_MIN = TpProperty.getDefaultProperty("max.realtime.limit.min");
 
 	public static final String DEFAULT_DATE_FORMAT_PATTERN = "yyyy-MM-dd HH:mm:ss";
 	public static final String GTFS_DATE_FORMAT = "yyyyMMdd";
@@ -148,7 +149,7 @@ public class TpConstants {
 	public enum NIMBLER_APP_TYPE {
 		DEFAULT(""),//0
 		/**
-		 *Ordinal 1 
+		 *Ordinal 1
 		 */
 		CALTRAIN("Caltrain"),//1
 		BART("BART"),//2
@@ -229,7 +230,7 @@ public class TpConstants {
 		CALTRAIN_REGULAR_TWEET,
 		CALTRAIN_REGULAR_TWEET_FOR_1_THRESHOLD,
 		/**
-		 * 1. count  
+		 * 1. count
 		 * 2. agency name
 		 */
 		SF_REGULAR_TWEET,
@@ -252,13 +253,13 @@ public class TpConstants {
 	}
 	public enum GTFS_FILE {
 		UNDEFINED("invalid"),
-		AGENCY         ("agency"),          
-		STOPS          ("stops"),         
-		ROUTES         ("routes"),         
-		TRIPS          ("trips"),          
-		STOP_TIMES     ("stop_times"),      
-		CALENDAR       ("calendar"),    
-		CALENDAR_DATES ("calendar_dates"),  
+		AGENCY         ("agency"),
+		STOPS          ("stops"),
+		ROUTES         ("routes"),
+		TRIPS          ("trips"),
+		STOP_TIMES     ("stop_times"),
+		CALENDAR       ("calendar"),
+		CALENDAR_DATES ("calendar_dates"),
 		FARE_ATTRIBUTES("fare_attributes"),
 		FARE_RULES     ("fare_rules"),
 		SHAPES         ("shapes"),

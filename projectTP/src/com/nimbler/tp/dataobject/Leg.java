@@ -58,7 +58,7 @@ public class Leg {
 
 	private String agencyUrl;
 
-	private int agencyTimeZoneOffset;
+	private Integer agencyTimeZoneOffset;
 
 	/**
 	 * For transit leg, the route's (background) color (if one exists). For non-transit legs, null.
@@ -142,7 +142,7 @@ public class Leg {
 
 	private String alightRule;
 
-	private long duration;
+	private Long duration;
 
 	public void setDuration(long duration) {
 		this.duration = duration;
@@ -205,6 +205,15 @@ public class Leg {
 
 	public void setRoute(String route) {
 		this.route = route;
+	}
+
+
+	public String getRouteId() {
+		return routeId;
+	}
+
+	public void setRouteId(String routeId) {
+		this.routeId = routeId;
 	}
 
 	public String getAgencyName() {

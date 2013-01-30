@@ -61,7 +61,7 @@ public class LiveFeedResponse {
 	public void addLegLiveFeed(LegLiveFeed legFeed) {
 		if (legLiveFeeds==null)
 			legLiveFeeds = new ArrayList<LegLiveFeed>();
-		legLiveFeeds.add(legFeed); 
+		legLiveFeeds.add(legFeed);
 	}
 
 	public Integer getErrCode() {
@@ -85,7 +85,7 @@ public class LiveFeedResponse {
 	 */
 	public void setError(int code) {
 		this.errCode = code;
-		this.errMsg = TP_CODES.get(code).getMsg(); 
+		this.errMsg = TP_CODES.get(code).getMsg();
 	}
 	public boolean isDirty() {
 		return isDirty;

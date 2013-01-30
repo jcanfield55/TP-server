@@ -3,9 +3,15 @@
  */
 package com.nimbler.tp.util;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.jayway.jsonpath.JsonPath;
 import com.nimbler.tp.dataobject.Itinerary;
+import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.TPResponse;
 import com.nimbler.tp.dataobject.TripPlan;
 import com.nimbler.tp.dataobject.TripResponse;
@@ -38,6 +44,22 @@ public class JSONUtil {
 		Itinerary response =  gson.fromJson(jSon,Itinerary.class);
 		return response;
 	}
+
+	public static Object getObjectFromJson(String jSon,Class clazz) {
+		if(jSon == null)
+			return null;
+		Gson gson = new Gson();
+		return  gson.fromJson(jSon,clazz);
+	}
+
+	public static List<Leg> getLegsJson(String jSon) {
+		if(jSon == null)
+			return null;
+		Gson gson = new Gson();
+		Type token = new TypeToken<ArrayList<Leg>>() {}.getType();
+		List<Leg> response =  gson.fromJson(jSon,token);
+		return response;
+	}
 	/**
 	 * 
 	 * @param planJsonString
@@ -48,7 +70,7 @@ public class JSONUtil {
 		Gson gson = new Gson();
 		TripResponse response =  gson.fromJson(planJsonString, TripResponse.class);
 		if (response==null || response.getPlan()==null) {
-			throw new TpException("Error while getting Planb object from JSON string."); 
+			throw new TpException("Error while getting Planb object from JSON string.");
 		}
 		return response.getPlan();
 	}

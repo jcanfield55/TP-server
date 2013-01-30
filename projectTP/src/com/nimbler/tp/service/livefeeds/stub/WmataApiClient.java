@@ -1,7 +1,11 @@
 package com.nimbler.tp.service.livefeeds.stub;
 
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.PostConstruct;
 import javax.ws.rs.core.MultivaluedMap;
@@ -11,11 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.google.gson.Gson;
 import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.common.RealTimeDataException;
+import com.nimbler.tp.common.RequestLimitExceedException;
 import com.nimbler.tp.dataobject.wmata.BusStop;
-import com.nimbler.tp.dataobject.wmata.Predictions;
 import com.nimbler.tp.dataobject.wmata.RailLine;
 import com.nimbler.tp.dataobject.wmata.RailPrediction;
 import com.nimbler.tp.dataobject.wmata.RailStation;
+import com.nimbler.tp.dataobject.wmata.WmataBusPrediction;
 import com.nimbler.tp.dataobject.wmata.WmataBusPredictions;
 import com.nimbler.tp.dataobject.wmata.WmataRailLines;
 import com.nimbler.tp.dataobject.wmata.WmataRailPredictions;
@@ -23,6 +28,7 @@ import com.nimbler.tp.dataobject.wmata.WmataRailStations;
 import com.nimbler.tp.dataobject.wmata.WmataStops;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.util.ComUtils;
+import com.nimbler.tp.util.SpeedLimiter;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
@@ -31,7 +37,7 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
  * @author nirmal
  *
  */
-public class WmataApiClient {
+public class WmataApiClient{
 
 	@Autowired
 	private LoggingService logger;
@@ -39,15 +45,25 @@ public class WmataApiClient {
 	private String loggerName = "com.nimbler.tp.service.livefeeds";
 	private Map<String, String> routeMap;
 	private String baseUrl = "http://api.wmata.com/";
-	private Client client;
+	//	private Client client;
 
 	public String PARAM_API_KEY = "api_key";
 	public String PARAM_ROUTE_ID = "routeId";
 	Gson gson = null;
 
+	private Map<String,WebResource> resourcePool = new Hashtable<String, WebResource>();
+	private SpeedLimiter  speedLimiter = null;
+	private int requestPerSec = 5;
+	/**
+	 * Time for which request for API call can wait in queue for resource availability.
+	 */
+	private int resourceTimeOutMillSec = 180000;
+	private AtomicLong requestCounter = new AtomicLong();
+	private int dailyLimit = 10000;
+
 	@PostConstruct
 	public void init(){
-		client = Client.create();
+		speedLimiter = new SpeedLimiter(requestPerSec,1,TimeUnit.SECONDS);
 		gson = new Gson();
 	}
 
@@ -62,9 +78,10 @@ public class WmataApiClient {
 	 * @throws RealTimeDataException the real time data exception
 	 */
 	public WmataStops getStopsNearPoint(String regKey,String lat,String lon,String radius) throws RealTimeDataException {
+		String url = null;
 		try {
-			String url = baseUrl+routeMap.get("GET_STOP");
-			WebResource webResource = client.resource(url);
+			url = baseUrl+routeMap.get("GET_STOP");
+			WebResource webResource = getResource(url);
 			MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
 			queryParams.add("lat", lat);
 			queryParams.add("lon", lon);
@@ -74,12 +91,12 @@ public class WmataApiClient {
 			WmataStops res =  gson.fromJson(strResp, WmataStops.class);
 			return res;
 		} catch (RuntimeException e) {
-			System.out
-			.println("WmataApiClient.getStopsNearPoint() --> regKey: "+ regKey + " lat: " + lat + " lon: " + lon
-					+ " radius: " + radius);
-			e.printStackTrace();
-			//			logger.error(loggerName, e.getMessage());
+			logger.error(loggerName, e.getMessage());
 			throw new RealTimeDataException("Error while getting stops near point"+e.getMessage());
+		} catch (InterruptedException e) {
+			throw new RealTimeDataException("InterruptedException while wmata api call url:"+url+","+e.getMessage());
+		} catch (TimeoutException e) {
+			throw new RealTimeDataException(e.getMessage());
 		}
 	}
 
@@ -91,9 +108,10 @@ public class WmataApiClient {
 	 * @throws RealTimeDataException the real time data exception
 	 */
 	public List<BusStop> getAllStops(String regKey) throws RealTimeDataException {
+		String url = null;
 		try {
-			String url = baseUrl+routeMap.get("GET_STOP");
-			WebResource webResource = client.resource(url);
+			url = baseUrl+routeMap.get("GET_STOP");
+			WebResource webResource = getResource(url);
 			MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
 			queryParams.add(PARAM_API_KEY, regKey);
 			String strResp = webResource.queryParams(queryParams).accept("application/json").get(String.class);
@@ -104,6 +122,10 @@ public class WmataApiClient {
 		} catch (RuntimeException e) {
 			logger.error(loggerName, e.getMessage());
 			throw new RealTimeDataException("Error while getting stops near point"+e.getMessage());
+		}catch (InterruptedException e) {
+			throw new RealTimeDataException("InterruptedException while wmata api call url:"+url+","+e.getMessage());
+		} catch (TimeoutException e) {
+			throw new RealTimeDataException(e.getMessage());
 		}
 	}
 
@@ -114,10 +136,11 @@ public class WmataApiClient {
 	 * @param stopId the stop id
 	 * @throws RealTimeDataException
 	 */
-	public List<Predictions> getBusPredictionAtStop(String regKey,String stopId) throws RealTimeDataException {
+	public List<WmataBusPrediction> getBusPredictionAtStop(String regKey,String stopId) throws RealTimeDataException {
+		String url = null;
 		try {
-			String url = baseUrl+routeMap.get("BUS_PREDICTION");
-			WebResource webResource = client.resource(url);
+			url = baseUrl+routeMap.get("BUS_PREDICTION");
+			WebResource webResource = getResource(url);
 			MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
 			queryParams.add("StopID", stopId);
 			queryParams.add(PARAM_API_KEY, regKey);
@@ -129,6 +152,10 @@ public class WmataApiClient {
 		} catch (RuntimeException e) {
 			logger.error(loggerName, e.getMessage());
 			throw new RealTimeDataException("Error while getting stops near point"+e.getMessage());
+		}catch (InterruptedException e) {
+			throw new RealTimeDataException("InterruptedException while wmata api call url:"+url+","+e.getMessage());
+		} catch (TimeoutException e) {
+			throw new RealTimeDataException(e.getMessage());
 		}
 	}
 
@@ -140,9 +167,10 @@ public class WmataApiClient {
 	 * @throws RealTimeDataException the real time data exception
 	 */
 	public List<RailLine> getRailLines(String regKey) throws RealTimeDataException {
+		String url = null;
 		try {
-			String url = baseUrl+routeMap.get("RAIL_LINES");
-			WebResource webResource = client.resource(url);
+			url = baseUrl+routeMap.get("RAIL_LINES");
+			WebResource webResource = getResource(url);
 			MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
 			queryParams.add(PARAM_API_KEY, regKey);
 			String strResp = webResource.queryParams(queryParams).accept("application/json").get(String.class);
@@ -153,12 +181,17 @@ public class WmataApiClient {
 		} catch (RuntimeException e) {
 			logger.error(loggerName, e.getMessage());
 			throw new RealTimeDataException("Error while getting Rail Lines"+e.getMessage());
+		}catch (InterruptedException e) {
+			throw new RealTimeDataException("InterruptedException while wmata api call url:"+url+","+e.getMessage());
+		} catch (TimeoutException e) {
+			throw new RealTimeDataException(e.getMessage());
 		}
 	}
 	public List<RailPrediction> getRailPrediction(String regKey,String station) throws RealTimeDataException {
+		String url = null;
 		try {
-			String url = baseUrl+routeMap.get("RAIL_PREDICTION")+station;
-			WebResource webResource = client.resource(url);
+			url = baseUrl+routeMap.get("RAIL_PREDICTION")+station;
+			WebResource webResource =getResource(url,false); //do not cache
 			MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
 			queryParams.add(PARAM_API_KEY, regKey);
 			String strResp = webResource.queryParams(queryParams).accept("application/json").get(String.class);
@@ -170,6 +203,10 @@ public class WmataApiClient {
 		} catch (RuntimeException e) {
 			logger.error(loggerName, e.getMessage());
 			throw new RealTimeDataException("Error while getting Rail Lines"+e.getMessage());
+		}catch (InterruptedException e) {
+			throw new RealTimeDataException("InterruptedException while wmata api call url:"+url+","+e.getMessage());
+		} catch (TimeoutException e) {
+			throw new RealTimeDataException(e.getMessage());
 		}
 	}
 
@@ -181,9 +218,10 @@ public class WmataApiClient {
 	 * @throws RealTimeDataException the real time data exception
 	 */
 	public List<RailStation> getRailStationByLines(String regKey,String line) throws RealTimeDataException {
+		String url = null;
 		try {
-			String url = baseUrl+routeMap.get("RAIL_STATION_BY_LINES");
-			WebResource webResource = client.resource(url);
+			url = baseUrl+routeMap.get("RAIL_STATION_BY_LINES");
+			WebResource webResource = getResource(url);
 			MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
 			queryParams.add(PARAM_API_KEY, regKey);
 			queryParams.add("LineCode", line);
@@ -195,6 +233,10 @@ public class WmataApiClient {
 		} catch (RuntimeException e) {
 			logger.error(loggerName, e.getMessage());
 			throw new RealTimeDataException("Error while getting Rail Stations"+e.getMessage());
+		}catch (InterruptedException e) {
+			throw new RealTimeDataException("InterruptedException while wmata api call url:"+url+","+e.getMessage());
+		} catch (TimeoutException e) {
+			throw new RealTimeDataException(e.getMessage());
 		}
 	}
 
@@ -250,6 +292,83 @@ public class WmataApiClient {
 
 	public void setLogger(LoggingService logger) {
 		this.logger = logger;
+	}
+	private Client getClient() {
+		return  Client.create();
+	}
+
+	/**
+	 * Gets the resource.
+	 *
+	 * @param url the url
+	 * @param cache the cache
+	 * @return the resource
+	 * @throws InterruptedException the interrupted exception
+	 * @throws TimeoutException the timeout exception
+	 */
+	private WebResource getResource(String url,boolean cache) throws InterruptedException, TimeoutException {
+		if(requestCounter.get()>=dailyLimit)
+			throw new RequestLimitExceedException("Daily request execeed. Limit:"+dailyLimit+",Requested:"+requestCounter.get());
+		WebResource resource =  resourcePool.get(url);
+		if(resource==null){
+			Client client = getClient();
+			resource = client.resource(url);
+			if(cache)
+				resourcePool.put(url, resource);
+		}
+		boolean permition = speedLimiter.tryAcquire(resourceTimeOutMillSec, TimeUnit.MILLISECONDS);
+		if(!permition)
+			throw new TimeoutException("Wmata resource queue timeout while getting resource for "+url+",cache:"+cache);
+		requestCounter.addAndGet(1);
+		return  resource;
+	}
+
+	/**
+	 * Gets the resource.
+	 *
+	 * @param url the url
+	 * @return the resource
+	 * @throws InterruptedException the interrupted exception
+	 * @throws TimeoutException the timeout exception
+	 */
+	private WebResource getResource(String url) throws InterruptedException, TimeoutException {
+		return getResource(url, true);
+	}
+	public void resetRequestCounter() {
+		logger.debug(loggerName, "Resetting Counter...."+requestCounter.get());
+		requestCounter.set(0);
+	}
+
+	public int getRequestPerSec() {
+		return requestPerSec;
+	}
+
+	public void setRequestPerSec(int requestPerSec) {
+		this.requestPerSec = requestPerSec;
+	}
+
+	public int getResourceTimeOutMillSec() {
+		return resourceTimeOutMillSec;
+	}
+
+	public void setResourceTimeOutMillSec(int resourceTimeOutMillSec) {
+		this.resourceTimeOutMillSec = resourceTimeOutMillSec;
+	}
+
+	public AtomicLong getRequestCounter() {
+		return requestCounter;
+	}
+
+	public void setRequestCounter(AtomicLong requestCounter) {
+		this.requestCounter = requestCounter;
+	}
+
+	public int getDailyLimit() {
+		return dailyLimit;
+	}
+
+	public void setDailyLimit(int dailyLimit) {
+		this.dailyLimit = dailyLimit;
 	}
 
 }

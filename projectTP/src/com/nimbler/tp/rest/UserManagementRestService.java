@@ -94,7 +94,6 @@ public class UserManagementRestService {
 			reqUserValue.setEnableCaltrainAdv(enableCaltrainAdv);
 			reqUserValue.setEnableSfMuniAdv(enableSfMuniAdv);
 			reqUserValue.setEnableWmataAdv(enableWmata);
-
 			reqUserValue.setNotifTimingMorning(notifTimingMorning);
 			reqUserValue.setNotifTimingMidday(notifTimingMidday);
 			reqUserValue.setNotifTimingEvening(notifTimingEvening);

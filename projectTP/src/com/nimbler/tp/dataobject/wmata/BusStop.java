@@ -35,6 +35,7 @@ public class BusStop extends Point implements Serializable{
 	private List<String> routes;
 
 	private double gtfsDistance;
+	private int usedCount = 0;
 
 	public String getLat() {
 		return lat;
@@ -116,12 +117,18 @@ public class BusStop extends Point implements Serializable{
 	public String getStopId() {
 		return stopId;
 	}
+	public synchronized void markUsed() {
+		usedCount++;
+	}
 
 
 	public void setStopId(String stopId) {
 		this.stopId = stopId;
 	}
 
+	public int getUsedCount() {
+		return usedCount;
+	}
 
 	public List<String> getRoutes() {
 		return routes;

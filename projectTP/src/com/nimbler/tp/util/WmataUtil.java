@@ -20,13 +20,17 @@ import com.nimbler.tp.common.StopNotFoundException;
 import com.nimbler.tp.dataobject.wmata.BusStop;
 import com.nimbler.tp.dataobject.wmata.GtfsStop;
 import com.nimbler.tp.dataobject.wmata.Point;
-import com.nimbler.tp.dataobject.wmata.Predictions;
 import com.nimbler.tp.dataobject.wmata.RailLine;
 import com.nimbler.tp.dataobject.wmata.RailPrediction;
 import com.nimbler.tp.dataobject.wmata.RailPrediction.RAIL_MIN_VALUES;
 import com.nimbler.tp.dataobject.wmata.RailStation;
 import com.nimbler.tp.dataobject.wmata.StopMapping;
-
+import com.nimbler.tp.dataobject.wmata.WmataBusPrediction;
+/**
+ * 
+ * @author nirmal
+ *
+ */
 public class WmataUtil {
 
 	/**
@@ -54,11 +58,11 @@ public class WmataUtil {
 	 * @param index the index
 	 * @return the Pair <match differance,Estimated time>, -ve differance means early
 	 */
-	public static MutablePair<Integer, Long> getClosestEstimationForBus(List<Predictions> lstPredictions, long scheduledTime, int index,int clampEarly,int clampDelay) {
+	public static MutablePair<Integer, Long> getClosestEstimationForBus(List<WmataBusPrediction> lstPredictions, long scheduledTime, int index,int clampEarly,int clampDelay) {
 		if (lstPredictions==null || lstPredictions.size()==0)
 			return null;
 		Map<Integer, MutablePair<Integer, Long>> diffToMiutes = new TreeMap<Integer, MutablePair<Integer, Long>>();
-		for (Predictions p: lstPredictions) {
+		for (WmataBusPrediction p: lstPredictions) {
 			int deviation = NumberUtils.toInt(p.getMinutes(), -1);
 			Calendar cal = Calendar.getInstance();
 			cal.add(Calendar.MINUTE, deviation);
@@ -132,11 +136,15 @@ public class WmataUtil {
 				res.add(rs.getCode());
 		}
 		if(res.isEmpty()){
-			List<String> allCodes = new ArrayList<String>();
-			for (RailStation rs : gtfsStop.getLstRailStations()) {
-				allCodes.addAll(rs.getAllStationLineCodes());
-			}
-			throw new StopNotFoundException("Could not find line:"+lineCode+" from gtfs stop id:"+fromStopId+" , Expected: "+StringUtils.join(allCodes,","));
+			//			List<String> allCodes = new ArrayList<String>();
+			//			for (RailStation rs : gtfsStop.getLstRailStations()) {
+			//				allCodes.addAll(rs.getAllStationLineCodes());
+			//			}
+			//			throw new StopNotFoundException("Could not find line:"+lineCode+" from gtfs stop id:"+fromStopId+" , Expected: "+StringUtils.join(allCodes,","));
+			if(gtfsStop.getLstRailStations()!=null && ! gtfsStop.getLstRailStations().isEmpty())
+				res.add(gtfsStop.getLstRailStations().get(0).getCode());//get first station
+			else
+				throw new StopNotFoundException("Could not stop for  gtfs stop id:"+fromStopId);
 		}
 		return new ArrayList<String>(res);
 	}
@@ -212,6 +220,11 @@ public class WmataUtil {
 				sortedMap.put(distance, lst);
 			}
 			lst.add(stop);
+			if(sortedMap.size()>5){
+				double lastKey = sortedMap.lastKey();
+				if(lastKey>maxDistance)
+					sortedMap.remove(lastKey);
+			}
 		}
 		List res = new ArrayList();
 		for (Map.Entry<Double, Set<Point>> entry : sortedMap.entrySet()) {
@@ -223,5 +236,23 @@ public class WmataUtil {
 				break;
 		}
 		return res;
+	}
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static List filterOneStopByDistance(Point p, Set lstStops,double maxDistance) {
+		double min = -1;
+		Set<Point> set = new HashSet<Point>();
+		for (Object obj : lstStops) {
+			Point stop = (Point) obj;
+			double distance = DistanceLibrary.distance(p.getX(),p.getY(),stop.getX(),stop.getY());
+			if(min==-1 || distance<min){
+				min=distance;
+				set = new HashSet<Point>();
+				set.add(stop);
+			}else if(min == distance){
+				set.add(stop);
+				System.out.println("same....");
+			}
+		}
+		return new ArrayList(set);
 	}
 }

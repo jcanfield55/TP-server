@@ -23,6 +23,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.commons.lang3.StringUtils;
 
 import com.nimbler.tp.TPApplicationContext;
+import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.dataobject.Itinerary;
 import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.TPResponse;
@@ -31,6 +32,7 @@ import com.nimbler.tp.dataobject.TripResponse;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.service.TpEventLoggingService;
 import com.nimbler.tp.service.TpPlanService;
+import com.nimbler.tp.service.livefeeds.WmataApiImpl;
 import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.JSONUtil;
@@ -136,7 +138,7 @@ public class TpPlanRestService {
 				throw new TpException("TripResponse is null");
 			if (tripResponse.getPlan()!=null)
 				planId = tripResponse.getPlan().getId();
-			printWMataDetails(tripResponse.getPlan());
+			//			printWMataDetails(tripResponse.getPlan());
 
 			TpEventLoggingService tpLoggingService = BeanUtil.getTpEventLoggingService();
 			reqParams.put(RequestParam.TIME_TRIP_PLAN, tripResponse.getPlanGenerateTime()+"");
@@ -170,6 +172,7 @@ public class TpPlanRestService {
 				System.out.println("Itineraty ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 				List<Leg> legs = itinerary.getLegs();
 				for (Leg leg : legs) {
+					getPrediction(legs);
 					if(leg.getFrom()!=null){
 						//						System.out.println("     Start Time: "+leg.getStartTime());
 						//						System.out.println("     Trip id   : "+leg.getTripId());
@@ -196,6 +199,23 @@ public class TpPlanRestService {
 			System.out.println("can't print:");
 			e.printStackTrace();
 		}
+
+	}
+	private void getPrediction(final List<Leg> legs) {
+		Thread thread =  new Thread(){
+			@Override
+			public void run() {
+				for (Leg leg : legs) {
+					try {
+						WmataApiImpl apiImpl = BeanUtil.getWMATAApiImpl();
+						apiImpl.getLiveFeeds(leg);
+					} catch (FeedsNotFoundException e) {
+						System.out.println(e.getMessage());
+					}
+				}
+			}
+		};
+		//		thread.start();
 
 	}
 	/**

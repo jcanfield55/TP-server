@@ -82,16 +82,17 @@
 			<value>com.nimbler.tp.service.livefeeds</value>
 		</property>
 	</bean>
+	<bean id="wmataApiImpl" class="com.nimbler.tp.service.livefeeds.WmataApiImpl">
+		<property name="stopMapFilePath" value="C:/wmata_data/" />
+	</bean>
+	<bean id="wmataCachedApiClient" class="com.nimbler.tp.service.livefeeds.cache.WmataCachedApiClient" >
+	</bean>
+	
 	<bean id="wmataApiClient" class="com.nimbler.tp.service.livefeeds.stub.WmataApiClient">
 		<property name="baseUrl">
 			<value>http://api.wmata.com/</value>
 		</property>
-		<property name="busDirectionOverride">
-			<map>
-				<entry key="1" value="0" />
-				<entry key="0" value="1" />
-			</map>
-		</property>
+
 		<property name="routeMap">
 			<map>
 				<entry key="GET_STOP" value="Bus.svc/json/JStops" />
@@ -138,8 +139,7 @@
 			<value>40</value>			
 		</property>-->
 	</bean>
-	<bean id="wmataApiImpl" class="com.nimbler.tp.service.livefeeds.WmataApiImpl">
-	</bean>
+
 
 	<bean id="advisoriesPushService"
 		class="com.nimbler.tp.service.advisories.AdvisoriesPushService"
@@ -340,6 +340,16 @@
 				<entry key="5" value="8" />
 			</map>
 		</property>
+	<property name="realTimeApiByAgency">
+		<map><!-- wmataApiImpl, nextBusApiImpl, bartApiImpl -->
+			<entry key="AC Transit" value-ref="nextBusApiImpl" />
+			<entry key="Bay Area Rapid Transit" value-ref="bartApiImpl" />
+			<entry key="AirBART" value-ref="bartApiImpl" />
+			<entry key="San Francisco Municipal Transportation Agency" value-ref="nextBusApiImpl" />
+			<entry key="DC Circulator" value-ref="wmataApiImpl" />
+			<entry key="METRO" value-ref="wmataApiImpl" />
+		</map>
+	</property>
 	</bean>
 
 	
@@ -399,6 +409,26 @@
 		<property name="jobDetail" ref="urgentAdvisoriesClearJob" />
 		<property name="cronExpression" value="0 59 23 * * ?" /> 		
 	</bean>
+	<bean name="wmataApiLimitRenewJob"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetBeanName" value="wmataApiClient" />
+		<property name="targetMethod" value="resetRequestCounter" />
+	</bean>
+	<bean id="wmataApiLimitRenewTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="wmataApiLimitRenewJob" />
+		<property name="cronExpression" value="0 59 23 * * ?" />		
+	</bean>	
+	<bean name="wmataSaveStopJob"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetBeanName" value="wmataApiImpl" />
+		<property name="targetMethod" value="saveStopMapping" />
+	</bean>
+	<bean id="wmataSaveStopTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="wmataSaveStopJob" />
+		<property name="cronExpression" value="0 0 0/6 * * ?" />		
+	</bean>
 	<bean id="schedulerFactoryBean"
 		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
@@ -408,6 +438,8 @@
 				<ref bean="urgentAdvisoriesClearJobTrigger" />
 				<ref bean="clearAdvisaryCounterTrigger" />
 				<ref bean="dBHealthMonitoringTrigger" />
+				<ref bean="wmataApiLimitRenewTrigger" />
+				<ref bean="wmataSaveStopTrigger" />
 			</list>
 		</property>
 	</bean>

@@ -11,13 +11,13 @@ public class WmataBusPredictions {
 	}
 
 	@SerializedName("Predictions")
-	private List<Predictions> predictions;
+	private List<WmataBusPrediction> predictions;
 
-	public List<Predictions> getPredictions() {
+	public List<WmataBusPrediction> getPredictions() {
 		return predictions;
 	}
 
-	public void setPredictions(List<Predictions> predictions) {
+	public void setPredictions(List<WmataBusPrediction> predictions) {
 		this.predictions = predictions;
 	}
 
