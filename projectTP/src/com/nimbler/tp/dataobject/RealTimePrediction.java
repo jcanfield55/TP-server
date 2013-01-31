@@ -32,11 +32,11 @@ public class RealTimePrediction implements Serializable{
 	 */
 	private static final long serialVersionUID = -5685192102963893821L;
 
-	public RealTimePrediction(Prediction p) {
-		this.epochTime = p.getEpochTime();
-		this.tripId = p.getTripTag();
-		this.seconds = p.getSeconds();
-		this.vehicleId = p.getVehicle();
+	public RealTimePrediction(Prediction prediction) {
+		this.epochTime = prediction.getEpochTime();
+		this.tripId = prediction.getTripTag();
+		this.seconds = prediction.getSeconds();
+		this.vehicleId = prediction.getVehicle();
 	}
 	public RealTimePrediction(Estimate estimate) {
 		this.seconds = NumberUtils.toLong(estimate.getMinutes())*60;
@@ -88,10 +88,6 @@ public class RealTimePrediction implements Serializable{
 	public void setDirection(String direction) {
 		this.direction = direction;
 	}
-	//	@Override
-	//	public String toString() {
-	//		return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
-	//	}
 	@Override
 	public String toString() {
 		return "RealTimePrediction [tripId=" + tripId + ", seconds=" + seconds

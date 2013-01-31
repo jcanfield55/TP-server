@@ -136,5 +136,4 @@ public class BeanUtil {
 	public static GtfsDataService getGtfsDataServiceBean() {
 		return (GtfsDataService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.GTFS_DATA_SERVICE.bean());
 	}
-
 }

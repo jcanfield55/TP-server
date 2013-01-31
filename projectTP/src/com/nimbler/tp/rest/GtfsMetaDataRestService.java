@@ -9,10 +9,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 
 import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.dataobject.GtfsResponse;
@@ -195,12 +198,17 @@ public class GtfsMetaDataRestService {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws ClassNotFoundException the class not found exception
 	 */
-	@GET
+	//	@GET
+	//	@Path("/stoptimes/")	
+	//	public String getStopTimes(@QueryParam(RequestParam.AGENCY_IDS)String strAgencyId) throws UnsupportedEncodingException, IOException, ClassNotFoundException {
+	@POST
 	@Path("/stoptimes/")	
-	public String getStopTimes(@QueryParam(RequestParam.AGENCY_IDS)String strAgencyId) throws UnsupportedEncodingException, IOException, ClassNotFoundException {
+	public String getStopTimes(@Context HttpServletRequest httpRequest) throws UnsupportedEncodingException, IOException, ClassNotFoundException {
 		TPResponse response = ResponseUtil.createResponse(TP_CODES.SUCESS);
 		long start = System.currentTimeMillis();
 		try {		
+			Map<String,String> reqParam = ComUtils.parseMultipartRequest(httpRequest);
+			String strAgencyId = reqParam.get(RequestParam.AGENCY_IDS);
 			if(ComUtils.isEmptyString(strAgencyId))
 				throw new TpException(TP_CODES.INVALID_REQUEST);
 			GtfsDataService gtfsDataService =  BeanUtil.getGtfsDataServiceBean();			

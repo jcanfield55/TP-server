@@ -43,7 +43,7 @@ public class TweetStore {
 	 * @param agency
 	 */
 	public void setTweet(List<Tweet> tweets, int agency) {
-		agencyToAdvisoriesMap.put(agency, tweets); 
+		agencyToAdvisoriesMap.put(agency, tweets);
 	}
 	/**
 	 * Get tweets for specific agency.
@@ -51,7 +51,7 @@ public class TweetStore {
 	 * @return
 	 */
 	public List<Tweet> getTweets(int agencyType) {
-		return agencyToAdvisoriesMap.get(agencyType); 
+		return agencyToAdvisoriesMap.get(agencyType);
 	}
 	/**
 	 * 
@@ -63,7 +63,7 @@ public class TweetStore {
 		for (int agencyType: agencyTypes) {
 			List<Tweet> agencyTweets = agencyToAdvisoriesMap.get(agencyType);
 			if (agencyTweets!=null && agencyTweets.size()>0)
-				allTweets.addAll(agencyTweets);			 
+				allTweets.addAll(agencyTweets);
 		}
 		return allTweets;
 	}
@@ -72,7 +72,7 @@ public class TweetStore {
 	 * @param agencyType
 	 * @return
 	 */
-	public LinkedList<Tweet> getUrgentTweets(int agencyType) {		
+	public LinkedList<Tweet> getUrgentTweets(int agencyType) {
 		return agencyToUrgentAdvisoriesMap.get(agencyType);
 	}
 	/**
@@ -80,12 +80,12 @@ public class TweetStore {
 	 * @param agencyIds
 	 * @return
 	 */
-	public LinkedList<Tweet> getUrgentTweets(int[] agencyIds) {		
+	public LinkedList<Tweet> getUrgentTweets(int[] agencyIds) {
 		LinkedList<Tweet> allTweets = new LinkedList<Tweet>();
 		for (int agencyId: agencyIds) {
 			List<Tweet> agencyTweets = agencyToUrgentAdvisoriesMap.get(agencyId);
 			if (agencyTweets!=null && agencyTweets.size()>0)
-				allTweets.addAll(agencyTweets);			 
+				allTweets.addAll(agencyTweets);
 		}
 		return allTweets;
 	}
@@ -99,7 +99,7 @@ public class TweetStore {
 			LinkedList<Tweet> tweets = this.agencyToUrgentAdvisoriesMap.get(agencyType);
 			if (tweets == null) {
 				tweets = new LinkedList<Tweet>();
-				agencyToUrgentAdvisoriesMap.put(agencyType, tweets); 
+				agencyToUrgentAdvisoriesMap.put(agencyType, tweets);
 			} else {
 				if (tweets.size()==this.ungentTweetsMaxSize)
 					tweets.removeFirst();
@@ -143,11 +143,14 @@ public class TweetStore {
 		return tweets;
 	}
 	/**
+	 * @param agencies
 	 * 
 	 */
-	public void clearUrgentAdvisories() {
+	public void clearUrgentAdvisories(Integer[] agencies) {
 		synchronized (agencyToUrgentAdvisoriesMap) {
-			agencyToUrgentAdvisoriesMap.clear();
+			for (Integer agency : agencies) {
+				agencyToUrgentAdvisoriesMap.remove(agency);
+			}
 		}
 	}
 	/**
@@ -175,7 +178,7 @@ public class TweetStore {
 		synchronized (urgentTweets) {
 			if (this.urgentTweets.size()==this.ungentTweetsMaxSize) {
 				this.urgentTweets.removeFirst();
-			}		
+			}
 			this.urgentTweets.add(urgentTweet);
 		}
 	}*/

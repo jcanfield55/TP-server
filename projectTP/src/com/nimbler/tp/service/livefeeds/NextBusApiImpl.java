@@ -1,5 +1,9 @@
+/*
+ * @author nirmal
+ */
 package com.nimbler.tp.service.livefeeds;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +12,7 @@ import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.common.RealTimeDataException;
 import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.LegLiveFeed;
+import com.nimbler.tp.dataobject.RealTimePrediction;
 import com.nimbler.tp.dataobject.nextbus.Direction;
 import com.nimbler.tp.dataobject.nextbus.NextBusResponse;
 import com.nimbler.tp.dataobject.nextbus.Prediction;
@@ -22,11 +27,11 @@ import com.nimbler.tp.util.TpConstants;
  */
 public class NextBusApiImpl implements RealTimeAPI {
 
+	private static final boolean _verbose = false;
+
 	private Map<String, String> agencyMap;
 
 	private int timeDiffercenceInMin;
-
-	private List<String> suportedAgencyNames;
 
 	@Override
 	public LegLiveFeed getLiveFeeds(Leg leg) throws FeedsNotFoundException {
@@ -65,12 +70,14 @@ public class NextBusApiImpl implements RealTimeAPI {
 					if (prediction.getTripTag().equalsIgnoreCase(leg.getTripId()) && direction.getTitle().toLowerCase().contains(leg.getHeadsign().toLowerCase())) {
 						resp = new LegLiveFeed();
 						Long predictedTime = prediction.getEpochTime();
-						//						System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-						//						System.out.println("From Stop: "+leg.getFrom().getName()+" -- To Stop: "+leg.getTo().getName()+" -- Route: "+routeTag);
-						//						System.out.println("Scheduled: "+ scheduledTime+" -- > "+new Date(scheduledTime));
-						//						System.out.println("Predicted: "+ predictedTime+" -- > "+new Date(predictedTime)+" ("+prediction.getMinutes()+")");
-						//						System.out.println("Direction: "+leg.getHeadsign()+"-->"+direction.getTitle());
-						//						System.out.println("");
+						if(_verbose){
+							System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+							System.out.println("From Stop: "+leg.getFrom().getName()+" -- To Stop: "+leg.getTo().getName()+" -- Route: "+routeTag);
+							System.out.println("Scheduled: "+ scheduledTime+" -- > "+new Date(scheduledTime));
+							System.out.println("Predicted: "+ predictedTime+" -- > "+new Date(predictedTime)+" ("+prediction.getMinutes()+")");
+							System.out.println("Direction: "+leg.getHeadsign()+"-->"+direction.getTitle());
+							System.out.println("");
+						}
 						if (scheduledTime < predictedTime) {
 							int diff = (int) (predictedTime - scheduledTime);
 							diff = diff /( 1000 * 60);
@@ -78,7 +85,8 @@ public class NextBusApiImpl implements RealTimeAPI {
 								resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.DELAYED.ordinal());
 							else
 								resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
-							//							System.out.println("Difference: "+diff);
+							if(_verbose)
+								System.out.println("Difference: "+diff);
 							resp.setTimeDiffInMins(diff);
 						} else {
 							int diff = (int) (scheduledTime - predictedTime);
@@ -117,6 +125,67 @@ public class NextBusApiImpl implements RealTimeAPI {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see com.nimbler.tp.service.livefeeds.RealTimeAPI#getRealTimeFeeds(com.nimbler.tp.dataobject.Leg)
+	 */
+	@Override
+	public LegLiveFeed getAllRealTimeFeeds(Leg leg) throws FeedsNotFoundException {
+		LegLiveFeed resp = new LegLiveFeed();
+		List<RealTimePrediction> lstRealTimePredictions = new ArrayList<RealTimePrediction>();
+		try {
+			Long scheduledTime = leg.getStartTime();
+			String agencyId = leg.getAgencyId();
+			String agencyTag = agencyMap.get(agencyId);
+			if (agencyTag==null)
+				throw new RealTimeDataException("Agency not supported for Real Time feeds: "+agencyId);
+
+			String fromStopTag = leg.getFrom().getStopId().getId();
+			//			String toStopTag = leg.getTo().getStopId().getId();
+			String routeTag = leg.getRoute();
+			routeTag = NBInMemoryDataStore.getInstance().getRouteTag(agencyTag, routeTag);
+			NextBusResponse respBody = NextBusPredictionCache.getInstance().getPrediction(agencyTag, routeTag, fromStopTag);
+			List<Predictions> predictionsList = respBody.getPredictions();
+			if (predictionsList==null || predictionsList.size()==0)
+				throw new RealTimeDataException("Prediction results not found for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
+
+			Predictions predictions = predictionsList.get(0);
+			List<Direction> directions = predictions.getDirection();
+			if (directions==null)
+				throw new RealTimeDataException("Directions not found in Prediction response " +
+						"for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
+			StringBuilder sb = new StringBuilder();
+			for (Direction direction : directions) {
+				List<Prediction> predictionList = direction.getPrediction();
+				if (predictionList==null || predictionList.size()==0)
+					throw new RealTimeDataException("RealTimePrediction objects not found in Prediction response " +
+							"for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
+
+				for (Prediction prediction : predictionList) {
+					sb.append(prediction.getTripTag()+"--"+prediction.getMinutes()+", ");
+					if (direction.getTitle().toLowerCase().contains(leg.getHeadsign().toLowerCase())) {
+						lstRealTimePredictions.add(new RealTimePrediction(prediction));
+						if(_verbose){
+							Long predictedTime = prediction.getEpochTime();
+							System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+							System.out.println("From Stop: "+leg.getFrom().getName()+" -- To Stop: "+leg.getTo().getName()+" -- Route: "+routeTag);
+							System.out.println("Scheduled: "+ scheduledTime+" -- > "+new Date(scheduledTime));
+							System.out.println("Predicted: "+ predictedTime+" -- > "+new Date(predictedTime)+" ("+prediction.getMinutes()+")");
+							System.out.println("Direction: "+leg.getHeadsign()+"-->"+direction.getTitle());
+							System.out.println("");
+						}
+						break;
+					}
+				}
+			}
+			resp.setEmptyLeg(leg);
+			resp.setLstPredictions(lstRealTimePredictions);
+			return resp;
+		} catch (RealTimeDataException e) {
+			throw new FeedsNotFoundException(e.getMessage());
+		} catch (Exception e) {
+			throw new FeedsNotFoundException("Unknown Exception: "+e);
+		}
+	}
 	public Map<String, String> getAgencyMap() {
 		return agencyMap;
 	}
@@ -128,17 +197,5 @@ public class NextBusApiImpl implements RealTimeAPI {
 	}
 	public void setTimeDiffercenceInMin(int timeDiffercenceInMin) {
 		this.timeDiffercenceInMin = timeDiffercenceInMin;
-	}
-
-	@Override
-	public LegLiveFeed getAllRealTimeFeeds(Leg leg)	throws FeedsNotFoundException {
-		return null;
-	}
-	public List<String> getSuportedAgencyNames() {
-		return suportedAgencyNames;
-	}
-
-	public void setSuportedAgencyNames(List<String> suportedAgencyNames) {
-		this.suportedAgencyNames = suportedAgencyNames;
 	}
 }

@@ -207,15 +207,6 @@ public class Leg {
 		this.route = route;
 	}
 
-
-	public String getRouteId() {
-		return routeId;
-	}
-
-	public void setRouteId(String routeId) {
-		this.routeId = routeId;
-	}
-
 	public String getAgencyName() {
 		return agencyName;
 	}
@@ -472,6 +463,14 @@ public class Leg {
 		} else if (!to.equals(other.to))
 			return false;
 		return true;
+	}
+
+	public String getRouteId() {
+		return routeId;
+	}
+
+	public void setRouteId(String routeId) {
+		this.routeId = routeId;
 	}
 
 	/*	@Override

@@ -6,11 +6,18 @@
  */
 package com.nimbler.tp.rest;
 
+import static org.apache.commons.lang3.StringUtils.trim;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
@@ -42,7 +49,7 @@ public class UserManagementRestService {
 	private String loggerName;
 
 	@GET
-	@Path("/preferences/update")
+	@Path("/preferences/update1")
 	@Produces(MediaType.TEXT_PLAIN)
 	public String saveAlertPreference(@QueryParam(RequestParam.DEVICE_ID)String deviceid,
 			@DefaultValue("-2") @QueryParam(RequestParam.ALERT)int alertCount,
@@ -108,6 +115,34 @@ public class UserManagementRestService {
 			reqUserValue.setMaxBikeDist(maxBikeDist);
 
 			alertService.saveAlertPreferences(reqUserValue);
+			response.setCode(TP_CODES.SUCESS.getCode());
+		} catch (TpException e) {
+			logger.error(loggerName, e.getErrMsg());
+			response.setCode(e.getErrCode());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			response.setCode(TP_CODES.FAIL.ordinal());
+		}
+		return getJsonResponse(response);
+	}
+	@GET
+	@Path("/preferences/update")
+	@Produces(MediaType.TEXT_PLAIN)
+	@SuppressWarnings("unchecked")
+	public String saveAlertPreferenceAbstract(@Context HttpServletRequest request) throws TpException {
+		Map<String,String[]> req = request.getParameterMap();
+		Map<String,String> reqParams = new HashMap<String, String>();
+		for (Map.Entry<String, String[]> entry : req.entrySet()) {
+			String key = entry.getKey();
+			String[] value = entry.getValue();
+			if(value!=null && value.length>0){
+				reqParams.put(key,trim(value[0]));
+			}
+		}
+		TPResponse response = new TPResponse();
+		try {
+			UserManagementService alertService = BeanUtil.getUserManagementService();
+			alertService.saveAlertPreferences(reqParams);
 			response.setCode(TP_CODES.SUCESS.getCode());
 		} catch (TpException e) {
 			logger.error(loggerName, e.getErrMsg());

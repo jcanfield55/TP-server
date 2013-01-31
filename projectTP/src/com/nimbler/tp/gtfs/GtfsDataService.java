@@ -52,7 +52,7 @@ public class GtfsDataService {
 	private String ageciesToLoad ="1,2,3,4";
 	private boolean gtfsReadCompleted = false;
 
-	private boolean useInMemoryGtfs = false;
+	private boolean useInMemoryGtfs = true;
 
 	@SuppressWarnings("unused")
 	@PostConstruct

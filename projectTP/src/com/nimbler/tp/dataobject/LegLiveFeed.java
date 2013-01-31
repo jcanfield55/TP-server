@@ -14,7 +14,7 @@ public class LegLiveFeed {
 	private Long departureTime;
 	private Long arrivalTime;
 	private Integer timeDiffInMins;
-	private Integer arrivalTimeFlag;
+	private Integer arrivalTimeFlag;	
 	private List<RealTimePrediction> lstPredictions;
 
 
@@ -37,14 +37,14 @@ public class LegLiveFeed {
 	public void setLeg(Leg leg) {
 		Leg emptyLeg = new Leg();
 		emptyLeg.setId(leg.getId());
-		emptyLeg.setMode(leg.getMode());
-		emptyLeg.setStartTime(leg.getStartTime());
-		emptyLeg.setEndTime(leg.getEndTime());
-		emptyLeg.setRouteId(leg.getRouteId());
-		emptyLeg.setRoute(leg.getRoute());
+		emptyLeg.setMode(leg.getMode()); 
+		emptyLeg.setStartTime(leg.getStartTime()); 
+		emptyLeg.setEndTime(leg.getEndTime()); 
+		emptyLeg.setRouteId(leg.getRouteId()); 
+		emptyLeg.setRoute(leg.getRoute()); 
 		this.leg = emptyLeg;
 
-	}
+	}	
 	public void setEmptyLeg(Leg leg) {
 		Leg emptyLeg = new Leg();
 		emptyLeg.setId(leg.getId());

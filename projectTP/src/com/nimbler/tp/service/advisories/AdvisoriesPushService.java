@@ -17,9 +17,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.Vector;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -58,7 +61,7 @@ import com.nimbler.tp.util.TpException;
  */
 public class AdvisoriesPushService {
 
-	@Autowired 
+	@Autowired
 	private LoggingService logger;
 
 	@Autowired
@@ -84,30 +87,34 @@ public class AdvisoriesPushService {
 	private int validTweetHours = 6;
 
 	private int thresholdToInc = 1;
-
+	/**
+	 * agency,boards
+	 */
 	private Map<Integer, Vector<ThresholdBoard>> thresholdBoards = new HashMap<Integer, Vector<ThresholdBoard>>();
 	/**
 	 * <agency, multiplier>
 	 */
 	private Map<Integer, Integer> agencyPushThresholdWeight = new HashMap<Integer, Integer>();
 
-	private static Object thresholdLock = new  Object(); 
+	private Map<String, String>  agencyTweetSourceIconMap;
+
+	private static Object thresholdLock = new  Object();
 
 	public int maxTweetTextSizeToSend = 140;
 
 	private int pageSize = 500;
 
-	public boolean enablePushNotification = true;
+	private boolean enablePushNotification = true;
 
 	/**
-	 *<column name,start-end min of day> 
+	 *<column name,start-end min of day>
 	 */
 	private Map<String, String> pushTimeInterval = new HashMap<String, String>();
 
 	@Autowired
 	private NimblerApps nimblerApps;
 
-	public void init() {	
+	public void init() {
 		AGENCY_TYPE[] agencyTypes = AGENCY_TYPE.values();
 		for (AGENCY_TYPE agency : agencyTypes) {
 			if(agency.ordinal()==0)
@@ -117,24 +124,36 @@ public class AdvisoriesPushService {
 				boards = new Vector<ThresholdBoard>();
 				thresholdBoards.put(agency.ordinal(), boards);
 			}
-			for (int i = 1; i <= maxAlertThreshhold; i++) 
+			for (int i = 1; i <= maxAlertThreshhold; i++)
 				boards.add(new ThresholdBoard(agency.ordinal(),i));
 		}
 	}
 
 	/**
 	 * Reset all counters.
+	 * @param agencies
 	 */
-	public void resetAllCounters() {		
+	public void resetAllCounters(Integer[] agencies) {
 		synchronized (thresholdLock) {
-			for (Vector<ThresholdBoard> thresholdBoard : thresholdBoards.values()) {
-				for (ThresholdBoard board : thresholdBoard) {
+			for (Integer agency : agencies) {
+				Vector<ThresholdBoard> boards =  thresholdBoards.get(agency);
+				if(boards==null){
+					logger.error(loggerName, "No ThresholdBoards found to reset for agency id "+agency);
+					continue;
+				}
+				for (ThresholdBoard board : boards) {
 					logger.debug(loggerName, "before reset Threshold + Increament: "+board.getThreshold()+"+"+board.getIncreamentCount()+"");
 					board.resetCounter();
-				}			
+				}
 			}
 		}
 		logger.info(loggerName, "All threshold counters reset.");
+	}
+
+	public void onDayFinish(String strAgencies) {
+		Integer[] agencies = ComUtils.splitToIntArray(strAgencies);
+		resetAllCounters(agencies);
+		clearUrgentAdvisories(agencies);
 	}
 	/**
 	 * 
@@ -143,10 +162,6 @@ public class AdvisoriesPushService {
 		try {
 			logger.debug(loggerName, "Fetching Tweets.......");
 			fetchTweets();
-			if(getCurrentPushIntervalName()==null){
-				logger.info(loggerName, "Not valid push time, skipping");
-				return;
-			}
 			if(!enablePushNotification){
 				logger.warn(loggerName, "Push notification Disabled, skipping..");
 				return;
@@ -161,7 +176,7 @@ public class AdvisoriesPushService {
 	 * 
 	 */
 	private void fetchTweets() {
-		Iterator<Integer> agencies = agencyTweetSourceMap.keySet().iterator();		
+		Iterator<Integer> agencies = agencyTweetSourceMap.keySet().iterator();
 		while (agencies.hasNext()) {
 			Integer agency = agencies.next();
 			String commaSeparatedSource = agencyTweetSourceMap.get(agency);
@@ -197,6 +212,12 @@ public class AdvisoriesPushService {
 		Set<ThresholdIncData> boardsToInc = new HashSet<ThresholdIncData>();
 		while (appIdentifiers.hasNext()) {
 			int appIdentifier = appIdentifiers.next();
+
+			TimeZone tz = BeanUtil.getNimblerAppsBean().getTimeZoneByApp(appIdentifier);
+			if(getCurrentPushIntervalName(tz)==null){
+				logger.info(loggerName, "Not valid push time for App: "+appIdentifier+", skipping");
+				continue;
+			}
 			//For many agencies in one app: use this for sending push to specific app for specific agencies
 			String agencies = apps.getAppIdentifierToAgenciesMap().get(appIdentifier);
 			String[] agencyArr = agencies.split(",");
@@ -207,7 +228,7 @@ public class AdvisoriesPushService {
 				long timeDiff = NumberUtils.toLong(TpConstants.TWEET_TIME_DIFF)*60*60*1000;
 				long lastTimeLeg = System.currentTimeMillis() - timeDiff;
 				int lastFrameTweetCount = 0;
-				List<Tweet> tweetList  = TweetStore.getInstance().getTweets(agencyId); 
+				List<Tweet> tweetList  = TweetStore.getInstance().getTweets(agencyId);
 				for (Tweet tweet : tweetList) {
 					if (tweet.getTime() >= lastTimeLeg)
 						lastFrameTweetCount++;
@@ -233,7 +254,7 @@ public class AdvisoriesPushService {
 						for (ThresholdBoard board : thresholdBoard) {
 							int agencyMultilierWeight = agencyPushThresholdWeight.get(agencyId);
 							if (board.getEligibleCount()*agencyMultilierWeight == i && !board.isUsed()) {
-								int sentCount = publishTweets(tweet.getTime(), board.getThreshold(),lastTimeLeg, latestTweet, 
+								int sentCount = publishTweets(tweet.getTime(), board.getThreshold(),lastTimeLeg, latestTweet,
 										NIMBLER_APP_TYPE.values()[appIdentifier], AGENCY_TYPE.values()[agencyId]);
 								//logger.debug(loggerName, "threasold - sentCount:"+board.getThreshold()+"-"+sentCount);
 
@@ -254,7 +275,7 @@ public class AdvisoriesPushService {
 		}
 		if(boardsToInc.size()>0){
 			for (ThresholdIncData data : boardsToInc) {
-				ThresholdBoard board = data.getBoard();				
+				ThresholdBoard board = data.getBoard();
 				board.incCounter(data.getTime(),data.getIncCount());
 				logger.debug(loggerName, "Increamented counter for: "+board.getThreshold()+"+"+board.getIncreamentCount());
 			}
@@ -282,6 +303,7 @@ public class AdvisoriesPushService {
 				tweet.setTweetTime(createdDate.get(i));
 				tweet.setTime(tweetTime.get(i));
 				tweet.setTweet("@"+fromUser.get(i)+":"+tweets.get(i));
+				tweet.setSource(agencyTweetSourceIconMap.get(StringUtils.lowerCase(fromUser.get(i))));
 				tweetList.add(tweet);
 			}
 		}
@@ -304,8 +326,8 @@ public class AdvisoriesPushService {
 	 * 
 	 * @param userid
 	 * @return
-	 * @throws TpException 
-	 * @throws UnsupportedEncodingException 
+	 * @throws TpException
+	 * @throws UnsupportedEncodingException
 	 */
 	private String getTwitterResponse(String queryParameter) throws  UnsupportedEncodingException, TpException {
 		String response =null;
@@ -314,7 +336,7 @@ public class AdvisoriesPushService {
 		return response;
 	}
 	/**
-	 * 	
+	 * 
 	 * @param lastSentTime
 	 * @param tweetCount
 	 * @param lastLegTime
@@ -335,14 +357,14 @@ public class AdvisoriesPushService {
 			}else{
 				alertMsg = StatusMsgConfig.getInstance().getMsg(PUSH_MSG_CONSTANT.SF_REGULAR_TWEET.name());
 				alertMsg = String.format(alertMsg, "%s",agencyType.getText(),"%s");
-			}			
-
+			}
+			TimeZone timeZone = BeanUtil.getNimblerAppsBean().getTimeZoneByApp(appType.ordinal());
 			BasicDBObject queryObject = new BasicDBObject();
-			boolean isWeekEnd = ComUtils.isWeekEnd();
+			boolean isWeekEnd = ComUtils.isWeekEnd(timeZone);
 			if(isWeekEnd){
 				queryObject.put(RequestParam.NOTIF_TIMING_WEEKEND, BOOLEAN_VAL.TRUE.ordinal());
 			}else{
-				String intervalColumnName = getCurrentPushIntervalName(); //morning/evening
+				String intervalColumnName = getCurrentPushIntervalName(timeZone); //morning/evening
 				if(intervalColumnName==null){
 					logger.info(loggerName, "No valid interval column found for current time (possibly entered in blackout), skip sending.....");
 					return count;
@@ -374,7 +396,7 @@ public class AdvisoriesPushService {
 							pushToPhone(user.getDeviceToken(), 1, newTweets.get(0), false, user.isStandardNotifSoundEnable(), appType);
 						} else {
 							for (String tweet: newTweets)
-								pushToPhone(user.getDeviceToken(), newTweets.size(), tweet, false, user.isStandardNotifSoundEnable(), appType);							
+								pushToPhone(user.getDeviceToken(), newTweets.size(), tweet, false, user.isStandardNotifSoundEnable(), appType);
 						}
 					} else {
 						int newTweetCount = TweetStore.getInstance().getTweetCountAfterTime(usrLastPushTime, lastLegTime, agencyType.ordinal());
@@ -413,7 +435,7 @@ public class AdvisoriesPushService {
 			BasicDBObject queryObj = new BasicDBObject();
 			queryObj.put(TpConstants.NUMBER_OF_ALERT, new BasicDBObject(MongoQueryConstant.NOT_EQUAL, never));
 			queryObj.put(agencyType.getEnableAdvisoryColumnName(), BOOLEAN_VAL.TRUE.ordinal());
-			/*	
+			/*
 			queryObj.put(TpConstants.APP_TYPE, agencyType.ordinal());
 			 * if(agencyType.ordinal() == AGENCY_TYPE.CALTRAIN.ordinal()){
 				DBObject appCalTrain = new BasicDBObject(TpConstants.APP_TYPE, new BasicDBObject(MongoQueryConstant.IN, new Object[]{null,NIMBLER_APP_TYPE.CALTRAIN.ordinal()}));
@@ -422,7 +444,7 @@ public class AdvisoriesPushService {
 				BasicDBList or = new BasicDBList();
 				or.add(appCalTrain);
 				or.add(appBay);
-				queryObj.put(MongoQueryConstant.OR, or);				
+				queryObj.put(MongoQueryConstant.OR, or);
 			}else{
 				queryObj.put(TpConstants.APP_TYPE, NIMBLER_APP_TYPE.SF_BAY_AREA.ordinal());
 			}*/
@@ -443,7 +465,7 @@ public class AdvisoriesPushService {
 					int appType = NumberUtils.toInt(user.getAppType()+"", NIMBLER_APP_TYPE.CALTRAIN.ordinal());
 					if(appType==0)
 						appType = NIMBLER_APP_TYPE.CALTRAIN.ordinal();
-					pushToPhone(user.getDeviceToken(), 0, msg, true, user.isUrgentNotifSoundEnable(), 
+					pushToPhone(user.getDeviceToken(), 0, msg, true, user.isUrgentNotifSoundEnable(),
 							NIMBLER_APP_TYPE.values()[appType]);//i know its bad!!
 					pushSuccessDevices.add(user.getId());
 				}
@@ -467,7 +489,7 @@ public class AdvisoriesPushService {
 	 */
 	public int pushTweetsByApp(String tweet, int appType) {
 		int pushNotification = PUSH_NOTIFICATION.FAIL.ordinal();
-		try {			
+		try {
 			int never = -1;
 			BasicDBObject queryObj = new BasicDBObject();
 			queryObj.put(TpConstants.NUMBER_OF_ALERT, new BasicDBObject(MongoQueryConstant.NOT_EQUAL, never));
@@ -479,7 +501,7 @@ public class AdvisoriesPushService {
 				queryObj.put(TpConstants.APP_TYPE, NIMBLER_APP_TYPE.SF_BAY_AREA.ordinal());
 			}*/
 			String templet = StatusMsgConfig.getInstance().getMsg(PUSH_MSG_CONSTANT.STANDARD_ADMIN_MSG.name());
-			String msg = String.format(templet,NIMBLER_APP_TYPE.values()[appType].getText() ,tweet);			
+			String msg = String.format(templet,NIMBLER_APP_TYPE.values()[appType].getText() ,tweet);
 
 			BasicQuery basicQuery = new BasicQuery(queryObj);
 			int count = persistenceService.getCount(MONGO_TABLES.users.name(), queryObj, User.class);
@@ -492,8 +514,8 @@ public class AdvisoriesPushService {
 				if (resultSet==null || resultSet.size()==0)
 					break;
 				List<String> pushSuccessDevices = new ArrayList<String>();
-				for (User user : resultSet) {					
-					pushToPhone(user.getDeviceToken(), 0, msg, false, user.isStandardNotifSoundEnable(), 
+				for (User user : resultSet) {
+					pushToPhone(user.getDeviceToken(), 0, msg, false, user.isStandardNotifSoundEnable(),
 							NIMBLER_APP_TYPE.values()[appType]);
 					pushSuccessDevices.add(user.getId());
 				}
@@ -516,7 +538,7 @@ public class AdvisoriesPushService {
 	public int pushTweetToTestUser(String message, String betaUserDeviceToken, boolean playSound, NIMBLER_APP_TYPE appType) {
 		logger.debug(loggerName ,"sending tweet to Test Users, Message:"+message+", Tockens: "+betaUserDeviceToken+",playSound: "+playSound);
 		int pushNotification = PUSH_NOTIFICATION.FAIL.ordinal();
-		try { 
+		try {
 			String[] deviceTokens = betaUserDeviceToken.split(",");
 			List<String> lstDeviceTokans = new ArrayList<String>();
 			for (int i = 0; i < deviceTokens.length; i++) {
@@ -532,7 +554,7 @@ public class AdvisoriesPushService {
 		return pushNotification;
 	}
 	/**
-	 * Push To phone 
+	 * Push To phone
 	 * @param currentTime
 	 * @param lastTime
 	 */
@@ -599,10 +621,15 @@ public class AdvisoriesPushService {
 		this.apnService = apnService;
 	}
 	/**
+	 * @param agencies
 	 * 
 	 */
-	public void clearUrgentAdvisories() {
-		TweetStore.getInstance().clearUrgentAdvisories();
+	public void clearUrgentAdvisories(Integer[] agencies) {
+		logger.debug(loggerName, "clearing for agency: "+ToStringBuilder.reflectionToString(agencies));
+		logger.debug(loggerName,"before...."+ TweetStore.getInstance().getUrgentTweets(ArrayUtils.toPrimitive(agencies)).toString());
+		TweetStore.getInstance().clearUrgentAdvisories(agencies);
+		logger.debug(loggerName,"after...."+ TweetStore.getInstance().getUrgentTweets(ArrayUtils.toPrimitive(agencies)).toString());
+		logger.debug(loggerName, "done....");
 	}
 	/**
 	 * 
@@ -618,18 +645,20 @@ public class AdvisoriesPushService {
 	 * 
 	 * @return
 	 */
-	private boolean isValidPushTimeForCalTrain() {		
+	private boolean isValidPushTimeForCalTrain() {
 		int current = NumberUtils.toInt(DateFormatUtils.format(new Date(), "HH"));
-		return pushIntervalStartTime<=current && pushIntervalEndTime>current; 
+		return pushIntervalStartTime<=current && pushIntervalEndTime>current;
 	}
 
 	/**
 	 * Gets the current push interval name.
+	 * @param timeZone
 	 *
 	 * @return the current push interval name
 	 */
-	private String getCurrentPushIntervalName(){
+	private String getCurrentPushIntervalName(TimeZone timeZone){
 		Calendar c =  Calendar.getInstance();
+		c.setTimeZone(timeZone);
 		int currentMins = c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE);
 		for (Entry<String, String> entry : pushTimeInterval.entrySet()) {
 			String name = entry.getKey();
@@ -648,7 +677,7 @@ public class AdvisoriesPushService {
 	 * @return
 	 */
 	private boolean validateTweet(Long createdDate) {
-		long oldtimeLimit = System.currentTimeMillis()- (validTweetHours * DateUtils.MILLIS_PER_HOUR);		
+		long oldtimeLimit = System.currentTimeMillis()- (validTweetHours * DateUtils.MILLIS_PER_HOUR);
 		return (createdDate > oldtimeLimit);
 	}
 	/**
@@ -783,7 +812,7 @@ public class AdvisoriesPushService {
 		} else if (agencyId == AGENCY_TYPE.AC_TRANSIT.ordinal()) {
 			return user.getLastPushTimeAct();
 		} else if (agencyId == AGENCY_TYPE.SFMUNI.ordinal()) {
-			return user.getLastPushTimeSfMuni(); 
+			return user.getLastPushTimeSfMuni();
 		} else if (agencyId == AGENCY_TYPE.CALTRAIN.ordinal()) {
 			//return user.getLastPushTimeCaltrain();
 			return user.getLastPushTime();
@@ -847,5 +876,20 @@ public class AdvisoriesPushService {
 			return true;
 		}
 	}
+	public boolean isEnablePushNotification() {
+		return enablePushNotification;
+	}
 
+	public void setEnablePushNotification(boolean enablePushNotification) {
+		this.enablePushNotification = enablePushNotification;
+	}
+
+	public Map<String, String> getAgencyTweetSourceIconMap() {
+		return agencyTweetSourceIconMap;
+	}
+
+	public void setAgencyTweetSourceIconMap(
+			Map<String, String> agencyTweetSourceIconMap) {
+		this.agencyTweetSourceIconMap = agencyTweetSourceIconMap;
+	}
 }

@@ -140,7 +140,6 @@
 		</property>-->
 	</bean>
 
-
 	<bean id="advisoriesPushService"
 		class="com.nimbler.tp.service.advisories.AdvisoriesPushService"
 		init-method="init">	
@@ -151,6 +150,20 @@
 				<entry key="3" value="apprikasfmta" /><!-- SFMUNI - apprikasfmta -->
 				<entry key="4" value="apprikactransit" />  <!-- AC_TRANSIT - apprikactransit -->
 				<entry key="8" value="wmata" />  <!-- WMATA - apprikwmata -->
+			</map>
+		</property>	
+		<property name="agencyTweetSourceIconMap"> <!-- keys point to ordinal value of TPCpnstants.AGENCY_TYPE enum, value = comma separated sources -->
+			<map>				
+				<entry key="caltrain_news" value="caltrain_news.png" />								
+				<entry key="caltrain" value="caltrain.png" />								
+				<entry key="sfbartalert" value="bart.png" />								
+				<entry key="sfmta_muni" value="sfmta.png" />								
+				<entry key="rideact" value="actransit.png" />	
+				<!-- test -->
+				<entry key="apprikacaltrain" value="caltrain.png" />	
+				<entry key="apprikabart" value="bart.png" />	
+				<entry key="apprikasfmta" value="sfmta.png" />	
+				<entry key="apprikactransit" value="actransit.png" />								
 			</map>
 		</property>	
 		<property name="agencyPushThresholdWeight"> 
@@ -224,7 +237,7 @@
 	<bean id="gtfsContext" class="com.nimbler.tp.gtfs.GtfsContext">
 		<property name="gtfsBundles">
 			<list>				
-		<!-- 		<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="Menlo-Midday" />
 					<property name="currentDataFile" value="c:/otp_/gtfs/Menlo-Midday.zip" />
 					<property name="downloadUrl"
@@ -283,7 +296,7 @@
 					<property name="downloadUrl"
 						value="http://www.sfmta.com/transitdata/google_transit.zip" />
 						<property name="lastUpdateDate" value="20120912" />
-				</bean> -->  
+				</bean>  
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="WMATA" />
 					<property name="currentDataFile" value="c:/otp_/gtfs/wmata.zip" />
@@ -350,6 +363,13 @@
 			<entry key="METRO" value-ref="wmataApiImpl" />
 		</map>
 	</property>
+	<property name="appTimeZone">
+		<map>
+			<entry key="1" value-ref="pstTimeZone" />
+			<entry key="4" value-ref="pstTimeZone" />
+			<entry key="5" value-ref="easternTimeZone" />			
+		</map>
+	</property>
 	</bean>
 
 	
@@ -375,20 +395,43 @@
 	</bean>
 	<bean id="gtfsMonitoringJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="gtfsMonitoringJob" />
- 		<property name="cronExpression" value="0 0 21 * * ?" /> 	
-		   <!--  <property name="cronExpression" value="0 59 17 * * ?" /> --> 		
+ 		<property name="cronExpression" value="0 0 21 * * ?" /> 		    
 	</bean>
 
-	<bean name="clearAdvisaryCounterJob"
+	<bean name="onDayFinishJobPST"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="concurrent" value="false" />
 		<property name="targetBeanName" value="advisoriesPushService" />
-		<property name="targetMethod" value="resetAllCounters" />
+		<property name="targetMethod" value="onDayFinish" />
+		<property name="arguments">
+			<list>
+				<value>1,2,3,4</value> <!-- agenciIds -->			
+			</list>
+		</property>		
 	</bean>
-	<bean id="clearAdvisaryCounterTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
-		<property name="jobDetail" ref="clearAdvisaryCounterJob" />
-		<property name="cronExpression" value="0 0 0/6 * * ?" />
+	<bean id="onDayFinishTriggerPST" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="onDayFinishJobPST" />
+		<property name="cronExpression" value="0 59 23 * * ?" />		 
+		<property name="timeZone" ref="pstTimeZone" />
 	</bean>
+	
+	<bean name="onDayFinishJobDC"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetBeanName" value="advisoriesPushService" />
+		<property name="targetMethod" value="onDayFinish" />
+		<property name="arguments">
+			<list>
+				<value>8</value> <!-- agenciIds -->			
+			</list>
+		</property>		
+	</bean>
+	<bean id="onDayFinishTriggerDC" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="onDayFinishJobDC" />
+ 		<property name="cronExpression" value="0 59 23 * * ?" />		
+		<property name="timeZone" ref="easternTimeZone" />
+	</bean>	
+	
 	<bean name="fetchTweetsJob"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="concurrent" value="false" />
@@ -399,16 +442,7 @@
 		<property name="jobDetail" ref="fetchTweetsJob" />
 		<property name="cronExpression" value="0 0/1 * * * ?" />		
 	</bean>
-	<bean name="urgentAdvisoriesClearJob"
-		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
-		<property name="concurrent" value="false" />
-		<property name="targetBeanName" value="advisoriesPushService" />
-		<property name="targetMethod" value="clearUrgentAdvisories" />
-	</bean>
-	<bean id="urgentAdvisoriesClearJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
-		<property name="jobDetail" ref="urgentAdvisoriesClearJob" />
-		<property name="cronExpression" value="0 59 23 * * ?" /> 		
-	</bean>
+	 <!-- ===================================  wmata   =================================== -->
 	<bean name="wmataApiLimitRenewJob"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="concurrent" value="false" />
@@ -417,7 +451,8 @@
 	</bean>
 	<bean id="wmataApiLimitRenewTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="wmataApiLimitRenewJob" />
-		<property name="cronExpression" value="0 59 23 * * ?" />		
+		<property name="cronExpression" value="0 59 23 * * ?" />	
+		<property name="timeZone" ref="easternTimeZone" />	
 	</bean>	
 	<bean name="wmataSaveStopJob"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
@@ -429,19 +464,26 @@
 		<property name="jobDetail" ref="wmataSaveStopJob" />
 		<property name="cronExpression" value="0 0 0/6 * * ?" />		
 	</bean>
+	<!-- ===================================  wmata   =================================== -->
 	<bean id="schedulerFactoryBean"
 		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>
 				<ref bean="gtfsMonitoringJobTrigger" />
 				<ref bean="fetchTweetsTrigger" />
-				<ref bean="urgentAdvisoriesClearJobTrigger" />
-				<ref bean="clearAdvisaryCounterTrigger" />
+				<ref bean="onDayFinishTriggerPST" />
+				<ref bean="onDayFinishTriggerDC" />
 				<ref bean="dBHealthMonitoringTrigger" />
 				<ref bean="wmataApiLimitRenewTrigger" />
 				<ref bean="wmataSaveStopTrigger" />
 			</list>
 		</property>
+	</bean>
+	<bean id="pstTimeZone" class="java.util.TimeZone" factory-method="getTimeZone">
+		<constructor-arg index="0" value="PST" />
+	</bean>
+	<bean id="easternTimeZone" class="java.util.TimeZone" factory-method="getTimeZone">
+		<constructor-arg index="0" value="US/Eastern" />
 	</bean>
 	<!-- ====================================== Mail configuration  ================================== -->
  	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">

@@ -1,5 +1,6 @@
 package com.nimbler.tp.service.livefeeds;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
@@ -14,6 +15,7 @@ import com.nimbler.tp.common.RealTimeDataException;
 import com.nimbler.tp.dataobject.BartRouteInfo;
 import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.LegLiveFeed;
+import com.nimbler.tp.dataobject.RealTimePrediction;
 import com.nimbler.tp.dataobject.bart.BartResponse;
 import com.nimbler.tp.dataobject.bart.Estimate;
 import com.nimbler.tp.dataobject.bart.EstimateTimeOfDiparture;
@@ -43,6 +45,74 @@ public class BARTApiImpl implements RealTimeAPI {
 	private int maxTimeDifference = 30;//can be updated from bean
 	private int maxTimeDifferenceForEarly = 10;//can be updated from bean
 
+	@Override
+	public LegLiveFeed getAllRealTimeFeeds(Leg leg) throws FeedsNotFoundException {		
+		List<RealTimePrediction> lstRealTimePredictions = new ArrayList<RealTimePrediction>();
+		try {
+			Long scheduledTime = leg.getStartTime();
+			if (scheduledTime < System.currentTimeMillis())
+				throw new RealTimeDataException("Leg scheduled time is already passed. No estimates possible.");
+
+			String agencyId = leg.getAgencyId();
+			String fromStopTag = leg.getFrom().getStopId().getId();
+			String toStopTag = leg.getTo().getStopId().getId();
+			String routeTag = leg.getRoute().trim();			
+			BartResponse response = BartETDCache.getInstance().getEstimateTimeOfDepart(fromStopTag);
+			List<Station> lstStation = response.getStation();  
+			if (lstStation == null || lstStation.size()==0)
+				throw new RealTimeDataException("Stations not found in ETD response for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
+
+			Station station = lstStation.get(0);
+			List<EstimateTimeOfDiparture> etds = station.getEtdTimeDeparture();
+			if (etds == null || etds.size()==0)
+				throw new RealTimeDataException("ETDs not found in ETD response for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
+
+			EstimateTimeOfDiparture targetETD = null;
+			//1. Compare TO stop in ETD response directly
+			for (EstimateTimeOfDiparture etd : etds) {
+				String destinationAbbr = etd.getAbbreviation();
+				if (destinationAbbr.equalsIgnoreCase(toStopTag)) {
+					targetETD = etd;
+					break;
+				}
+			}
+			if (targetETD == null) {
+				String routeHeadSign = leg.getHeadsign().trim();
+				int routeDirection  = getRouteDirection(routeTag, routeHeadSign);
+				String lastStationInRoute = "";
+				if (routeDirection == TpConstants.ROUTE_DIRECTION_OUTBOUND) {//in direction of route tag
+					lastStationInRoute = getLastStopOfRoute(routeTag);
+				} else if (routeDirection == TpConstants.ROUTE_DIRECTION_INBOUND) {//in reverse direction
+					lastStationInRoute = getFirstStopOfRoute(routeTag);
+				}
+				for (EstimateTimeOfDiparture etd : etds) {
+					String destinationAbbr = etd.getAbbreviation();
+					if (destinationAbbr.equalsIgnoreCase(lastStationInRoute)) {//predict on base of last stop of the route
+						targetETD = etd;
+						break;
+					}
+				}
+			}			
+			if (targetETD == null)
+				throw new RealTimeDataException("Targeted station not found in estimation response.");
+
+			List<Estimate> estimates = targetETD.getEstimate();
+			if (estimates==null || estimates.size()==0)
+				throw new RealTimeDataException("Estimates not found in ETD response for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
+
+			for (Estimate estimate : estimates) {
+				lstRealTimePredictions.add(new RealTimePrediction(estimate));
+			}
+			LegLiveFeed resp = new LegLiveFeed();
+			resp.setEmptyLeg(leg);
+			resp.setLstPredictions(lstRealTimePredictions);
+			return resp;
+		} catch (RealTimeDataException e) {
+			throw new FeedsNotFoundException(e.getMessage());
+		} catch (Exception e) {
+			throw new FeedsNotFoundException("Unknown Exception: "+e);
+		}		
+	}
 
 	@Override
 	public LegLiveFeed getLiveFeeds(Leg leg) throws FeedsNotFoundException {
@@ -278,8 +348,5 @@ public class BARTApiImpl implements RealTimeAPI {
 	public void setBartAPIRegKey(String bartAPIRegKey) {
 		this.bartAPIRegKey = bartAPIRegKey;
 	}
-	@Override
-	public LegLiveFeed getAllRealTimeFeeds(Leg leg)	throws FeedsNotFoundException {
-		return null;
-	}
+
 }

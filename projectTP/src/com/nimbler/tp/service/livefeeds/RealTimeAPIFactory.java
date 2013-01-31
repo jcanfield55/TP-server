@@ -5,6 +5,7 @@ import java.util.Map;
 import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.util.BeanUtil;
+import com.nimbler.tp.util.TpConstants;
 /**
  * Factory class that provides appropriate handler for getting real time data.
  * Selection criteria is OTP Leg type.

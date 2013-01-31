@@ -4,7 +4,9 @@
 package com.nimbler.tp.rest;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.replaceOnce;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,10 +15,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import javax.activation.MimetypesFileTypeMap;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -127,9 +137,9 @@ public class RealTimePredictionService {
 				//				System.out.println("Itinerary Start Time:---------->> "+new Date(itin.getStartTime()));
 				LiveFeedResponse itinFeeds = getRealTimeLegData(itin);
 				//				System.out.println("=======>"+JSONUtil.getJsonFromObj(itin.getLegs()));
-				String real = predictRealTimeByLegs(JSONUtil.getJsonFromObj(itin.getLegs()));
+				//	String real = predictRealTimeByLegs(JSONUtil.getJsonFromObj(itin.getLegs()));
 				//				System.out.println("------>"+predictRealTimeByLegs(JSONUtil.getJsonFromObj(itin.getLegs())));
-				printData(itin.getLegs(),(PlanLiveFeeds)JSONUtil.getObjectFromJson(real,PlanLiveFeeds.class));
+				//	printData(itin.getLegs(),(PlanLiveFeeds)JSONUtil.getObjectFromJson(real,PlanLiveFeeds.class));
 				if(itinFeeds!=null && !ComUtils.isEmptyList(itinFeeds.getLegLiveFeeds())){
 					adjustLegOverLap(itin,itinFeeds);
 					updateItineraryTimeFlag(itinFeeds);
@@ -182,14 +192,15 @@ public class RealTimePredictionService {
 	 * @param strLegs the str legs
 	 * @return the string
 	 */
-	@GET
+	@POST
 	@Path("/bylegs/")
-	public String predictRealTimeByLegs(@QueryParam(RequestParam.LEGS) String strLegs) {
+	public String predictRealTimeByLegs(@Context HttpServletRequest httpRequest) {
 		PlanLiveFeeds response = new PlanLiveFeeds();
 		try {
-			//			Map<String,String> reqParam = ComUtils.parseMultipartRequest(httpRequest);
-			//			String strLegs = reqParam.get(RequestParam.LEGS);
-			System.out.println(strLegs);
+			Map<String,String> reqParam = ComUtils.parseMultipartRequest(httpRequest);
+			String strLegs = reqParam.get(RequestParam.LEGS);
+			strLegs = replaceOnce(strLegs, "(","[");
+			strLegs = replaceOnce(strLegs, ")","]");
 			List lstLegs =  JSONUtil.getLegsJson(strLegs);
 			if(ComUtils.isEmptyList(lstLegs))
 				throw new TpException(TP_CODES.INVALID_REQUEST.getCode(),"Error while getting JSON String from plan object.");
@@ -206,8 +217,26 @@ public class RealTimePredictionService {
 			response.setError(TP_CODES.FAIL.getCode());
 		}
 		String res =  getJsonResponse(response);
-		//		System.out.println(res);
+		//System.out.println(res);
 		return res;
+	}
+
+	/**
+	 * Gets the agency image.
+	 * @return
+	 *
+	 * @return the agency image
+	 */
+	@GET
+	@Path("/download/{image}")
+	@Produces("image/*")
+	public Response getAgencyImage(@PathParam("image") String strImage) {
+		File image = new File(TpConstants.DOWNLOAD_IMAGE_PATH+"/"+strImage);
+		if (!image.exists()) {
+			throw new WebApplicationException(404);
+		}
+		String mimeType = new MimetypesFileTypeMap().getContentType(image);
+		return Response.ok(image, mimeType).build();
 	}
 
 	/**
@@ -237,6 +266,13 @@ public class RealTimePredictionService {
 		}
 		return itinFeeds;
 	}
+
+	/**
+	 * Gets the real time leg data legs.
+	 *
+	 * @param legs the legs
+	 * @return the real time leg data legs
+	 */
 	private List<LegLiveFeed> getAllRealTimeFeedsForLegs(List<Leg> legs) {
 		List<LegLiveFeed> lstRes = new ArrayList<LegLiveFeed>();
 		legs = getApplicableLegs(legs);
@@ -257,6 +293,7 @@ public class RealTimePredictionService {
 		}
 		return lstRes;
 	}
+
 	/**
 	 * Update leg time to today.
 	 *
@@ -481,9 +518,6 @@ public class RealTimePredictionService {
 			List<LegLiveFeed> lstLegLiveFeeds =  itinFeeds.getLegLiveFeeds();
 			List<LegLiveFeed> lstFeedsToAdd = new ArrayList<LegLiveFeed>();
 			for (LegLiveFeed legLiveFeed : lstLegLiveFeeds) {
-				if(legLiveFeed==null){
-					System.out.println("........"+legLiveFeed);
-				}
 				LegLiveFeed feed = PlanUtil.shiftLeg(legs, legLiveFeed);
 				if(feed!=null){
 					lstFeedsToAdd.add(feed);
@@ -518,49 +552,53 @@ public class RealTimePredictionService {
 		this.loggerName = loggerName;
 	}
 	public static void main(String[] args) {
-		Leg fistWalk = new Leg();
-		fistWalk.setId("fw");
-		fistWalk.setMode(TraverseMode.WALK.toString());
-		fistWalk.setStartTime(10l);
-		fistWalk.setEndTime(20l);
+		try {
+			Leg fistWalk = new Leg();
+			fistWalk.setId("fw");
+			fistWalk.setMode(TraverseMode.WALK.toString());
+			fistWalk.setStartTime(10l);
+			fistWalk.setEndTime(20l);
 
-		Leg transit = new Leg();
-		transit.setId("transit");
-		transit.setMode(TraverseMode.SUBWAY.toString());
-		transit.setStartTime(23l);
-		transit.setEndTime(28l);
-
-
-		Leg lastWalk = new Leg();
-		lastWalk.setId("lw");
-		lastWalk.setMode(TraverseMode.WALK.toString());
-		lastWalk.setStartTime(30l);
-		lastWalk.setEndTime(40l);
-
-		Leg transit1 = new Leg();
-		transit1.setId("transit1");
-		transit1.setMode(TraverseMode.SUBWAY.toString());
-		transit1.setStartTime(1l);
-		transit1.setEndTime(5l);
-
-		Itinerary itinerary = new Itinerary();
-		itinerary.addLeg(transit1);
-		itinerary.addLeg(fistWalk);
-		itinerary.addLeg(transit);
-		itinerary.addLeg(lastWalk);
+			Leg transit = new Leg();
+			transit.setId("transit");
+			transit.setMode(TraverseMode.SUBWAY.toString());
+			transit.setStartTime(23l);
+			transit.setEndTime(28l);
 
 
-		LegLiveFeed legFeed = new LegLiveFeed();
-		legFeed.setLeg(transit);
-		legFeed.setTimeDiffInMins(6);
-		legFeed.setDepartureTime(transit.getStartTime()-6);
-		legFeed.setArrivalTimeFlag(ETA_FLAG.EARLY.ordinal());
+			Leg lastWalk = new Leg();
+			lastWalk.setId("lw");
+			lastWalk.setMode(TraverseMode.WALK.toString());
+			lastWalk.setStartTime(30l);
+			lastWalk.setEndTime(40l);
 
-		LiveFeedResponse feedResponse = new LiveFeedResponse();
-		feedResponse.addLegLiveFeed(legFeed);
-		RealTimePredictionService service = new RealTimePredictionService();
-		service.adjustLegOverLap(itinerary, feedResponse);
-		//		System.out.println(getLegAtOffset(itinerary.getLegs(), fistWalk,3));
-		System.out.println(feedResponse);
+			Leg transit1 = new Leg();
+			transit1.setId("transit1");
+			transit1.setMode(TraverseMode.SUBWAY.toString());
+			transit1.setStartTime(1l);
+			transit1.setEndTime(5l);
+
+			Itinerary itinerary = new Itinerary();
+			itinerary.addLeg(transit1);
+			itinerary.addLeg(fistWalk);
+			itinerary.addLeg(transit);
+			itinerary.addLeg(lastWalk);
+
+			System.out.println(JSONUtil.getJsonFromObj(itinerary.getLegs()));
+			LegLiveFeed legFeed = new LegLiveFeed();
+			legFeed.setLeg(transit);
+			legFeed.setTimeDiffInMins(6);
+			legFeed.setDepartureTime(transit.getStartTime()-6);
+			legFeed.setArrivalTimeFlag(ETA_FLAG.EARLY.ordinal());
+
+			LiveFeedResponse feedResponse = new LiveFeedResponse();
+			feedResponse.addLegLiveFeed(legFeed);
+			RealTimePredictionService service = new RealTimePredictionService();
+			service.adjustLegOverLap(itinerary, feedResponse);
+			//		System.out.println(getLegAtOffset(itinerary.getLegs(), fistWalk,3));
+			System.out.println(feedResponse);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }

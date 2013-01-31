@@ -3,6 +3,8 @@
  */
 package com.nimbler.tp.service.livefeeds;
 
+import java.util.List;
+
 import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.LegLiveFeed;
@@ -12,7 +14,6 @@ import com.nimbler.tp.dataobject.LegLiveFeed;
  *
  */
 public interface RealTimeAPI {
-
 	/**
 	 * Will return real time departure data for specific leg.
 	 * @param leg

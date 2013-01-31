@@ -26,7 +26,7 @@ public class PlanLiveFeeds {
 	}
 
 	public PlanLiveFeeds() {
-		this.errCode = TP_CODES.SUCESS.getCode();
+		this.errCode = TP_CODES.SUCESS.getCode();	
 	}
 
 	public List<LegLiveFeed> getLegLiveFeeds() {
@@ -67,7 +67,7 @@ public class PlanLiveFeeds {
 	 */
 	public void setError(int code) {
 		this.errCode = code;
-		this.errMsg = TP_CODES.get(code).getMsg();
+		this.errMsg = TP_CODES.get(code).getMsg(); 
 	}
 	/**
 	 * 
@@ -76,7 +76,7 @@ public class PlanLiveFeeds {
 	public void addItinLiveFeeds(LiveFeedResponse itinFeed) {
 		if (itinLiveFeeds==null)
 			itinLiveFeeds = new ArrayList<LiveFeedResponse>();
-		itinLiveFeeds.add(itinFeed);
+		itinLiveFeeds.add(itinFeed); 
 	}
 	@Override
 	public String toString() {

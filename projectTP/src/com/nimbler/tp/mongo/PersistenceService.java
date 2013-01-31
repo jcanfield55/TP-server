@@ -1,6 +1,6 @@
 /**
  * 
- * Copyright (C) 2012 Apprika Systems   Pvt. Ltd. 
+ * Copyright (C) 2012 Apprika Systems   Pvt. Ltd.
  * All rights reserved.
  *
  */
@@ -79,7 +79,7 @@ public class PersistenceService {
 			mongoOpetation.save(collectionName, object);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -88,6 +88,33 @@ public class PersistenceService {
 			throw new DBException(e.getMessage());
 		}
 	}
+
+	/**
+	 * Adds the db object.
+	 *
+	 * @param collectionName the collection name
+	 * @param dbObject the db object
+	 * @throws DBException the dB exception
+	 */
+	public void addDbObject(String collectionName, DBObject dbObject)throws DBException {
+		try {
+			WriteResult rr = mongoOpetation.getCollection(collectionName).insert(dbObject);
+			if(rr.getError()!=null || rr.getN() == 0){
+				logger.error(loggerName, " WriteResult: "+rr);
+				//				throw new DBException("Error:"+rr.getError()+",count:"+rr.getN()+", LastError: "+rr.getLastError());
+			}
+		}  catch (DataAccessResourceFailureException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (MongoException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		}
+	}
+
 	/**
 	 * add multiple object for particular collection
 	 * @param collectionName
@@ -98,7 +125,7 @@ public class PersistenceService {
 			mongoOpetation.insertList(collectionName, list);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -108,7 +135,7 @@ public class PersistenceService {
 		}
 	}
 	/**
-	 * return only one row data 
+	 * return only one row data
 	 * @param collectionName
 	 * @param column
 	 * @param columnValue
@@ -121,7 +148,7 @@ public class PersistenceService {
 			return mongoOpetation.findOne(collectionName, new Query(Criteria.where(column).is(columnValue)), clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -155,7 +182,7 @@ public class PersistenceService {
 			return rr.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -165,7 +192,7 @@ public class PersistenceService {
 		}
 	}
 	/**
-	 * Returns all row which match according to search query 
+	 * Returns all row which match according to search query
 	 * @param collectionName
 	 * @param column
 	 * @param columnValue
@@ -180,7 +207,7 @@ public class PersistenceService {
 			return mongoOpetation.find(collectionName, query, clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -190,7 +217,7 @@ public class PersistenceService {
 		}
 	}
 	/**
-	 * Returns all row which match according to search query 
+	 * Returns all row which match according to search query
 	 * @param collectionName
 	 * @param column
 	 * @param columnValue
@@ -202,12 +229,12 @@ public class PersistenceService {
 			Criteria criteria = Criteria.where(column).is(columnValue);
 			Query query = new Query();
 			query.sort().on(key, order);
-			query.limit(limit); 
+			query.limit(limit);
 			query.addCriteria(criteria);
 			return mongoOpetation.find(collectionName, query, clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -226,7 +253,7 @@ public class PersistenceService {
 			mongoOpetation.ensureIndex(collectionName, new Index(columnName, Order.ASCENDING));
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -245,7 +272,7 @@ public class PersistenceService {
 			mongoOpetation.ensureIndex(collectionName, new Index(columnName, Order.DESCENDING));
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -265,7 +292,7 @@ public class PersistenceService {
 			return mongoOpetation.getCollection(collectionName, clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -297,7 +324,7 @@ public class PersistenceService {
 			return mongoOpetation.find(collectionName, query, clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -321,7 +348,7 @@ public class PersistenceService {
 	 * @return
 	 * @throws DBException
 	 */
-	public List getUserListByPaging(String collectionName, String lastAlertTimeColumn, long lastTimeLeg, String alertColumn, 
+	public List getUserListByPaging(String collectionName, String lastAlertTimeColumn, long lastTimeLeg, String alertColumn,
 			int tweetCount, String appTypeColumn, int appType, int never,  int pageSize, Class clazz) throws DBException {
 		try {
 
@@ -332,7 +359,7 @@ public class PersistenceService {
 			return mongoOpetation.find(collectionName, query, clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -347,7 +374,7 @@ public class PersistenceService {
 			return mongoOpetation.find(collectionName, query, clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -374,7 +401,7 @@ public class PersistenceService {
 			return mongoOpetation.find(collectionName, query, clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -403,7 +430,7 @@ public class PersistenceService {
 			return mongoOpetation.find(collectionName, query, clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -432,7 +459,7 @@ public class PersistenceService {
 			return mongoOpetation.find(collectionName, query, clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -458,7 +485,7 @@ public class PersistenceService {
 			return (int) collection.count(query);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -473,7 +500,7 @@ public class PersistenceService {
 	 * @param columnName
 	 * @param columnValue
 	 * @param map
-	 * @return 
+	 * @return
 	 * @throws DBException
 	 */
 	public int updateMultiColumn(String collectionName,String columnName, Object columnValue, Map<String, Object> map) throws DBException {
@@ -495,7 +522,7 @@ public class PersistenceService {
 			return res.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -511,7 +538,7 @@ public class PersistenceService {
 	 * @param collectionName the collection name
 	 * @param query the query
 	 * @param map the map
-	 * @return 
+	 * @return
 	 * @throws DBException the dB exception
 	 */
 	public int update(String collectionName,BasicDBObject query, Map<String, Object> map) throws DBException {
@@ -532,7 +559,7 @@ public class PersistenceService {
 			return res.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -553,7 +580,7 @@ public class PersistenceService {
 			return (int) collection.count();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -583,7 +610,7 @@ public class PersistenceService {
 			}
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -599,7 +626,7 @@ public class PersistenceService {
 	 * @param columnValue
 	 * @param updataColumn
 	 * @param updateValue
-	 * @return 
+	 * @return
 	 * @throws DBException
 	 */
 	public int updateSingleIntObject(String collectionName, String column, String columnValue, String updataColumn, int updateValue) throws DBException {
@@ -616,7 +643,7 @@ public class PersistenceService {
 			return res.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -632,7 +659,7 @@ public class PersistenceService {
 	 * @param columnValue
 	 * @param updataColumn
 	 * @param updateValue
-	 * @return 
+	 * @return
 	 * @throws DBException
 	 */
 	public int updateSingleObjectById(String collectionName, String id, String updataColumn, long updateValue) throws DBException {
@@ -647,7 +674,7 @@ public class PersistenceService {
 			return res.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -662,7 +689,7 @@ public class PersistenceService {
 	 * @param ids
 	 * @param updataColumn
 	 * @param updateValue
-	 * @return 
+	 * @return
 	 * @throws DBException
 	 */
 	public int updateMultiById(String collectionName, List<String> ids, String updataColumn, long updateValue) throws DBException {
@@ -681,7 +708,7 @@ public class PersistenceService {
 			return res.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -703,7 +730,7 @@ public class PersistenceService {
 			mongoOpetation.remove(collectionName, new Query(Criteria.where(column).is(columnValue)), clazz);
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
-			throw new DBException(e.getMessage()); 
+			throw new DBException(e.getMessage());
 		} catch (MongoException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage());
@@ -757,7 +784,7 @@ public class PersistenceService {
 	 * @author nirmal
 	 */
 	class DbInsertTask implements Runnable{
-		private String collectionName;  
+		private String collectionName;
 		private Object value;
 		private DB_OPERATION operation;
 		private  PersistenceService persistenceService;
@@ -776,7 +803,7 @@ public class PersistenceService {
 			try {
 				switch (operation) {
 				case ADD_OBJECT:
-					persistenceService.addObject(collectionName, value);					
+					persistenceService.addObject(collectionName, value);
 					break;
 				case ADD_OBJECT_COLLECTION:
 					persistenceService.addObjects(collectionName, (List<?>) value);
@@ -785,10 +812,10 @@ public class PersistenceService {
 					throw new DBException("INcalid Operation: "+operation);
 				}
 			} catch (DBException e) {
-				logger.error(loggerName, "Error while saving object in :"+collectionName+": "+value+", "+e);				
+				logger.error(loggerName, "Error while saving object in :"+collectionName+": "+value+", "+e);
 			}
 			catch (Exception e) {
-				logger.error(loggerName, "Error while saving object in :"+collectionName+": "+value+", "+e);				
+				logger.error(loggerName, "Error while saving object in :"+collectionName+": "+value+", "+e);
 			}
 
 		}

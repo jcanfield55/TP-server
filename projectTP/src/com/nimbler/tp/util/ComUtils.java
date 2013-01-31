@@ -34,6 +34,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -533,8 +534,27 @@ public class ComUtils {
 			return new Integer[]{NIMBLER_APP_TYPE.CALTRAIN.ordinal()};
 		}
 	}
-	public static boolean isWeekEnd(){
-		int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+
+	/**
+	 * Split to int array.
+	 *
+	 * @param values the values
+	 * @return the integer[]
+	 */
+	public static Integer[] splitToIntArray(String values) {
+		if(values == null)
+			return null;
+		String[] vals = values.split(",");
+		Integer[] integers = new Integer[vals.length];
+		for (int i = 0; i < vals.length; i++) {
+			integers[i] = NumberUtils.toInt(vals[i]);
+		}
+		return integers;
+	}
+	public static boolean isWeekEnd(TimeZone timeZone){
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTimeZone(timeZone);
+		int day = calendar.get(Calendar.DAY_OF_WEEK);
 		return (day==1 || day==7);
 	}
 	public static boolean isFileExist(String file) {

@@ -6,22 +6,49 @@
  */
 package com.nimbler.tp.service;
 
+import static com.nimbler.tp.util.RequestParam.BIKE_TRIANGLE_BIKEFRIENDLY;
+import static com.nimbler.tp.util.RequestParam.BIKE_TRIANGLE_FLAT;
+import static com.nimbler.tp.util.RequestParam.BIKE_TRIANGLE_QUICK;
+import static com.nimbler.tp.util.RequestParam.DEVICE_ID;
+import static com.nimbler.tp.util.RequestParam.DEVICE_TOKEN;
+import static com.nimbler.tp.util.RequestParam.ENABLE_STD_NOTIFICATION;
+import static com.nimbler.tp.util.RequestParam.ENABLE_URGENT_NOTIFICATION;
+import static com.nimbler.tp.util.RequestParam.MAX_BIKE_DISTANCE;
+import static com.nimbler.tp.util.RequestParam.NOTIF_TIMING_EVENING;
+import static com.nimbler.tp.util.RequestParam.NOTIF_TIMING_MIDDAY;
+import static com.nimbler.tp.util.RequestParam.NOTIF_TIMING_MORNING;
+import static com.nimbler.tp.util.RequestParam.NOTIF_TIMING_NIGHT;
+import static com.nimbler.tp.util.RequestParam.NOTIF_TIMING_WEEKEND;
+import static com.nimbler.tp.util.RequestParam.TRANSIT_MODE;
+import static com.nimbler.tp.util.TpConstants.APP_TYPE;
+import static com.nimbler.tp.util.TpConstants.CREATE_TIME;
+import static com.nimbler.tp.util.TpConstants.MAX_WALK_DISTANCE;
+import static com.nimbler.tp.util.TpConstants.NUMBER_OF_ALERT;
+import static com.nimbler.tp.util.TpConstants.UPDATE_TIME;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.mongodb.BasicDBObject;
 import com.nimbler.tp.common.DBException;
+import com.nimbler.tp.dataobject.NimblerApps;
 import com.nimbler.tp.dbobject.User;
+import com.nimbler.tp.dbobject.User.BOOLEAN_VAL;
 import com.nimbler.tp.mongo.MongoQueryConstant;
 import com.nimbler.tp.mongo.PersistenceService;
+import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
+import com.nimbler.tp.util.OperationCode.TP_CODES;
 import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.TpConstants;
+import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
 import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
 import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
+import com.nimbler.tp.util.TpException;
 /**
  * 
  * @author suresh
@@ -94,6 +121,68 @@ public class UserManagementService {
 			logger.error(loggerName, e.getMessage());
 		}
 	}
+
+	public void saveAlertPreferences(Map<String,String> reqParam) throws TpException {
+		try {
+			int appType = NumberUtils.toInt(reqParam.get(RequestParam.NIMBLER_APP_TYPE),NIMBLER_APP_TYPE.CALTRAIN.ordinal());
+			String deviceTocken = reqParam.get(RequestParam.DEVICE_TOKEN);
+
+			BasicDBObject usr = new BasicDBObject();
+			usr.put(APP_TYPE, appType);
+			usr.put(NUMBER_OF_ALERT, NumberUtils.toInt(reqParam.get(NUMBER_OF_ALERT),5));
+			usr.put(DEVICE_ID, reqParam.get(DEVICE_ID));
+			usr.put(MAX_WALK_DISTANCE, NumberUtils.toDouble(reqParam.get(MAX_WALK_DISTANCE)));
+			usr.put(DEVICE_TOKEN, deviceTocken);
+
+			long time = System.currentTimeMillis();
+			usr.put(UPDATE_TIME, time);
+
+			NimblerApps apps = BeanUtil.getNimblerAppsBean();
+			String[] strAppIdentifiers = apps.getAppIdentifierToAgenciesMap().get(appType).split(",");
+			int[] agencies = new int[strAppIdentifiers.length];
+			for (int i = 0; i < strAppIdentifiers.length; i++) {
+				agencies[i] = NumberUtils.toInt(strAppIdentifiers[i]);
+			}
+			for (int i : agencies) {
+				String enableColName = AGENCY_TYPE.values()[i].getEnableAdvisoryColumnName();
+				usr.put(enableColName,Integer.parseInt(reqParam.get(enableColName)));
+			}
+			usr.put(NOTIF_TIMING_MORNING,NumberUtils.toInt(reqParam.get(NOTIF_TIMING_MORNING),BOOLEAN_VAL.TRUE.ordinal()));
+			usr.put(NOTIF_TIMING_MIDDAY,NumberUtils.toInt(reqParam.get(NOTIF_TIMING_MIDDAY),BOOLEAN_VAL.FALSE.ordinal()));
+			usr.put(NOTIF_TIMING_EVENING,NumberUtils.toInt(reqParam.get(NOTIF_TIMING_EVENING),BOOLEAN_VAL.TRUE.ordinal()));
+			usr.put(NOTIF_TIMING_NIGHT,NumberUtils.toInt(reqParam.get(NOTIF_TIMING_NIGHT),BOOLEAN_VAL.FALSE.ordinal()));
+			usr.put(NOTIF_TIMING_WEEKEND,NumberUtils.toInt(reqParam.get(NOTIF_TIMING_WEEKEND),BOOLEAN_VAL.FALSE.ordinal()));
+
+			usr.put(ENABLE_STD_NOTIFICATION, NumberUtils.toInt(reqParam.get(ENABLE_STD_NOTIFICATION),BOOLEAN_VAL.FALSE.ordinal()));
+			usr.put(ENABLE_URGENT_NOTIFICATION, NumberUtils.toInt(reqParam.get(ENABLE_URGENT_NOTIFICATION),BOOLEAN_VAL.TRUE.ordinal()));
+
+			usr.put(TRANSIT_MODE,NumberUtils.toInt(reqParam.get(TRANSIT_MODE),User.TRANSIT_MODE.TRANSIT_WALK.ordinal()));
+			usr.put(MAX_BIKE_DISTANCE,NumberUtils.toDouble(reqParam.get(MAX_BIKE_DISTANCE)));
+			usr.put(BIKE_TRIANGLE_BIKEFRIENDLY,NumberUtils.toDouble(reqParam.get(BIKE_TRIANGLE_BIKEFRIENDLY)));
+			usr.put(BIKE_TRIANGLE_FLAT, NumberUtils.toDouble(reqParam.get(BIKE_TRIANGLE_FLAT)));
+			usr.put(BIKE_TRIANGLE_QUICK, NumberUtils.toDouble(reqParam.get(BIKE_TRIANGLE_QUICK)));
+
+			BasicDBObject query = new BasicDBObject();
+			query.put(TpConstants.DEVICE_TOKEN, deviceTocken);
+			if(appType == NIMBLER_APP_TYPE.CALTRAIN.ordinal())
+				query.put(TpConstants.APP_TYPE, new BasicDBObject(MongoQueryConstant.IN, new Object[]{null,NIMBLER_APP_TYPE.CALTRAIN.ordinal()}));//handle caltrain app
+			else
+				query.put(TpConstants.APP_TYPE, appType);
+			int count = persistenceService.getCount(MONGO_TABLES.users.name(), query, User.class);
+			if (count>0) {
+				persistenceService.update(MONGO_TABLES.users.name(),query, usr);
+			} else {
+				usr.put(CREATE_TIME, time);
+				persistenceService.addDbObject(MONGO_TABLES.users.name(), usr);
+			}
+		} catch (NumberFormatException e) {
+			logger.warn(loggerName,"NumberFormatException:"+ e.getMessage());
+			throw new TpException(TP_CODES.INVALID_REQUEST);
+		} catch (DBException e) {
+			logger.warn(loggerName,"DBException:"+ e.getMessage());
+			throw new TpException(TP_CODES.FAIL);
+		}
+	}
 	public User getUserByDeviceToken(String deviceTockens) {
 		User res = null;
 		try {
@@ -105,6 +194,7 @@ public class UserManagementService {
 		}
 		return res;
 	}
+
 	/**
 	 * 
 	 * @param deviceid
