@@ -2,6 +2,7 @@ package com.nimbler.tp.service.livefeeds;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
 
 import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.common.RealTimeDataException;
@@ -44,10 +46,10 @@ public class BARTApiImpl implements RealTimeAPI {
 
 	private int maxTimeDifference = 30;//can be updated from bean
 	private int maxTimeDifferenceForEarly = 10;//can be updated from bean
+	private long maxRealTimeSupportLimitMin = NumberUtils.toLong(TpConstants.MAX_REALTIME_LIMIT_MIN,90);
 
 	@Override
-	public LegLiveFeed getAllRealTimeFeeds(Leg leg) throws FeedsNotFoundException {
-		LegLiveFeed resp = new LegLiveFeed();
+	public LegLiveFeed getAllRealTimeFeeds(Leg leg) throws FeedsNotFoundException {		
 		List<RealTimePrediction> lstRealTimePredictions = new ArrayList<RealTimePrediction>();
 		try {
 			Long scheduledTime = leg.getStartTime();
@@ -104,13 +106,15 @@ public class BARTApiImpl implements RealTimeAPI {
 			for (Estimate estimate : estimates) {
 				lstRealTimePredictions.add(new RealTimePrediction(estimate));
 			}
+			LegLiveFeed resp = new LegLiveFeed();
 			resp.setEmptyLeg(leg);
+			resp.setLstPredictions(lstRealTimePredictions);
+			return resp;
 		} catch (RealTimeDataException e) {
 			throw new FeedsNotFoundException(e.getMessage());
 		} catch (Exception e) {
 			throw new FeedsNotFoundException("Unknown Exception: "+e);
 		}		
-		return resp;
 	}
 
 	@Override
@@ -323,9 +327,12 @@ public class BARTApiImpl implements RealTimeAPI {
 		}
 		return -1;
 	}
-	@Override
-	public List<LegLiveFeed> getLiveFeeds(List<Leg> leg) {
-		return null;
+	private void validateTimeLimit(Long scheduledTime) throws RealTimeDataException {
+		long curruntTime =System.currentTimeMillis();
+		long maxTime = curruntTime +(maxRealTimeSupportLimitMin*DateUtils.MILLIS_PER_MINUTE);
+		if(scheduledTime>maxTime)
+			throw new RealTimeDataException("ScheduleTime out Of range to query realtime for time:"+new Date(scheduledTime)+",currunt time:"+new Date(curruntTime));
+
 	}
 	public int getTimeDiffercenceInMin() {
 		return lateThreshold;

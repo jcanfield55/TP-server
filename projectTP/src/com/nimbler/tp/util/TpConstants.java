@@ -63,6 +63,7 @@ public class TpConstants {
 	public static final String PLAN_TO_PATH = TpProperty.getDefaultProperty("plan.to.path");
 	public static final String PLAN_START_TIME_PATH = TpProperty.getDefaultProperty("plan.stattime.path");
 	public static final String PLAN_END_TIME_PATH = TpProperty.getDefaultProperty("plan.entime.path");
+	public static final String MAX_REALTIME_LIMIT_MIN = TpProperty.getDefaultProperty("max.realtime.limit.min");
 
 	public static final String DEFAULT_DATE_FORMAT_PATTERN = "yyyy-MM-dd HH:mm:ss";
 	public static final String GTFS_DATE_FORMAT = "yyyyMMdd";
@@ -121,7 +122,11 @@ public class TpConstants {
 		leg,
 		event_log,
 		login,
-		nimbler_params
+		nimbler_params,
+		flurry_report_status,
+		flurry_events,
+		flurry_events_meta,
+		advisory_fetch_log
 	}
 
 	public enum LIVE_FEED_MODES {

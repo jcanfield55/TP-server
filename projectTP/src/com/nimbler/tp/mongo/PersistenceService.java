@@ -70,7 +70,7 @@ public class PersistenceService {
 		logger.info(loggerName, "Persistance service started");
 	}
 	/**
-	 * add single row object
+	 * add single row object,over write if id exists
 	 * @param collectionName
 	 * @param object
 	 */
@@ -88,6 +88,33 @@ public class PersistenceService {
 			throw new DBException(e.getMessage());
 		}
 	}
+
+	/**
+	 * Adds the db object.
+	 *
+	 * @param collectionName the collection name
+	 * @param dbObject the db object
+	 * @throws DBException the dB exception
+	 */
+	public void addDbObject(String collectionName, DBObject dbObject)throws DBException {
+		try {
+			WriteResult rr = mongoOpetation.getCollection(collectionName).insert(dbObject);
+			if(rr.getError()!=null){
+				logger.error(loggerName, " WriteResult: "+rr);
+				//				throw new DBException("Error:"+rr.getError()+",count:"+rr.getN()+", LastError: "+rr.getLastError());
+			}
+		}  catch (DataAccessResourceFailureException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (MongoException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		}
+	}
+
 	/**
 	 * add multiple object for particular collection
 	 * @param collectionName
@@ -172,7 +199,7 @@ public class PersistenceService {
 	 * @param clazz
 	 * @return
 	 */
-	public List<?> find(String collectionName, String column, String columnValue, Class<?> clazz) throws DBException {
+	public List<?> find(String collectionName, String column, Object columnValue, Class<?> clazz) throws DBException {
 		try {
 			Criteria criteria = Criteria.where(column).is(columnValue);
 			Query query = new Query();
@@ -369,6 +396,23 @@ public class PersistenceService {
 	public List findByIn(String collectionName, String column,Object[] values, Class clazz) throws DBException {
 		try {
 			Criteria criteria = Criteria.where(column).in(values);
+			Query query = new Query();
+			query.addCriteria(criteria);
+			return mongoOpetation.find(collectionName, query, clazz);
+		}  catch (DataAccessResourceFailureException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage()); 
+		} catch (MongoException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		}
+	}
+	public List findByInFlurry(String collectionName, String column,Object[] values,String column1,int values1, Class clazz) throws DBException {
+		try {
+			Criteria criteria = Criteria.where(column).in(values).and(column1).lt(values);
 			Query query = new Query();
 			query.addCriteria(criteria);
 			return mongoOpetation.find(collectionName, query, clazz);

@@ -6,6 +6,8 @@
  */
 package com.nimbler.tp.util;
 
+import static org.apache.commons.lang3.StringUtils.join;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,6 +17,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -309,6 +312,31 @@ public class ComUtils {
 			//			e.printStackTrace();
 		}
 		return otpInfo;
+	}
+
+	/**
+	 * Creates the url with params.
+	 *
+	 * @param url the url
+	 * @param params the params
+	 * @return the string
+	 */
+	public static String createUrlWithParams(String url,Map<String,String> params) {
+		try {
+			if(params!=null && params.size()>0){
+				List<String> lstParams= new ArrayList<String>();
+				for (Map.Entry<String, String> entry : params.entrySet()) {
+					String key = entry.getKey();
+					String value = entry.getValue();
+					lstParams.add(key+"="+URLEncoder.encode(value));
+				}
+				url = url+"?"+join(lstParams,"&");
+			}
+			return url;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	/**

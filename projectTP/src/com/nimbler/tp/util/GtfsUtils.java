@@ -92,7 +92,7 @@ public class GtfsUtils {
 				String key =line[SERVICE_ID_INDEX];
 				String val = line[END_DATE_INDEX];
 				if(ComUtils.isEmptyString(key) || ComUtils.isEmptyString(val));
-					mapServiceIdAndDate.put(key, gtfsDateFormat.parse(StringUtils.remove(val, "\"")));
+				mapServiceIdAndDate.put(key, gtfsDateFormat.parse(StringUtils.remove(val, "\"")));
 			} catch (Exception e) {
 				logger.error(loggerName,"Malformed data Found at line "+i+", data: "+lstLines.get(i));				
 			}

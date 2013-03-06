@@ -22,11 +22,13 @@ import com.nimbler.tp.dataobject.TPResponse;
 import com.nimbler.tp.dbobject.User;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.service.UserManagementService;
+import com.nimbler.tp.service.flurry.FlurryManagementService;
 import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.JSONUtil;
 import com.nimbler.tp.util.OperationCode.TP_CODES;
 import com.nimbler.tp.util.PersistantHelper;
 import com.nimbler.tp.util.RequestParam;
+import com.nimbler.tp.util.ResponseUtil;
 import com.nimbler.tp.util.TpConstants;
 import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 import com.nimbler.tp.util.TpException;
@@ -161,6 +163,24 @@ public class UserManagementRestService {
 		} catch (Exception e) {
 			logger.error(loggerName, e);
 			response.setCode(TP_CODES.FAIL.ordinal());
+		}
+		return getJsonResponse(response);
+	}
+
+	@GET
+	@Path("/flurry/")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String requestFlurry(@QueryParam("start") String start,@QueryParam("end") String end) throws TpException {
+		TPResponse response = ResponseUtil.createResponse(TP_CODES.SUCESS);
+		try {
+			FlurryManagementService flurry =  BeanUtil.getFlurryManagementService();
+			flurry.requestDailyFlurryReport(Long.parseLong(start), Long.parseLong(end));
+		} catch (NumberFormatException e) {
+			logger.error(loggerName, e);
+			response = ResponseUtil.createResponse(TP_CODES.INVALID_REQUEST);
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			response = ResponseUtil.createResponse(TP_CODES.FAIL);
 		}
 		return getJsonResponse(response);
 	}

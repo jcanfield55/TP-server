@@ -5,23 +5,17 @@ package com.nimbler.tp.rest;
 
 import static org.apache.commons.lang3.StringUtils.replaceOnce;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.activation.MimetypesFileTypeMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
 
 import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.common.DBException;
@@ -153,11 +147,27 @@ public class RealTimePredictionService {
 		PlanLiveFeeds response = new PlanLiveFeeds();
 		try {
 			Map<String,String> reqParam = ComUtils.parseMultipartRequest(httpRequest);
+			return predictRealTimeByLegs(reqParam);
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			response.setError(TP_CODES.FAIL.getCode());
+		}
+		String res =  getJsonResponse(response);
+		return res;
+	}
+
+	/**
+	 * Predict real time by legs.
+	 *
+	 * @param reqParam the req param
+	 * @return the string
+	 */
+	private String predictRealTimeByLegs(Map<String, String> reqParam) {
+		PlanLiveFeeds response = new PlanLiveFeeds();
+		try {
 			String strLegs = reqParam.get(RequestParam.LEGS);			
-			System.out.println(strLegs);
 			strLegs = replaceOnce(strLegs, "(","[");
-			strLegs = replaceOnce(strLegs, ")","]");
-			System.out.println(strLegs);
+			strLegs = replaceOnce(strLegs, ")","]");			
 			List lstLegs =  JSONUtil.getLegsJson(strLegs);
 			if(ComUtils.isEmptyList(lstLegs))
 				throw new TpException(TP_CODES.INVALID_REQUEST.getCode(),"Error while getting JSON String from plan object.");
@@ -174,26 +184,8 @@ public class RealTimePredictionService {
 			response.setError(TP_CODES.FAIL.getCode());
 		}
 		String res =  getJsonResponse(response);
-		System.out.println(res);
+		//System.out.println(res);
 		return res;
-	}
-
-	/**
-	 * Gets the agency image.
-	 * @return 
-	 *
-	 * @return the agency image
-	 */
-	@GET
-	@Path("/download/{image}")
-	@Produces("image/*")
-	public Response getAgencyImage(@PathParam("image") String strImage) {
-		File image = new File(TpConstants.DOWNLOAD_IMAGE_PATH+"/"+strImage);
-		if (!image.exists()) {
-			throw new WebApplicationException(404);
-		}
-		String mimeType = new MimetypesFileTypeMap().getContentType(image);
-		return Response.ok(image, mimeType).build();
 	}
 
 	/**

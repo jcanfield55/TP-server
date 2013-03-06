@@ -2,6 +2,8 @@ package com.nimbler.tp.dataobject;
 
 import java.util.List;
 
+import org.apache.commons.lang3.time.DateUtils;
+
 /**
  * 
  * @author nIKUNJ
@@ -63,6 +65,9 @@ public class LegLiveFeed {
 	}
 	public void setTimeDiffInMins(Integer timeDiffInMins) {
 		this.timeDiffInMins = timeDiffInMins;
+	}
+	public void setTimeDiffInMills(int diff) {
+		this.timeDiffInMins = (int) (diff/DateUtils.MILLIS_PER_MINUTE);
 	}
 
 	public Long getDepartureTime() {

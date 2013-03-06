@@ -164,6 +164,8 @@
 			<value>com.nimbler.tp.service.TpEventLoggingService</value>
 		</property>
 	</bean>
+	<bean id="flurryManagementService" class="com.nimbler.tp.service.flurry.FlurryManagementService" />		
+	
 
 	<bean id="gat" class="com.nimbler.tp.gtfs.GraphAcceptanceTest"
 		init-method="startTest">
@@ -193,7 +195,7 @@
 					<property name="appType" value="SF_BAY_AREA" />
 				</bean>
 			</list>
-		</property>		
+		</property>
 		<property name="sound" value="default" />
 	</bean>
 
@@ -206,8 +208,8 @@
 	</bean>
 	<bean id="gtfsContext" class="com.nimbler.tp.gtfs.GtfsContext">
 		<property name="gtfsBundles">
-			<list>
-				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+			<list>				
+ 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="BART" />
 					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/BART.zip" />
 					<property name="downloadUrl" value="http://bart.gov/dev/schedules/google_transit.zip" />
@@ -218,25 +220,25 @@
 					<property name="defaultAgencyId" value="Menlo-Midday" />
 					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/Menlo-Midday.zip" />
 					<property name="downloadUrl"
-								value="http://www.menlopark.org/departments/trn/google/google_transit.zip" />
+						value="http://www.menlopark.org/departments/trn/google/google_transit.zip" />
 					<property name="lastUpdateDate" value="20120910" />
-					<property name="agencyType" value="MENLO_MIDDAY" />
+					 <property name="agencyType" value="MENLO_MIDDAY" />
 				</bean>
-				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+				 <bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="ACtransit" />
 					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/ACtransit.zip" />
 					<property name="crackedDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/ACtransit_hack.zip" />
 					<property name="downloadUrl"
-								value="http://www.actransit.org/wp-content/plugins/download-monitor/download.php?id=5" />
+						value="http://www.actransit.org/wp-content/plugins/download-monitor/download.php?id=5" />
 					<property name="lastUpdateDate" value="20120910" />
 					<property name="agencyType" value="AC_TRANSIT" />
-				</bean>
+				</bean> 
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="Caltrain" />
 					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/Caltrain.zip" />
 					<property name="downloadUrl"
-								value="http://www.caltrain.com/Assets/GTFS/caltrain/google_transit.zip" />
-					<property name="lastUpdateDate" value="20120912" />
+						value="http://www.caltrain.com/Assets/GTFS/caltrain/google_transit.zip" />
+						<property name="lastUpdateDate" value="20120912" />
 					<property name="agencyType" value="CALTRAIN" />
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
@@ -246,7 +248,7 @@
 					<property name="lastUpdateDate" value="20130106" />
 					<property name="enableAgency" value="false" />						
 					<property name="agencyType" value="SF_FERRIES" />
-				</bean>
+				</bean> 
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="VTA" />
 					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/VTA.zip" />					
@@ -255,13 +257,13 @@
 					<property name="lastUpdateDate" value="20130106" />
 					<property name="agencyType" value="VTA" />
 				</bean> 
-				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+			 	<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="SFMTA" />
 					<property name="currentDataFile" value="/server-ebs/nimbler/otp_build/latest_gtfs/SFMTA.zip" />					
 					<property name="downloadUrl" value="http://www.sfmta.com/transitdata/google_transit.zip" />
 					<property name="lastUpdateDate" value="20130106" />
-					<property name="agencyType" value="SFMUNI" />
-				</bean>
+						<property name="agencyType" value="SFMUNI" />
+				</bean>   
 			</list>
 		</property>
 	</bean>
@@ -310,6 +312,9 @@
 			</map>
 		</property>
 	</bean>
+
+	
+	<bean id="bartAlertCriteria" class="com.nimbler.tp.service.advisories.BartAlertCriteria" />
 
 	
 	<!-- ====================================== Quarts trigger ================================== -->
@@ -367,6 +372,29 @@
 		<property name="jobDetail" ref="urgentAdvisoriesClearJob" />
 		<property name="cronExpression" value="0 59 23 * * ?" /> 		
 	</bean>
+	 <!-- ===============================   flurry  ================================= -->
+	<bean name="flurryDailyRequestCallJob"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetBeanName" value="flurryManagementService" />
+		<property name="targetMethod" value="requestDailyFlurryReport" />
+	</bean>
+	<bean id="flurryDailyRequestCallTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="flurryDailyRequestCallJob" />
+		<property name="cronExpression" value="0 0/10 * * * ?" /> 		
+	</bean>
+	<bean name="flurryDailyReportFetchJob"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetBeanName" value="flurryManagementService" />
+		<property name="targetMethod" value="fetchFlurryReports" />
+	</bean>
+	<bean id="flurryDailyReportCallTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="flurryDailyReportFetchJob" />
+<!-- 		<property name="cronExpression" value="0 0 0/1 * * ?" /> --> 		
+		    <property name="cronExpression" value="30 0/8 * * * ?" /> 		
+	</bean>
+	<!-- ===============================   flurry end  ================================= -->
 	<bean id="schedulerFactoryBean"
 		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
@@ -376,6 +404,8 @@
 				<ref bean="urgentAdvisoriesClearJobTrigger" />
 				<ref bean="clearAdvisaryCounterTrigger" />
 				<ref bean="dBHealthMonitoringTrigger" />
+				<ref bean="flurryDailyRequestCallTrigger" />
+				<ref bean="flurryDailyReportCallTrigger" />
 			</list>
 		</property>
 	</bean>

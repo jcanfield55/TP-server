@@ -4,6 +4,7 @@
 package com.nimbler.tp.gtfs;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,12 +16,16 @@ import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.nimbler.tp.dataobject.TPResponse;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.util.GtfsUtils;
+import com.nimbler.tp.util.JSONUtil;
 import com.nimbler.tp.util.OperationCode.TP_CODES;
 import com.nimbler.tp.util.RequestParam;
+import com.nimbler.tp.util.ResponseUtil;
 import com.nimbler.tp.util.TpConstants.GTFS_FILE;
 import com.nimbler.tp.util.TpException;
+import com.nimbler.tp.util.ZipUtil;
 
 public class GtfsDataService {
 
@@ -49,7 +54,8 @@ public class GtfsDataService {
 
 	private Map<String,List<String>> gtfsData = null;
 
-	private String ageciesToLoad ="1,2,3,4";
+	private String ageciesToLoad ="1,2,3,4,5,6,7";
+	private String allStopTimesZipFile ="gtfsStopTimes.zip";
 	private boolean gtfsReadCompleted = false;
 
 	private boolean useInMemoryGtfs = true;
@@ -115,14 +121,20 @@ public class GtfsDataService {
 		try {
 			GtfsUtils gtfsUtils= new GtfsUtils(loggingService, loggerName);
 			for (int i = 0; i < agencyIdOrdinals.length; i++) {
-				GtfsBundle bundle = bundleMap.get(agencyIdOrdinals[i]);				
+				GtfsBundle bundle = bundleMap.get(agencyIdOrdinals[i]);
 				if(bundle==null){
 					System.out.println("Could not find bundle for: "+agencyIdOrdinals[i]);
 					continue;
 				}
-				List<String> lstData = gtfsUtils.getColumnsFromFile(new File(bundle.getValidFile()),gtfsColums.get(gtfsFile.getName()), gtfsFile.getFileName());
-				if(lstData!=null)
-					resMap.put(agencyIdOrdinals[i]+"_"+gtfsFile.getName(), lstData);
+				try {
+					List<String> lstData = gtfsUtils.getColumnsFromFile(new File(bundle.getValidFile()),gtfsColums.get(gtfsFile.getName()), gtfsFile.getFileName());
+					if(lstData!=null)
+						resMap.put(agencyIdOrdinals[i]+"_"+gtfsFile.getName(), lstData);
+				} catch (TpException e) {				
+					loggingService.error(loggerName, e.getMessage());
+				} catch (Exception e) {					
+					loggingService.error(loggerName,"Error While reading agency:"+agencyIdOrdinals[i]+" for file:"+gtfsFile, e);
+				}
 			}
 		} catch (Exception e) {
 			throw new TpException(e.getMessage());
@@ -270,7 +282,20 @@ public class GtfsDataService {
 		}
 		return resMap;
 	}
-
+	public File getStopTimesAll() throws TpException, IOException {		
+		if(!gtfsReadCompleted)
+			throw new TpException(TP_CODES.DATA_NOT_EXIST);
+		File file = new File(allStopTimesZipFile);
+		synchronized (allStopTimesZipFile) {
+			if(!file.exists()){
+				TPResponse response = ResponseUtil.createResponse(TP_CODES.SUCESS);
+				response.setData(stopTimesByTripId);
+				String res =  JSONUtil.getResponseJSON(response);
+				ZipUtil.writeStopTimes(file,res);
+			}
+		}
+		return file;
+	}
 	/**
 	 * Gets the trips by route id.
 	 *
@@ -289,7 +314,7 @@ public class GtfsDataService {
 			mapToQuery = tripsByRouteId;
 		}
 		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
-		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColums.get(GTFS_FILE.STOP_TIMES.getName())));
+		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColums.get(GTFS_FILE.TRIPS.getName())));
 		for (int t = 0; t < strAgencyIdAndRouteId.length; t++) {
 			String key =  strAgencyIdAndRouteId[t];					
 			resMap.put(key, mapToQuery.get(key));

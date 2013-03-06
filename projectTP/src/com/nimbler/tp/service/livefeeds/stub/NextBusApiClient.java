@@ -25,7 +25,7 @@ public class NextBusApiClient {
 	private LoggingService logger;
 
 	private String baseUrl;
-	private String loggerName;
+	private String loggerName = "com.nimbler.tp.service.livefeeds";
 	private Client client;
 
 	public void init(){
@@ -163,5 +163,11 @@ public class NextBusApiClient {
 
 	public void setLoggerName(String loggerName) {
 		this.loggerName = loggerName;
+	}
+	public LoggingService getLogger() {
+		return logger;
+	}
+	public void setLogger(LoggingService logger) {
+		this.logger = logger;
 	}
 }

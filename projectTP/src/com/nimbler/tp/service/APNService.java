@@ -24,6 +24,8 @@ import com.notnoop.apns.ApnsService;
 import com.notnoop.apns.ApnsServiceBuilder;
 import com.notnoop.apns.DeliveryError;
 import com.notnoop.apns.PayloadBuilder;
+import com.notnoop.apns.ReconnectPolicy;
+import com.notnoop.apns.internal.ReconnectPolicies.EveryHalfHour;
 import com.notnoop.exceptions.InvalidSSLConfig;
 import com.notnoop.exceptions.NetworkIOException;
 /**
@@ -39,7 +41,13 @@ public class APNService implements ApnsDelegate{
 	private int poolSize = 5;
 	private  String sound = null;
 	private boolean isQueued = false;	
+	private int cacheLenth = 1000;	
 	private List<ApnBundle> lstApnBundles;
+
+	private int MAX_PAYLOAD = 250;
+	private String	BODY_POST_FIX	= "...";
+
+	private ReconnectPolicy reconnectPolicy =  new EveryHalfHour();
 
 	private Map<NIMBLER_APP_TYPE, ApnsService> serviceMap = null;
 
@@ -50,6 +58,7 @@ public class APNService implements ApnsDelegate{
 	}
 
 	public APNService() {
+
 	}
 
 	/**
@@ -79,6 +88,9 @@ public class APNService implements ApnsDelegate{
 				serviceBuilder = serviceBuilder.asQueued();
 			if(poolSize!=-1)
 				serviceBuilder = serviceBuilder.asPool(poolSize);
+			if(reconnectPolicy!=null)
+				serviceBuilder = serviceBuilder.withReconnectPolicy(reconnectPolicy.copy());
+			serviceBuilder = serviceBuilder.withCacheLength(cacheLenth);			
 			ApnsService service = serviceBuilder.withDelegate(this).build();			
 			serviceMap.put(bundle.getAppType(), service);
 		} catch (InvalidSSLConfig e) {
@@ -113,6 +125,7 @@ public class APNService implements ApnsDelegate{
 				payloadBuilder.badge(badge);
 			if(isUrgent!=null)
 				payloadBuilder.customField("isUrgent",isUrgent+"");
+			payloadBuilder.resizeAlertBody(MAX_PAYLOAD,BODY_POST_FIX);			
 			payload = payloadBuilder.build();
 			logger.debug(loggerName,"Sending push notification..."+payload+", appType:"+appType);
 			getApnServiceByType(appType).push(deviceToken, payload);   
@@ -162,6 +175,7 @@ public class APNService implements ApnsDelegate{
 				payloadBuilder.badge(badge);
 			if(isUrgent!=null)
 				payloadBuilder.customField("isUrgent",isUrgent+"");
+			payloadBuilder.resizeAlertBody(MAX_PAYLOAD,BODY_POST_FIX);
 			String payload = payloadBuilder.build();
 			logger.debug(loggerName,"Sending push notification..."+payload+", appType:"+appType);
 			getApnServiceByType(appType).push(deviceTokens, payload);
@@ -198,6 +212,7 @@ public class APNService implements ApnsDelegate{
 				payloadBuilder.badge(badge);
 			if(customFields!=null)
 				payloadBuilder.customFields(customFields);
+			payloadBuilder.resizeAlertBody(MAX_PAYLOAD,BODY_POST_FIX);
 			payload = payloadBuilder.build();
 			logger.debug(loggerName,"Sending push notification..."+payload);
 			//			getService(appType).push(deviceToken, payload);
@@ -269,21 +284,67 @@ public class APNService implements ApnsDelegate{
 		return sound;
 	}
 
+	public int getMAX_PAYLOAD() {
+		return MAX_PAYLOAD;
+	}
+
+	public void setMAX_PAYLOAD(int mAX_PAYLOAD) {
+		MAX_PAYLOAD = mAX_PAYLOAD;
+	}
+
+	public String getBODY_POST_FIX() {
+		return BODY_POST_FIX;
+	}
+
+	public void setBODY_POST_FIX(String bODY_POST_FIX) {
+		BODY_POST_FIX = bODY_POST_FIX;
+	}
+
+	public ReconnectPolicy getReconnectPolicy() {
+		return reconnectPolicy;
+	}
+
+	public void setReconnectPolicy(ReconnectPolicy reconnectPolicy) {
+		this.reconnectPolicy = reconnectPolicy;
+	}
+
+	public int getCacheLenth() {
+		return cacheLenth;
+	}
+
+	public void setCacheLenth(int cacheLenth) {
+		this.cacheLenth = cacheLenth;
+	}
+
+	@Override
+	public void messageSent(ApnsNotification message, boolean resent) {
+
+	}
+
+	@Override
+	public void cacheLengthExceeded(int newCacheLength) {
+		//		System.out.println("APNService.cacheLengthExceeded() --> newCacheLength: "+ newCacheLength);
+		logger.warn(loggerName, "newCacheLength: " + newCacheLength);
+	}
 	@Override
 	public void connectionClosed(DeliveryError deliveryerror, int i) {
 		//		System.out.println("DeliveryError: "+ deliveryerror+", int: "+ i);		
-		logger.error(loggerName, "DeliveryError: "+ deliveryerror+", int: "+ i);		
+		logger.warn(loggerName, "DeliveryError: "+ deliveryerror+", int: "+ i);		
 	}
 
 	@Override
 	public void messageSendFailed(ApnsNotification apnsnotification,Throwable throwable) {
-		//		System.out.println("ApnsNotification: "+ apnsnotification+", Throwable: "+ throwable);
-		logger.error(loggerName,"ApnsNotification: "+ apnsnotification+", Throwable: "+ throwable+", "+new String(apnsnotification.getDeviceToken()));
+		//		System.out.println("APNService.messageSendFailed() --> apnsnotification: "	+ apnsnotification + " throwable: " + throwable);
+		logger.warn(loggerName,"ApnsNotification: "+ apnsnotification+", Throwable: "+ throwable);
 	}
 
 	@Override
-	public void messageSent(ApnsNotification apnsnotification) {
-		//		System.out.println("APNService.messageSent()"+ new String(apnsnotification.getDeviceToken()));
+	public void notificationsResent(int resendCount) {
+		//		System.out.println("APNService.notificationsResent() --> resendCount: "	+ resendCount);
+		logger.debug(loggerName, "resendCount: " + resendCount);
+
 	}
+
+
 
 }

@@ -92,6 +92,16 @@
 				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] [%C{1}] [%M] %m%n" />
 		</layout>
 	</appender>
+	<appender name="flurry" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="5" />
+		<param name="File" value="../logs/tplogs/flurry.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
+		</layout>
+	</appender>
 	<appender name="mailservice" class="org.apache.log4j.RollingFileAppender">
 		<param name="threshold" value="DEBUG" />
 		<param name="maxFileSize" value="2MB" />
@@ -133,6 +143,16 @@
 				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
 		</layout>
 	</appender>
+	<appender name="notnoop" class="org.apache.log4j.RollingFileAppender">
+		<param name="threshold" value="DEBUG" />
+		<param name="maxFileSize" value="2MB" />
+		<param name="maxBackupIndex" value="10" />
+		<param name="File" value="../logs/tplogs/notnoopApi.log" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="[%-5p] [%d{dd MMM yyyy HH:mm:ss}] %m%n" />
+		</layout>
+	</appender>
 	<!-- ===================================================== Loggers ============================================================== -->
 	<logger name="com.nimbler.tp.mongo.PersistenceService">
 		<level value="DEBUG" />
@@ -141,6 +161,14 @@
 	<logger name="com.nimbler.tp.service.TpFeedbackService">
 		<level value="DEBUG" />
 		<appender-ref ref="feedbackService" />
+	</logger>
+	<logger name="com.nimbler.tp.service.flurry.FlurryManagementService">
+		<level value="DEBUG" />
+		<appender-ref ref="flurry" />
+	</logger>
+	<logger name="com.notnoop">
+		<level value="INFO" />
+		<appender-ref ref="notnoop" />
 	</logger>
 
 	<logger name="com.nimbler.tp.service.TpEventLoggingService">

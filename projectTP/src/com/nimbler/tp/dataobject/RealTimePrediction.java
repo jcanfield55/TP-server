@@ -6,6 +6,7 @@ package com.nimbler.tp.dataobject;
 import java.io.Serializable;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
 
 import com.nimbler.tp.dataobject.bart.Estimate;
 import com.nimbler.tp.dataobject.nextbus.Prediction;
@@ -37,7 +38,7 @@ public class RealTimePrediction implements Serializable{
 	}
 	public RealTimePrediction(Estimate estimate) {
 		this.seconds = NumberUtils.toLong(estimate.getMinutes())*60;				
-		this.epochTime = System.currentTimeMillis()+(seconds*1000);				
+		this.epochTime =  estimate.getCreateTime()+(seconds*1000);				
 	}
 	public String getTripId() {
 		return tripId;

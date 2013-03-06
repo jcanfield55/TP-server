@@ -143,8 +143,16 @@ public class TweetStore {
 		return tweets;
 	}
 	/**
+	 * @param agencies
 	 * 
 	 */
+	public void clearUrgentAdvisories(Integer[] agencies) {
+		synchronized (agencyToUrgentAdvisoriesMap) {
+			for (Integer agency : agencies) {
+				agencyToUrgentAdvisoriesMap.remove(agency);
+			}
+		}
+	}
 	public void clearUrgentAdvisories() {
 		synchronized (agencyToUrgentAdvisoriesMap) {
 			agencyToUrgentAdvisoriesMap.clear();

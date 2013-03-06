@@ -56,6 +56,7 @@ public class GtfsMetaExtractor implements Runnable{
 			bundle.setAgencyIds(lstAgencyIds);
 
 			//read and calculate calander.txt
+			try {
 			List<GtfsCalander> lstCalanders = utils.readCalanderGtfs(gtfsFile);			
 			bundle.setLstCalanders(lstCalanders);
 			for (GtfsCalander gtfsCalander : lstCalanders) {
@@ -70,6 +71,9 @@ public class GtfsMetaExtractor implements Runnable{
 							serviceOnDays[i]= serviceOnDays[i]+","+gtfsCalander.getServiceName();
 					}
 				}
+			}
+			} catch (Exception e) {
+				logger.error(loggerName, e);
 			}
 			sortAndHashServices();
 
@@ -86,7 +90,7 @@ public class GtfsMetaExtractor implements Runnable{
 					calendar.setTime(gtfsDateFormat.parse(strDates));
 					int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
 					String service = serviceOnDays[dayOfWeek-1];	
-					servicesOnDate = service==null? new ArrayList<String>():ComUtils.getListFromArray(service.split(","));
+					servicesOnDate = ComUtils.isEmptyString(service)? new ArrayList<String>():ComUtils.getListFromArray(service.split(","));
 					tempDateException.put(strDates, servicesOnDate);
 				}
 				if(calDates.getServiceType().equals("1")){ // added

@@ -14,11 +14,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Vector;
 
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -29,9 +33,12 @@ import org.springframework.data.document.mongodb.query.BasicQuery;
 import com.jayway.jsonpath.JsonPath;
 import com.mongodb.BasicDBObject;
 import com.nimbler.tp.common.DBException;
+import com.nimbler.tp.dataobject.DefaultTweet;
+import com.nimbler.tp.dataobject.DefaultTweet.TwitterResponse;
 import com.nimbler.tp.dataobject.NimblerApps;
 import com.nimbler.tp.dataobject.ThresholdBoard;
 import com.nimbler.tp.dataobject.Tweet;
+import com.nimbler.tp.dbobject.NimblerParams;
 import com.nimbler.tp.dbobject.User;
 import com.nimbler.tp.dbobject.User.BOOLEAN_VAL;
 import com.nimbler.tp.mongo.MongoQueryConstant;
@@ -42,6 +49,7 @@ import com.nimbler.tp.service.twitter.TweetStore;
 import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.HttpUtils;
+import com.nimbler.tp.util.JSONUtil;
 import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.StatusMsgConfig;
 import com.nimbler.tp.util.TpConstants;
@@ -100,7 +108,8 @@ public class AdvisoriesPushService {
 	private int pageSize = 500;
 
 	private boolean enablePushNotification = true;
-
+	@Autowired
+	private BartAlertCriteria bartAlertCriteria = null;
 	/**
 	 *<column name,start-end min of day> 
 	 */
@@ -121,6 +130,23 @@ public class AdvisoriesPushService {
 			}
 			for (int i = 1; i <= maxAlertThreshhold; i++) 
 				boards.add(new ThresholdBoard(agency.ordinal(),i));
+		}
+		//		addDefaultBartLastTweetTime();
+	}
+
+	private void addDefaultBartLastTweetTime() {
+		try {
+			NimblerParams nimblerParams = 	(NimblerParams) persistenceService.findOne(
+					MONGO_TABLES.nimbler_params.name(),TpConstants.NIMBLER_PARAMS_NAME,
+					AGENCY_TYPE.BART.getLastReadTimeColumnName(), NimblerParams.class);
+			if(nimblerParams==null){
+				nimblerParams = new NimblerParams();
+				nimblerParams.setName(AGENCY_TYPE.BART.getPushTimeColumnName());
+				nimblerParams.setValue(DateUtils.addHours(new Date(),-6).getTime()+"");
+				persistenceService.addObject(MONGO_TABLES.nimbler_params.name(), nimblerParams);
+			}
+		} catch (DBException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -208,6 +234,10 @@ public class AdvisoriesPushService {
 				int agencyId = NumberUtils.toInt(agency, AGENCY_TYPE.CALTRAIN.ordinal());
 				long timeDiff = NumberUtils.toLong(TpConstants.TWEET_TIME_DIFF)*60*60*1000;
 				long lastTimeLeg = System.currentTimeMillis() - timeDiff;
+				if(agencyId == AGENCY_TYPE.BART.ordinal()){
+					pushTweetToBart(appIdentifier,lastTimeLeg);
+					continue;
+				}
 				int lastFrameTweetCount = 0;
 				List<Tweet> tweetList  = TweetStore.getInstance().getTweets(agencyId); 
 				for (Tweet tweet : tweetList) {
@@ -228,7 +258,7 @@ public class AdvisoriesPushService {
 					}
 					Tweet latestTweet = tweetList.get(0);
 					sortThresholdBoards(thresholdBoard,true); // to get largest eligible count
-					logger.debug(loggerName, "Iterate for tweet count max: "+maxTweetToIterate);
+					//					logger.debug(loggerName, "Iterate for tweet count max: "+maxTweetToIterate);
 					int iterateCount = Math.min(lastFrameTweetCount, maxTweetToIterate);
 					for (int i = 1; i <= iterateCount; i++) {
 						Tweet tweet = tweetList.get(i - 1);
@@ -240,7 +270,7 @@ public class AdvisoriesPushService {
 								//logger.debug(loggerName, "threasold - sentCount:"+board.getThreshold()+"-"+sentCount);
 
 								if (sentCount>0 && board.getThreshold() != 1 && latestTweet.getTime() != board.getLatestTweetTimeAtInc()) {
-									logger.debug(loggerName, "Increamenting counter for: "+board.getThreshold()+"+"+board.getIncreamentCount()+ ", tweet: "+tweet.getTweet()+ ", sent count: "+sentCount);
+									//									logger.debug(loggerName, "Increamenting counter for: "+board.getThreshold()+"+"+board.getIncreamentCount()+ ", tweet: "+tweet.getTweet()+ ", sent count: "+sentCount);
 
 									ThresholdIncData tid =  new ThresholdIncData(board, latestTweet.getTime(), thresholdToInc);
 									if(!boardsToInc.contains(tid))
@@ -262,6 +292,53 @@ public class AdvisoriesPushService {
 			}
 		}
 	}
+
+	/**
+	 * Push tweet to bart.
+	 *
+	 * @param appIdentifier the app identifier
+	 * @param lastTimeLeg the last time leg
+	 */
+	private void pushTweetToBart(int appIdentifier, long lastTimeLeg) {
+		try {			
+			if(appIdentifier!=4){
+				return;
+			}
+			logger.debug(loggerName, "sending tweet to bart...");
+			List<Tweet> tweetList  = TweetStore.getInstance().getTweets(AGENCY_TYPE.BART.ordinal());
+			NimblerParams nimblerParams = 	(NimblerParams) persistenceService.findOne(
+					MONGO_TABLES.nimbler_params.name(),TpConstants.NIMBLER_PARAMS_NAME,
+					AGENCY_TYPE.BART.getPushTimeColumnName()+"_"+appIdentifier, NimblerParams.class);
+			long lastTweetSentTime =-1;
+			if(nimblerParams!=null)
+				lastTweetSentTime = Long.parseLong(nimblerParams.getValue());
+			if(ComUtils.isEmptyList(tweetList)){
+				logger.debug(loggerName, "No tweet to send....");
+				return;
+			}			
+			Tweet latestTweet = tweetList.get(0);
+			long maxTweetTime = Math.max(lastTweetSentTime,latestTweet.getTime());
+			ListIterator<Tweet> itrTweet = tweetList.listIterator(tweetList.size());
+			while (itrTweet.hasPrevious()) {
+				Tweet tweet =  itrTweet.previous();
+				if( BooleanUtils.isTrue(tweet.getIsUrgent()) || tweet.getTime()<=lastTweetSentTime)
+					continue;
+				logger.debug(loggerName, "Tweet: "+tweet.getTweet()+", "+tweet.getTime());
+				logger.debug(loggerName,"latest Tweet: "+latestTweet.getTime()+" : "+latestTweet.getTweet());
+				Object[] alertCounts = bartAlertCriteria.getElibleAlertCount(tweet);
+				logger.debug(loggerName, "Eligible Alert Counts: "+ReflectionToStringBuilder.toString(alertCounts,ToStringStyle.SHORT_PREFIX_STYLE));
+				publishTweetsBart(alertCounts,tweet,lastTimeLeg,NIMBLER_APP_TYPE.values()[appIdentifier],maxTweetTime);
+			}			
+			persistenceService.upsertNimblerParam(AGENCY_TYPE.BART.getPushTimeColumnName()+"_"+appIdentifier, maxTweetTime+"");
+			logger.debug(loggerName, "done....");
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+		}
+
+
+
+	}
+
 	/**
 	 * 
 	 * @param response
@@ -269,25 +346,28 @@ public class AdvisoriesPushService {
 	 */
 	public List<Tweet> getTweets(String response) {
 		List<Tweet> tweetList = new ArrayList<Tweet>();
-		List<String> createdDate = JsonPath.read(response, TpConstants.TWEET_CREATED);
-		List<String> tweets = JsonPath.read(response, TpConstants.TWEET_TEXT);
-		List<String> fromUser = JsonPath.read(response,TpConstants.TWEET_FROM_USER );
-		List<String> toUser = JsonPath.read(response,TpConstants.TWEET_TO_USER_NAME );
-
-		List<Long> tweetTime = getTweetTime(response);
-		for(int i=0; i<tweets.size(); i++) {
-			if(toUser.get(i) == null || "".equals(toUser.get(i)) ) {
-				boolean validTweet = validateTweet(tweetTime.get(i));
-				if (!validTweet)
-					continue;
-				Tweet tweet = new Tweet();
-				tweet.setTweetTime(createdDate.get(i));
-				tweet.setTime(tweetTime.get(i));
-				tweet.setTweet("@"+fromUser.get(i)+":"+tweets.get(i));
-				tweet.setSource(agencyTweetSourceIconMap.get(StringUtils.lowerCase(fromUser.get(i))));
-				tweetList.add(tweet);
+		try {
+			TwitterResponse twitterResponse = (TwitterResponse) JSONUtil.getObjectFromJson(response, TwitterResponse.class);
+			if(twitterResponse!=null && !ComUtils.isEmptyList(twitterResponse.getResults())){
+				for (DefaultTweet dt : twitterResponse.getResults()) {
+					if(!ComUtils.isEmptyString(dt.getTo_user_name()))
+						continue;
+					long tweetTime = parseTweetTime(dt.getCreated_at());
+					boolean validTweet = validateTweet(tweetTime);
+					if (!validTweet)
+						continue;
+					Tweet tweet = new Tweet();
+					tweet.setTweetTime(dt.getCreated_at());
+					tweet.setTime(tweetTime);
+					tweet.setTweet("@"+dt.getFrom_user()+":"+dt.getText());
+					tweet.setSource(agencyTweetSourceIconMap.get(StringUtils.lowerCase(dt.getFrom_user())));
+					tweetList.add(tweet);
+				}
 			}
+		} catch (Exception e) {
+			logger.error(loggerName, e);
 		}
+
 		return tweetList;
 	}
 	/**
@@ -302,6 +382,9 @@ public class AdvisoriesPushService {
 			time.add(ComUtils.convertIntoTime(date.substring(0,date.length()-6)));
 		}
 		return time;
+	}
+	public Long parseTweetTime(String date) {
+		return ComUtils.convertIntoTime(date.substring(0,date.length()-6));
 	}
 	/**
 	 * 
@@ -393,6 +476,86 @@ public class AdvisoriesPushService {
 				}
 				//System.out.println("Tweets pushed to: "+pushedDeviceIds);
 				persistenceService.updateMultiById(MONGO_TABLES.users.name(), pushSuccessDevices , pushTimeColName, latestTweet.getTime());
+			}
+		} catch (DBException e) {
+			logger.error(loggerName, e.getMessage());
+		}
+		return count;
+	}
+
+	/**
+	 * Publish tweets bart.
+	 *
+	 * @param alertCount 1,5,6,7,8,9,10, or 1,3
+	 * @param lastLegTime the last leg time
+	 * @param latestTweet the latest tweet
+	 * @param appType the app type
+	 * @param maxTweetTime 
+	 * @return the int
+	 */
+	private int publishTweetsBart(Object[] alertCount,Tweet latestTweet,long lastTimeLeg, NIMBLER_APP_TYPE appType, long maxTweetTime) {
+		int count = 0;
+		try {
+			Map<Integer, String> msgCache = new HashMap<Integer, String>();
+			AGENCY_TYPE agencyType = AGENCY_TYPE.BART;
+
+			BasicDBObject queryObject = new BasicDBObject();
+			boolean isWeekEnd = ComUtils.isWeekEnd();
+			if(isWeekEnd){
+				queryObject.put(RequestParam.NOTIF_TIMING_WEEKEND, BOOLEAN_VAL.TRUE.ordinal());
+			}else{
+				String intervalColumnName = getCurrentPushIntervalName(); //morning/evening
+				if(intervalColumnName==null){
+					logger.info(loggerName, "No valid interval column found for current time (possibly entered in blackout), skip sending.....");
+					return count;
+				}
+				queryObject.put(intervalColumnName, BOOLEAN_VAL.TRUE.ordinal());
+			}
+			queryObject.put(agencyType.getEnableAdvisoryColumnName(), BOOLEAN_VAL.TRUE.ordinal());
+			queryObject.put(TpConstants.APP_TYPE, appType.ordinal());
+			queryObject.put(TpConstants.NUMBER_OF_ALERT, new BasicDBObject(MongoQueryConstant.IN, alertCount));
+			String queryExp = String.format(bartAlertCriteria.getTweetTimeQuery(), latestTweet.getTime());
+			queryObject.put(MongoQueryConstant.WHERE, queryExp);
+
+			count = persistenceService.getCount(MONGO_TABLES.users.name() ,queryObject ,User.class);
+			logger.debug(loggerName, "Count----->"+count);
+			int totalPages = (int) Math.ceil(count/(double)pageSize);
+			BasicQuery basicQuery = new BasicQuery(queryObject);
+			basicQuery.setLimit(pageSize);
+			String alertMsg = StatusMsgConfig.getInstance().getMsg(PUSH_MSG_CONSTANT.SF_REGULAR_TWEET.name());
+			alertMsg = String.format(alertMsg, "%s",agencyType.getText(),"%s");
+			for (int pageNumber=0; pageNumber<totalPages; pageNumber++) {
+				List<User> resultSet = persistenceService.findByQuery(MONGO_TABLES.users.name(),basicQuery,	User.class);
+				if (resultSet==null || resultSet.size()==0)
+					break;
+				List<String> pushSuccessDevices = new ArrayList<String>();
+				List<String> pushedDeviceIds = new ArrayList<String>();
+				for (User user : resultSet) {
+					long  usrLastPushTime = user.getLastPushTimeBart();
+					if (user.getNumberOfAlert()==1) {//then send actual tweet text
+						List<String> newTweets = TweetStore.getInstance().getTweetsAfterTime(usrLastPushTime, lastTimeLeg, agencyType.ordinal());
+						if (usrLastPushTime==0) {//if fresh installation then send only latest tweet, don't send all
+							pushToPhone(user.getDeviceToken(), 1, newTweets.get(0), false, user.isStandardNotifSoundEnable(), appType);
+						} else {							
+							pushToPhone(user.getDeviceToken(), newTweets.size(), latestTweet.getTweet(), false, user.isStandardNotifSoundEnable(), appType);							
+						}
+					} else {
+						int newTweetCount = TweetStore.getInstance().getTweetCountAfterTime(usrLastPushTime,lastTimeLeg , agencyType.ordinal());
+						String formattedMsg = msgCache.get(newTweetCount);
+						if (formattedMsg==null) {
+							formattedMsg = String.format(alertMsg, newTweetCount, latestTweet.getTweet());
+							msgCache.put(newTweetCount, formattedMsg);
+						}
+						pushToPhone(user.getDeviceToken(), newTweetCount, formattedMsg, false, user.isStandardNotifSoundEnable(), appType);
+					}
+					pushSuccessDevices.add(user.getId());
+					pushedDeviceIds.add(user.getDeviceId());
+				}
+				//System.out.println("Tweets pushed to: "+pushedDeviceIds);
+				persistenceService.updateMultiById(MONGO_TABLES.users.name(), pushSuccessDevices , agencyType.getPushTimeColumnName(), maxTweetTime);
+				logger.debug(loggerName, "               for tweet:    "+latestTweet.getTime()+" - "+latestTweet.getTweet()+"\n" +
+						"               max time :    "+maxTweetTime);
+
 			}
 		} catch (DBException e) {
 			logger.error(loggerName, e.getMessage());

@@ -4,11 +4,18 @@
 package com.nimbler.tp.util;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import org.apache.commons.io.IOUtils;
 
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
@@ -94,5 +101,14 @@ public class ZipUtil {
 		baos.close();
 		byte[] output = baos.toByteArray();
 		return new String(output);
+	}
+
+	public static void writeStopTimes(File file, String res) throws IOException {
+		ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(file));
+		ZipEntry ze = new ZipEntry("stop_times.txt");
+		zos.putNextEntry(ze);
+		IOUtils.copy(new StringReader(res), zos);
+		zos.closeEntry();
+		zos.close();
 	}
 }

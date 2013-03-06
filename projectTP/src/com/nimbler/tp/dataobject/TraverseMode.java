@@ -30,6 +30,12 @@ public enum TraverseMode {
 		}
 		return ret;
 	}
+	public boolean isSame(String mode) {
+		if(mode!=null){
+			return mode.equalsIgnoreCase(name());
+		}
+		return false;
+	}
 
 	public boolean isTransit() {
 		return this == TRAM || this == SUBWAY || this == RAIL || this == BUS || this == FERRY

@@ -8,6 +8,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
+
 import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.common.RealTimeDataException;
 import com.nimbler.tp.dataobject.Leg;
@@ -32,6 +35,8 @@ public class NextBusApiImpl implements RealTimeAPI {
 	private Map<String, String> agencyMap;
 
 	private int timeDiffercenceInMin;
+
+	private long maxRealTimeSupportLimitMin = NumberUtils.toLong(TpConstants.MAX_REALTIME_LIMIT_MIN,90);
 
 	@Override
 	public LegLiveFeed getLiveFeeds(Leg leg) throws FeedsNotFoundException {
@@ -134,6 +139,7 @@ public class NextBusApiImpl implements RealTimeAPI {
 		List<RealTimePrediction> lstRealTimePredictions = new ArrayList<RealTimePrediction>();
 		try {			
 			Long scheduledTime = leg.getStartTime();
+			validateTimeLimit(scheduledTime);
 			String agencyId = leg.getAgencyId();
 			String agencyTag = agencyMap.get(agencyId);
 			if (agencyTag==null)
@@ -153,7 +159,7 @@ public class NextBusApiImpl implements RealTimeAPI {
 			if (directions==null)
 				throw new RealTimeDataException("Directions not found in Prediction response " +
 						"for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
-			StringBuilder sb = new StringBuilder();
+			//			StringBuilder sb = new StringBuilder();
 			for (Direction direction : directions) {				
 				List<Prediction> predictionList = direction.getPrediction();
 				if (predictionList==null || predictionList.size()==0)
@@ -161,7 +167,7 @@ public class NextBusApiImpl implements RealTimeAPI {
 							"for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);	
 
 				for (Prediction prediction : predictionList) {
-					sb.append(prediction.getTripTag()+"--"+prediction.getMinutes()+", ");
+					//					sb.append(prediction.getTripTag()+"--"+prediction.getMinutes()+", ");
 					if (direction.getTitle().toLowerCase().contains(leg.getHeadsign().toLowerCase())) {
 						lstRealTimePredictions.add(new RealTimePrediction(prediction));
 						if(_verbose){
@@ -177,6 +183,9 @@ public class NextBusApiImpl implements RealTimeAPI {
 					}
 				}
 			}
+			if(lstRealTimePredictions.isEmpty()){
+				throw new FeedsNotFoundException("No Valid feeds found in response");
+			}
 			resp.setEmptyLeg(leg);
 			resp.setLstPredictions(lstRealTimePredictions);
 			return resp;
@@ -187,9 +196,18 @@ public class NextBusApiImpl implements RealTimeAPI {
 		}
 	}
 
-	@Override
-	public List<LegLiveFeed> getLiveFeeds(List<Leg> legs) {
-		return null;
+	/**
+	 * Validate time limit.
+	 *
+	 * @param scheduledTime the scheduled time
+	 * @throws RealTimeDataException the real time data exception
+	 */
+	private void validateTimeLimit(Long scheduledTime) throws RealTimeDataException {
+		long curruntTime =System.currentTimeMillis();
+		long maxTime = curruntTime +(maxRealTimeSupportLimitMin*DateUtils.MILLIS_PER_MINUTE);
+		if(scheduledTime>maxTime)
+			throw new RealTimeDataException("ScheduleTime out Of range to query realtime for time:"+new Date(scheduledTime)+",currunt time:"+new Date(curruntTime));
+
 	}
 	public Map<String, String> getAgencyMap() {
 		return agencyMap;

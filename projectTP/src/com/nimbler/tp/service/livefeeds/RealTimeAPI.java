@@ -30,11 +30,4 @@ public interface RealTimeAPI {
 	 * @throws FeedsNotFoundException the feeds not found exception
 	 */
 	public abstract LegLiveFeed getAllRealTimeFeeds(Leg leg) throws FeedsNotFoundException;
-	/**
-	 * Will return real time departure data for multiple legs.
-	 * @param leg
-	 * @return
-	 * @throws FeedsNotFoundException
-	 */
-	public abstract List<LegLiveFeed> getLiveFeeds(List<Leg> leg) throws FeedsNotFoundException ;
 }
