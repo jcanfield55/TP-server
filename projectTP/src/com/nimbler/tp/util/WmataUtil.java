@@ -65,6 +65,7 @@ public class WmataUtil {
 		for (WmataBusPrediction p: lstPredictions) {
 			int deviation = NumberUtils.toInt(p.getMinutes(), -1);
 			Calendar cal = Calendar.getInstance();
+			cal.setTimeInMillis(p.getCreateTime());
 			cal.add(Calendar.MINUTE, deviation);
 			Long estimatedDepartureTime = cal.getTimeInMillis();
 			int diff = (int) (estimatedDepartureTime - scheduledTime);
@@ -97,6 +98,7 @@ public class WmataUtil {
 				deviation = NumberUtils.toInt(estimate.getMin(), -1);
 			}
 			Calendar cal = Calendar.getInstance();
+			cal.setTimeInMillis(estimate.getCreateTime());
 			cal.add(Calendar.MINUTE, deviation);
 			Long estimatedDepartureTime = cal.getTimeInMillis();
 			int diff = (int) (estimatedDepartureTime - scheduledTime);

@@ -11,7 +11,8 @@ public class Estimate {
 	private String color;
 	private String hexcolor;
 	private String bikeflag;
-	
+	private long createTime = System.currentTimeMillis();
+
 	public String getMinutes() {
 		return minutes;
 	}
@@ -20,6 +21,13 @@ public class Estimate {
 	}
 	public String getPlatform() {
 		return platform;
+	}
+
+	public long getCreateTime() {
+		return createTime;
+	}
+	public void setCreateTime(long createTime) {
+		this.createTime = createTime;
 	}
 	public void setPlatform(String platform) {
 		this.platform = platform;

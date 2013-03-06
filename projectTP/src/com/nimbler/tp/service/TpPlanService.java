@@ -6,6 +6,8 @@
  */
 package com.nimbler.tp.service;
 
+import static org.apache.commons.lang3.StringUtils.defaultString;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
@@ -33,6 +35,7 @@ import com.nimbler.tp.util.JSONUtil;
 import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.TpConstants;
 import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
+import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 import com.nimbler.tp.util.TpException;
 
 /**
@@ -143,17 +146,15 @@ public class TpPlanService {
 				if(val!=null)
 					lstOtpParams.add( TpConstants.OTP_PARAMETERS[i]+"="+URLEncoder.encode(val));
 			}
-			String appType = reqMap.get(RequestParam.NIMBLER_APP_TYPE);
-			if(!ComUtils.isEmptyString(appType)){
-				String routerId = appTypeToRouterID.get(appType);
-				if(!ComUtils.isEmptyString(routerId)){
-					lstOtpParams.add(RequestParam.ROURER_ID+"="+URLEncoder.encode(routerId));
-				}
+			String appType = defaultString(reqMap.get(RequestParam.NIMBLER_APP_TYPE),NIMBLER_APP_TYPE.CALTRAIN.ordinal()+"");
+			String routerId = appTypeToRouterID.get(appType);
+			if(!ComUtils.isEmptyString(routerId)){
+				lstOtpParams.add(RequestParam.ROURER_ID+"="+URLEncoder.encode(routerId));
 			}
 			String url = TpConstants.SERVER_URL+"ws/plan?"+StringUtils.join(lstOtpParams, "&");
 			long start = System.currentTimeMillis();
 			//			logger.debug(loggerName, url);
-			System.out.println(url);
+			//			System.out.println(url);
 			String planJsonString = HttpUtils.getHttpResponse(url);
 			logger.debug(loggerName, planJsonString);
 			System.out.println(planJsonString);

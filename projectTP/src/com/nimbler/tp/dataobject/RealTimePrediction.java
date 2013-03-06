@@ -40,17 +40,19 @@ public class RealTimePrediction implements Serializable{
 	}
 	public RealTimePrediction(Estimate estimate) {
 		this.seconds = NumberUtils.toLong(estimate.getMinutes())*60;
-		this.epochTime = System.currentTimeMillis()+(seconds*1000);
+		this.epochTime =  estimate.getCreateTime()+(seconds*1000);
 	}
 	public RealTimePrediction(WmataBusPrediction p) {
 		long mills = NumberUtils.toInt(p.getMinutes())*DateUtils.MILLIS_PER_MINUTE;
-		this.epochTime = System.currentTimeMillis()+mills;
+		this.epochTime = p.getCreateTime()+mills;
 		this.vehicleId = p.getVehicleID();
 		this.seconds = mills/1000;
 	}
 	public RealTimePrediction(RailPrediction rp) {
 		this.seconds = NumberUtils.toLong(rp.getMin())*60;
-		this.epochTime = System.currentTimeMillis()+(seconds*1000);
+		this.epochTime =  rp.getCreateTime()+(seconds*1000);
+	}
+	public RealTimePrediction() {
 	}
 	public String getTripId() {
 		return tripId;

@@ -160,7 +160,7 @@ public class TpPlanRestService {
 			response.setReqId(reqID);
 		}
 		String res = JSONUtil.getResponseJSON(response);
-		//		System.out.println(res);
+		System.out.println(res);
 		//		System.out.println("============================================================");
 		return res;
 	}

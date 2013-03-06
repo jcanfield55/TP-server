@@ -56,25 +56,25 @@ public class GtfsMetaExtractor implements Runnable{
 			bundle.setAgencyIds(lstAgencyIds);
 
 			//read and calculate calander.txt
-			try {
-				List<GtfsCalander> lstCalanders = utils.readCalanderGtfs(gtfsFile);
-				bundle.setLstCalanders(lstCalanders);
-				for (GtfsCalander gtfsCalander : lstCalanders) {
-					int[] weekServiceStatus = gtfsCalander.getWeeklyStatusForService();// all weekday status for particular service
-					String[] serviceOnDays = bundle.getServiceOnDays();
+			//			try {
+			List<GtfsCalander> lstCalanders = utils.readCalanderGtfs(gtfsFile);
+			bundle.setLstCalanders(lstCalanders);
+			for (GtfsCalander gtfsCalander : lstCalanders) {
+				int[] weekServiceStatus = gtfsCalander.getWeeklyStatusForService();// all weekday status for particular service
+				String[] serviceOnDays = bundle.getServiceOnDays();
 
-					for (int i = 0; i < weekServiceStatus.length; i++) {
-						if(weekServiceStatus[i] == 1){ // available
-							if(ComUtils.isEmptyString(serviceOnDays[i]))
-								serviceOnDays[i]= gtfsCalander.getServiceName();
-							else
-								serviceOnDays[i]= serviceOnDays[i]+","+gtfsCalander.getServiceName();
-						}
+				for (int i = 0; i < weekServiceStatus.length; i++) {
+					if(weekServiceStatus[i] == 1){ // available
+						if(ComUtils.isEmptyString(serviceOnDays[i]))
+							serviceOnDays[i]= gtfsCalander.getServiceName();
+						else
+							serviceOnDays[i]= serviceOnDays[i]+","+gtfsCalander.getServiceName();
 					}
 				}
-			} catch (Exception e) {
-				logger.error(loggerName, e);
 			}
+			//			} catch (Exception e) {
+			//				logger.error(loggerName, e);
+			//			}
 			sortAndHashServices();
 
 			//read and calculate calander_dates.txt

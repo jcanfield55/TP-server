@@ -11,9 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.nimbler.tp.common.RealTimeDataException;
-import com.nimbler.tp.dataobject.wmata.WmataBusPrediction;
 import com.nimbler.tp.dataobject.wmata.RailPrediction;
+import com.nimbler.tp.dataobject.wmata.WmataBusPrediction;
 import com.nimbler.tp.service.livefeeds.stub.WmataApiClient;
 
 /**
@@ -28,6 +29,7 @@ public class WmataCachedApiClient {
 	private int cacheExpirationTimeInSec = 60;
 	LoadingCache<String, List<WmataBusPrediction>> busStopPrediction = null;
 	LoadingCache<String, List<RailPrediction>> railStopPrediction = null;
+	LoadingCache<String, String> s = null;
 
 	@PostConstruct
 	private void init() {
@@ -40,13 +42,33 @@ public class WmataCachedApiClient {
 		railStopPrediction = CacheBuilder.newBuilder().expireAfterWrite(cacheExpirationTimeInSec, TimeUnit.SECONDS)
 				.build(new CacheLoader<String, List<RailPrediction>>() {
 					public List<RailPrediction> load(String stopId) throws Exception{
-						return apiClient.getRailPrediction(apiKey, stopId);
+						return  apiClient.getRailPrediction(apiKey, stopId);
+					}
+				});
+		s = CacheBuilder.newBuilder().refreshAfterWrite(5, TimeUnit.SECONDS)
+				.build(new CacheLoader<String, String>() {
+					@Override
+					public ListenableFuture<String> reload(String key,
+							String oldValue) throws Exception {
+						return super.reload(key, oldValue);
+					}
+					public String load(String stopId) throws Exception{
+						System.out.println("get....");
+						return System.currentTimeMillis()+"";
 					}
 				});
 	}
 	public List<WmataBusPrediction> getBusPredictionAtStop(String stopId) throws RealTimeDataException, ExecutionException {
 		return busStopPrediction.get(stopId);
 	}
+	public List<RailPrediction> getRailPrediction(String apiFromStop) throws ExecutionException {
+		return railStopPrediction.get(apiFromStop);
+	}
+	public String getRailPredictionByStation(String apiFromStop) throws ExecutionException {
+		String ss =  s.get(apiFromStop);
+		return ss;
+	}
+	//	 getter setter ========================================
 	public String getApiKey() {
 		return apiKey;
 	}
@@ -59,13 +81,23 @@ public class WmataCachedApiClient {
 	public void setApiClient(WmataApiClient apiClient) {
 		this.apiClient = apiClient;
 	}
-	public List<RailPrediction> getRailPrediction(String apiFromStop) throws ExecutionException {
-		return railStopPrediction.get(apiFromStop);
-	}
 	public int getCacheExpirationTimeInSec() {
 		return cacheExpirationTimeInSec;
 	}
 	public void setCacheExpirationTimeInSec(int cacheExpirationTimeInSec) {
 		this.cacheExpirationTimeInSec = cacheExpirationTimeInSec;
+	}
+	public static void main(String[] args) {
+		try {
+			WmataCachedApiClient apiClient = new WmataCachedApiClient();
+			apiClient.init();
+			apiClient.getRailPredictionByStation("test");
+			Thread.sleep(6000);
+			apiClient.getRailPredictionByStation("test");
+			Thread.sleep(56000);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 	}
 }

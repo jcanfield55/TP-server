@@ -62,7 +62,7 @@ public class GtfsMetaDataRestService {
 		} catch (Exception e) {
 			logger.error(loggerName, e);
 			response = ResponseUtil.createResponse(TP_CODES.INTERNAL_SERVER_ERROR);
-		}		
+		}
 		return JSONUtil.getResponseJSON(response);
 		//		return "{\"gtfsUpdateTime\":{\"caltrain-ca-us\":\"20120910\",\"MIDDAY\":\"20120910\",\"BART\":\"20120910\",\"VTA\":\"20120910\",\"AC Transit\":\"20120910\",\"SFMTA\":\"20120910\",\"AirBART\":\"20120910\"},\"code\":105,\"msg\":\"Operation Completed Sucessfully\"}";
 	}
@@ -98,7 +98,7 @@ public class GtfsMetaDataRestService {
 			Map<String, String[]> res = new HashMap<String, String[]>();
 			for (GtfsBundle gtfsBundle : lstBundles) {
 				if(gtfsBundle.isEnableAgency())
-					res.putAll(getMapWithAgencies(gtfsBundle, gtfsBundle.getServiceOnDaysHash()));				
+					res.putAll(getMapWithAgencies(gtfsBundle, gtfsBundle.getServiceOnDaysHash()));
 			}
 			response = new GtfsResponse(TP_CODES.SUCESS);
 			((GtfsResponse)response).setGtfsServiceByWeekDay(res);
@@ -125,7 +125,7 @@ public class GtfsMetaDataRestService {
 			Map<String, Map<String,String>> res = new HashMap<String, Map<String,String>>();
 			for (GtfsBundle gtfsBundle : lstBundles) {
 				if(gtfsBundle.isEnableAgency())
-					res.putAll(getMapWithAgencies(gtfsBundle, gtfsBundle.getDatesAndServiceWithException()));	
+					res.putAll(getMapWithAgencies(gtfsBundle, gtfsBundle.getDatesAndServiceWithException()));
 			}
 			response = new GtfsResponse(TP_CODES.SUCESS);
 			((GtfsResponse)response).setGtfsServiceExceptionDates(res);
@@ -148,14 +148,14 @@ public class GtfsMetaDataRestService {
 	 * @throws ClassNotFoundException the class not found exception
 	 */
 	@GET
-	@Path("/rawdata/")	
+	@Path("/rawdata/")
 	public String getRawData(@QueryParam(RequestParam.ENTITY)String fileNames,
 			@DefaultValue("1,2,3,4") @QueryParam(RequestParam.AGENCY_IDS)String strAgencyIds) throws UnsupportedEncodingException, IOException, ClassNotFoundException {
 		TPResponse response = ResponseUtil.createResponse(TP_CODES.SUCESS);
 		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
 		long start = System.currentTimeMillis();
 
-		try {			
+		try {
 			if(ComUtils.isEmptyString(fileNames))
 				throw new TpException(TP_CODES.INVALID_REQUEST);
 			GtfsDataService gtfsDataService =  BeanUtil.getGtfsDataServiceBean();
@@ -177,13 +177,13 @@ public class GtfsMetaDataRestService {
 			response.setData(resMap);
 		} catch (TpException e) {
 			logger.error(loggerName, e);
-			response = ResponseUtil.createResponse(e);			
+			response = ResponseUtil.createResponse(e);
 		} catch (Exception e) {
 			logger.error(loggerName, e);
 			response = ResponseUtil.createResponse(TP_CODES.INTERNAL_SERVER_ERROR);
 		}
 		String res =  JSONUtil.getResponseJSON(response);
-		long end = System.currentTimeMillis();		
+		long end = System.currentTimeMillis();
 		//		System.out.println("GetRawData took " + (end - start) + " mill sec");
 		return res;
 	}
@@ -199,30 +199,30 @@ public class GtfsMetaDataRestService {
 	 * @throws ClassNotFoundException the class not found exception
 	 */
 	//	@GET
-	//	@Path("/stoptimes/")	
+	//	@Path("/stoptimes/")
 	//	public String getStopTimes(@QueryParam(RequestParam.AGENCY_IDS)String strAgencyId) throws UnsupportedEncodingException, IOException, ClassNotFoundException {
 	@POST
-	@Path("/stoptimes/")	
+	@Path("/stoptimes/")
 	public String getStopTimes(@Context HttpServletRequest httpRequest) throws UnsupportedEncodingException, IOException, ClassNotFoundException {
 		TPResponse response = ResponseUtil.createResponse(TP_CODES.SUCESS);
 		long start = System.currentTimeMillis();
-		try {		
+		try {
 			Map<String,String> reqParam = ComUtils.parseMultipartRequest(httpRequest);
 			String strAgencyId = reqParam.get(RequestParam.AGENCY_IDS);
 			if(ComUtils.isEmptyString(strAgencyId))
 				throw new TpException(TP_CODES.INVALID_REQUEST);
-			GtfsDataService gtfsDataService =  BeanUtil.getGtfsDataServiceBean();			
+			GtfsDataService gtfsDataService =  BeanUtil.getGtfsDataServiceBean();
 			Map<String, List<String>> map =  gtfsDataService.getStopTimesByAgency(strAgencyId.split(","));
 			response.setData(map);
 		} catch (TpException e) {
 			logger.error(loggerName, e);
-			response = ResponseUtil.createResponse(e);			
+			response = ResponseUtil.createResponse(e);
 		} catch (Exception e) {
 			logger.error(loggerName, e);
 			response = ResponseUtil.createResponse(TP_CODES.INTERNAL_SERVER_ERROR);
 		}
 		String res =  JSONUtil.getResponseJSON(response);
-		long end = System.currentTimeMillis();		
+		long end = System.currentTimeMillis();
 		//		System.out.println("GetStopTimes took " + (end - start) + "mill sec");
 		return res;
 	}
@@ -236,39 +236,44 @@ public class GtfsMetaDataRestService {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws ClassNotFoundException the class not found exception
 	 */
-	@GET
-	@Path("/trips/")	
+	/*	@GET
+	@Path("/trips/")
 	public String getTrips(@QueryParam(RequestParam.AGENCY_AND_ROUTE_IDS)String strAgencyIdAndRouteId) throws UnsupportedEncodingException, IOException, ClassNotFoundException {
-		TPResponse response = ResponseUtil.createResponse(TP_CODES.SUCESS);
-		long start = System.currentTimeMillis();
-		try {		
-			if(ComUtils.isEmptyString(strAgencyIdAndRouteId))
-				throw new TpException(TP_CODES.INVALID_REQUEST);
-			GtfsDataService gtfsDataService =  BeanUtil.getGtfsDataServiceBean();			
-			Map<String, List<String>> map =  gtfsDataService.getTripsByRouteId(strAgencyIdAndRouteId.split(","));
-			response.setData(map);
-		} catch (TpException e) {
-			logger.error(loggerName, e);
-			response = ResponseUtil.createResponse(e);			
-		} catch (Exception e) {
-			logger.error(loggerName, e);
-			response = ResponseUtil.createResponse(TP_CODES.INTERNAL_SERVER_ERROR);
-		}
-		String res =  JSONUtil.getResponseJSON(response);
-		long end = System.currentTimeMillis();		
-		//		System.out.println("GetStopTimes took " + (end - start) + "mill sec");
-		return res;
-	}
-	public LoggingService getLogger() {
-		return logger;
-	}
-	public void setLogger(LoggingService logger) {
-		this.logger = logger;
-	}
-	public String getLoggerName() {
-		return loggerName;
-	}
-	public void setLoggerName(String loggerName) {
-		this.loggerName = loggerName;
-	}
+	 */	@POST
+	 @Path("/trips/")
+	 public String getTrips(@Context HttpServletRequest request) throws UnsupportedEncodingException, IOException, ClassNotFoundException {
+		 TPResponse response = ResponseUtil.createResponse(TP_CODES.SUCESS);
+		 try {
+			 Map<String,String> req = ComUtils.parseMultipartRequest(request);
+			 String strAgencyIdAndRouteId = req.get(RequestParam.AGENCY_AND_ROUTE_IDS);
+			 long start = System.currentTimeMillis();
+			 if(ComUtils.isEmptyString(strAgencyIdAndRouteId))
+				 throw new TpException(TP_CODES.INVALID_REQUEST);
+			 GtfsDataService gtfsDataService =  BeanUtil.getGtfsDataServiceBean();
+			 Map<String, List<String>> map =  gtfsDataService.getTripsByRouteId(strAgencyIdAndRouteId.split(","));
+			 response.setData(map);
+		 } catch (TpException e) {
+			 logger.error(loggerName, e);
+			 response = ResponseUtil.createResponse(e);
+		 } catch (Exception e) {
+			 logger.error(loggerName, e);
+			 response = ResponseUtil.createResponse(TP_CODES.INTERNAL_SERVER_ERROR);
+		 }
+		 String res =  JSONUtil.getResponseJSON(response);
+		 long end = System.currentTimeMillis();
+		 //		System.out.println("GetStopTimes took " + (end - start) + "mill sec");
+		 return res;
+	 }
+	 public LoggingService getLogger() {
+		 return logger;
+	 }
+	 public void setLogger(LoggingService logger) {
+		 this.logger = logger;
+	 }
+	 public String getLoggerName() {
+		 return loggerName;
+	 }
+	 public void setLoggerName(String loggerName) {
+		 this.loggerName = loggerName;
+	 }
 }

@@ -42,7 +42,8 @@ public class TPApplicationContext {
 		TWITTER_ADVISORIES_SERVICE("twitterAdvisoriesService"),
 		ADVISORIES_PUSH_SERVICE("advisoriesPushService"),
 		NIMBLER_APPS_BEAN("nimblerApps"),
-		GTFS_DATA_SERVICE("gtfsDataService");
+		GTFS_DATA_SERVICE("gtfsDataService"),
+		FLURRY_MANAGEMENT_SERVICE("flurryManagementService");
 		String name;
 
 		/**

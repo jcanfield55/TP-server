@@ -2,6 +2,8 @@ package com.nimbler.tp.dataobject;
 
 import java.util.List;
 
+import org.apache.commons.lang3.time.DateUtils;
+
 /**
  * 
  * @author nIKUNJ
@@ -14,7 +16,7 @@ public class LegLiveFeed {
 	private Long departureTime;
 	private Long arrivalTime;
 	private Integer timeDiffInMins;
-	private Integer arrivalTimeFlag;	
+	private Integer arrivalTimeFlag;
 	private List<RealTimePrediction> lstPredictions;
 
 
@@ -37,14 +39,14 @@ public class LegLiveFeed {
 	public void setLeg(Leg leg) {
 		Leg emptyLeg = new Leg();
 		emptyLeg.setId(leg.getId());
-		emptyLeg.setMode(leg.getMode()); 
-		emptyLeg.setStartTime(leg.getStartTime()); 
-		emptyLeg.setEndTime(leg.getEndTime()); 
-		emptyLeg.setRouteId(leg.getRouteId()); 
-		emptyLeg.setRoute(leg.getRoute()); 
+		emptyLeg.setMode(leg.getMode());
+		emptyLeg.setStartTime(leg.getStartTime());
+		emptyLeg.setEndTime(leg.getEndTime());
+		emptyLeg.setRouteId(leg.getRouteId());
+		emptyLeg.setRoute(leg.getRoute());
 		this.leg = emptyLeg;
 
-	}	
+	}
 	public void setEmptyLeg(Leg leg) {
 		Leg emptyLeg = new Leg();
 		emptyLeg.setId(leg.getId());
@@ -63,6 +65,9 @@ public class LegLiveFeed {
 	}
 	public void setTimeDiffInMins(Integer timeDiffInMins) {
 		this.timeDiffInMins = timeDiffInMins;
+	}
+	public void setTimeDiffInMills(int diff) {
+		this.timeDiffInMins = (int) (diff/DateUtils.MILLIS_PER_MINUTE);
 	}
 
 	public Long getDepartureTime() {

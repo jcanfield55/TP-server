@@ -109,9 +109,6 @@
 		<property name="baseUrl">
 			<value>http://webservices.nextbus.com/service/publicXMLFeed</value>
 		</property>
-		<property name="loggerName">
-			<value>com.nimbler.tp.service.livefeeds</value>
-		</property>
 	</bean>
 
 	<bean id="nextBusApiImpl" class="com.nimbler.tp.service.livefeeds.NextBusApiImpl">
@@ -130,14 +127,6 @@
 		<property name="bartAPIRegKey">
 			<value>MW9S-E7SL-26DU-VV8V</value>
 		</property>
-		<property name="timeDiffercenceInMin">
-			<!-- In minutes -->
-			<value>3</value>
-		</property>
-		<!--<property name="maxTimeDifference">
-			In minutes 
-			<value>40</value>			
-		</property>-->
 	</bean>
 
 	<bean id="advisoriesPushService"
@@ -192,6 +181,8 @@
 			<value>com.nimbler.tp.service.TpEventLoggingService</value>
 		</property>
 	</bean>
+	<bean id="flurryManagementService" class="com.nimbler.tp.service.flurry.FlurryManagementService" />		
+	
 
 	<bean id="gat" class="com.nimbler.tp.gtfs.GraphAcceptanceTest"
 		init-method="startTest">
@@ -229,7 +220,7 @@
 
 	<bean id="gtfsMonitoring" class="com.nimbler.tp.gtfs.GtfsDataMonitor"
 		init-method="init">
-		<property name="downloadDirectory" value="c:/otp_/GTFS/tmp/" />
+		<property name="downloadDirectory" value="c:/otp_/GTFS/tmp/" />	
 		<property name="loggerName">
 			<value>com.nimbler.tp.gtfs.GtfsDataMonitor</value>
 		</property>		
@@ -315,7 +306,8 @@
 	</bean>
 	<bean id="dBHealthMonitoringService" class="com.nimbler.tp.gtfs.DBHealthMonitoringService" />
 	
-	<bean id="gtfsDataService" class="com.nimbler.tp.gtfs.GtfsDataService">		
+	<bean id="gtfsDataService" class="com.nimbler.tp.gtfs.GtfsDataService">	
+		<!-- <property name="ageciesToLoad" value="1,2,3,4,5,6,7,8" /> -->	
 	<property name="gtfsColums">
 		<map>
 			<entry key="agency" value="agency_id,agency_name,agency_url" />

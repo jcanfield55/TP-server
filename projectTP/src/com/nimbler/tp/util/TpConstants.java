@@ -96,6 +96,7 @@ public class TpConstants {
 	public static final String LAST_PUSH_TIME_SFMUNI = "lastPushTimeSfMuni";
 
 
+
 	public static final String TWEET_TIME_DIFF 		= TpProperty.getDefaultProperty("tweet.time.diff");
 	public static final String TWEET_CREATED 		= TpProperty.getDefaultProperty("tweet.created");
 	public static final String TWEET_TEXT 			= TpProperty.getDefaultProperty("tweet.text");
@@ -122,7 +123,11 @@ public class TpConstants {
 		leg,
 		event_log,
 		login,
-		nimbler_params
+		nimbler_params,
+		flurry_report_status,
+		flurry_events,
+		flurry_events_meta,
+		advisory_fetch_log
 	}
 
 	public enum LIVE_FEED_MODES {

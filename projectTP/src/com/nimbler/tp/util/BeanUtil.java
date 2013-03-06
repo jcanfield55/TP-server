@@ -17,6 +17,7 @@ import com.nimbler.tp.service.TpPlanService;
 import com.nimbler.tp.service.UserManagementService;
 import com.nimbler.tp.service.advisories.AdvisoriesPushService;
 import com.nimbler.tp.service.advisories.AdvisoriesService;
+import com.nimbler.tp.service.flurry.FlurryManagementService;
 import com.nimbler.tp.service.livefeeds.BARTApiImpl;
 import com.nimbler.tp.service.livefeeds.NextBusApiImpl;
 import com.nimbler.tp.service.livefeeds.WmataApiImpl;
@@ -62,6 +63,9 @@ public class BeanUtil {
 	 */
 	public static final PersistenceService getPersistanceService(){
 		return (PersistenceService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.PERSISTANCE_SERVICE.bean());
+	}
+	public static final FlurryManagementService getFlurryManagementService(){
+		return (FlurryManagementService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.FLURRY_MANAGEMENT_SERVICE.bean());
 	}
 	/**
 	 * 

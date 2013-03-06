@@ -41,9 +41,22 @@ public  class RailPrediction {
 	long scheduledTime;
 	long estimatedTime;
 
+	long createTime = System.currentTimeMillis();
+
 	public String getCar() {
 		return car;
 	}
+
+
+	public long getCreateTime() {
+		return createTime;
+	}
+
+
+	public void setCreateTime(long createTime) {
+		this.createTime = createTime;
+	}
+
 
 	public long getScheduledTime() {
 		return scheduledTime;

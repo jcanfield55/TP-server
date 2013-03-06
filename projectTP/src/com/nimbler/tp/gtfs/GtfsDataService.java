@@ -120,9 +120,15 @@ public class GtfsDataService {
 					System.out.println("Could not find bundle for: "+agencyIdOrdinals[i]);
 					continue;
 				}
-				List<String> lstData = gtfsUtils.getColumnsFromFile(new File(bundle.getValidFile()),gtfsColums.get(gtfsFile.getName()), gtfsFile.getFileName());
-				if(lstData!=null)
-					resMap.put(agencyIdOrdinals[i]+"_"+gtfsFile.getName(), lstData);
+				try {
+					List<String> lstData = gtfsUtils.getColumnsFromFile(new File(bundle.getValidFile()),gtfsColums.get(gtfsFile.getName()), gtfsFile.getFileName());
+					if(lstData!=null)
+						resMap.put(agencyIdOrdinals[i]+"_"+gtfsFile.getName(), lstData);
+				} catch (TpException e) {
+					loggingService.error(loggerName, e.getMessage());
+				} catch (Exception e) {
+					loggingService.error(loggerName,"Error While reading agency:"+agencyIdOrdinals[i]+" for file:"+gtfsFile, e);
+				}
 			}
 		} catch (Exception e) {
 			throw new TpException(e.getMessage());
@@ -289,7 +295,7 @@ public class GtfsDataService {
 			mapToQuery = tripsByRouteId;
 		}
 		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
-		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColums.get(GTFS_FILE.STOP_TIMES.getName())));
+		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColums.get(GTFS_FILE.TRIPS.getName())));
 		for (int t = 0; t < strAgencyIdAndRouteId.length; t++) {
 			String key =  strAgencyIdAndRouteId[t];
 			resMap.put(key, mapToQuery.get(key));

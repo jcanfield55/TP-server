@@ -21,12 +21,23 @@ public class WmataBusPrediction {
 
 	private BusStop busStop;
 
+	private long createTime = System.currentTimeMillis();
+
 	public String getDirectionNum() {
 		return directionNum;
 	}
 
 	public BusStop getBusStop() {
 		return busStop;
+	}
+
+
+	public long getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(long createTime) {
+		this.createTime = createTime;
 	}
 
 	public void setBusStop(BusStop busStop) {

@@ -281,7 +281,7 @@ public class StopMapBuilder {
 		Set<BusStop> lstStopSet = null;
 		if(!ComUtils.isFileExist(API_BUS_STOP_DATA_FILE)){
 			System.out.println("Getting bus stops from api....");
-			List<BusStop> stops = apiClient.getAllStops(WMATA_API_KEY);
+			List<BusStop> stops = apiClient.getBusAllStops(WMATA_API_KEY);
 			System.out.println("done....."+stops.size());
 			lstStopSet = new HashSet<BusStop>(stops);
 			System.out.println("Writting bus stop api data....");

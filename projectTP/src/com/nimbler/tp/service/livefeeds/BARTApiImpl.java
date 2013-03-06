@@ -2,6 +2,7 @@ package com.nimbler.tp.service.livefeeds;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.time.DateUtils;
 
 import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.common.RealTimeDataException;
@@ -44,9 +46,10 @@ public class BARTApiImpl implements RealTimeAPI {
 
 	private int maxTimeDifference = 30;//can be updated from bean
 	private int maxTimeDifferenceForEarly = 10;//can be updated from bean
+	private long maxRealTimeSupportLimitMin = NumberUtils.toLong(TpConstants.MAX_REALTIME_LIMIT_MIN,90);
 
 	@Override
-	public LegLiveFeed getAllRealTimeFeeds(Leg leg) throws FeedsNotFoundException {		
+	public LegLiveFeed getAllRealTimeFeeds(Leg leg) throws FeedsNotFoundException {
 		List<RealTimePrediction> lstRealTimePredictions = new ArrayList<RealTimePrediction>();
 		try {
 			Long scheduledTime = leg.getStartTime();
@@ -56,9 +59,9 @@ public class BARTApiImpl implements RealTimeAPI {
 			String agencyId = leg.getAgencyId();
 			String fromStopTag = leg.getFrom().getStopId().getId();
 			String toStopTag = leg.getTo().getStopId().getId();
-			String routeTag = leg.getRoute().trim();			
+			String routeTag = leg.getRoute().trim();
 			BartResponse response = BartETDCache.getInstance().getEstimateTimeOfDepart(fromStopTag);
-			List<Station> lstStation = response.getStation();  
+			List<Station> lstStation = response.getStation();
 			if (lstStation == null || lstStation.size()==0)
 				throw new RealTimeDataException("Stations not found in ETD response for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
 
@@ -92,7 +95,7 @@ public class BARTApiImpl implements RealTimeAPI {
 						break;
 					}
 				}
-			}			
+			}
 			if (targetETD == null)
 				throw new RealTimeDataException("Targeted station not found in estimation response.");
 
@@ -111,7 +114,7 @@ public class BARTApiImpl implements RealTimeAPI {
 			throw new FeedsNotFoundException(e.getMessage());
 		} catch (Exception e) {
 			throw new FeedsNotFoundException("Unknown Exception: "+e);
-		}		
+		}
 	}
 
 	@Override
@@ -323,6 +326,13 @@ public class BARTApiImpl implements RealTimeAPI {
 			}
 		}
 		return -1;
+	}
+	private void validateTimeLimit(Long scheduledTime) throws RealTimeDataException {
+		long curruntTime =System.currentTimeMillis();
+		long maxTime = curruntTime +(maxRealTimeSupportLimitMin*DateUtils.MILLIS_PER_MINUTE);
+		if(scheduledTime>maxTime)
+			throw new RealTimeDataException("ScheduleTime out Of range to query realtime for time:"+new Date(scheduledTime)+",currunt time:"+new Date(curruntTime));
+
 	}
 	public int getTimeDiffercenceInMin() {
 		return lateThreshold;

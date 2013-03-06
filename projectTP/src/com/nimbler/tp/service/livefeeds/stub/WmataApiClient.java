@@ -107,7 +107,7 @@ public class WmataApiClient{
 	 * @return the all stops
 	 * @throws RealTimeDataException the real time data exception
 	 */
-	public List<BusStop> getAllStops(String regKey) throws RealTimeDataException {
+	public List<BusStop> getBusAllStops(String regKey) throws RealTimeDataException {
 		String url = null;
 		try {
 			url = baseUrl+routeMap.get("GET_STOP");
@@ -199,6 +199,36 @@ public class WmataApiClient{
 			WmataRailPredictions res =  gson.fromJson(strResp, WmataRailPredictions.class);
 			if((res==null ||  ComUtils.isEmptyList(res.getTrains())))
 				throw new FeedsNotFoundException("No Rail Line Found.");
+			return res.getTrains();
+		} catch (RuntimeException e) {
+			logger.error(loggerName, e.getMessage());
+			throw new RealTimeDataException("Error while getting Rail Lines"+e.getMessage());
+		}catch (InterruptedException e) {
+			throw new RealTimeDataException("InterruptedException while wmata api call url:"+url+","+e.getMessage());
+		} catch (TimeoutException e) {
+			throw new RealTimeDataException(e.getMessage());
+		}
+	}
+
+	/**
+	 * Gets the all rail prediction.
+	 *
+	 * @param regKey the reg key
+	 * @return the all rail prediction
+	 * @throws RealTimeDataException the real time data exception
+	 */
+	public List<RailPrediction> getAllRailPrediction(String regKey) throws RealTimeDataException {
+		String url = null;
+		try {
+			url = baseUrl+routeMap.get("RAIL_PREDICTION_ALL");
+			WebResource webResource =getResource(url);
+			MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+			queryParams.add(PARAM_API_KEY, regKey);
+			String strResp = webResource.queryParams(queryParams).accept("application/json").get(String.class);
+			System.out.println("---->"+strResp);
+			WmataRailPredictions res =  gson.fromJson(strResp, WmataRailPredictions.class);
+			if((res==null ||  ComUtils.isEmptyList(res.getTrains())))
+				throw new FeedsNotFoundException("No Rail Predictions  Found.");
 			return res.getTrains();
 		} catch (RuntimeException e) {
 			logger.error(loggerName, e.getMessage());

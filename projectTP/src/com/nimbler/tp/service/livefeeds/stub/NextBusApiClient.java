@@ -25,7 +25,7 @@ public class NextBusApiClient {
 	private LoggingService logger;
 
 	private String baseUrl;
-	private String loggerName;
+	private String loggerName = "com.nimbler.tp.service.livefeeds";
 	private Client client;
 
 	public void init(){
@@ -43,14 +43,14 @@ public class NextBusApiClient {
 			MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
 			queryParams.add("command", "routeList");
 			queryParams.add("a", agencyId);
-			ClientResponse resp = webResource.queryParams(queryParams).accept("text/xml").get(ClientResponse.class);			
+			ClientResponse resp = webResource.queryParams(queryParams).accept("text/xml").get(ClientResponse.class);
 			return resp.getEntity(NextBusResponse.class);
 		} catch (ClientHandlerException e) {
 			logger.error(loggerName, e);
 			throw new RealTimeDataException("Error while getting Next Bus Api route list"+e.getMessage());
-		} catch (UniformInterfaceException uie) {	
+		} catch (UniformInterfaceException uie) {
 			logger.error(loggerName, uie);
-			throw new RealTimeDataException("Error while getting Next Bus Api route list"+uie.getMessage()); 
+			throw new RealTimeDataException("Error while getting Next Bus Api route list"+uie.getMessage());
 		}
 	}
 	/**
@@ -163,5 +163,11 @@ public class NextBusApiClient {
 
 	public void setLoggerName(String loggerName) {
 		this.loggerName = loggerName;
+	}
+	public LoggingService getLogger() {
+		return logger;
+	}
+	public void setLogger(LoggingService logger) {
+		this.logger = logger;
 	}
 }

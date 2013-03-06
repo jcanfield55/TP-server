@@ -119,21 +119,20 @@ public class WmataApiImpl implements RealTimeAPI {
 		LegLiveFeed resp = null;
 		try {
 			if(_verbose)
-				logger.debug(loggerName, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+				logger.debug(loggerName, "-------------------------------------------------------------------------------");
 			Long scheduledTime = leg.getStartTime();
-			if (scheduledTime < System.currentTimeMillis())
-				throw new RealTimeDataException("Leg scheduled time is already passed. No estimates possible.");
+
 			validateTimeLimit(scheduledTime);
 			String gtfsFromStop = leg.getFrom().getStopId().getId();
 			String routeTag = leg.getRoute().trim();
 			String gtfsTtipId = leg.getTripId().trim();
 			String mode = leg.getMode();
-			if(StringUtils.equalsIgnoreCase(mode,TraverseMode.BUS.name())){
+			if(TraverseMode.BUS.isSame(mode)){
 				LegLiveFeed liveFeed = getBusRealTimeData(gtfsFromStop, gtfsTtipId, routeTag, scheduledTime);
 				liveFeed.setLeg(leg);
 				return  liveFeed;
 
-			}else if(StringUtils.equalsIgnoreCase(mode,TraverseMode.SUBWAY.name())){
+			}else if(TraverseMode.SUBWAY.isSame(mode)){
 				LegLiveFeed liveFeed =  getRailRealTimeData(gtfsFromStop, routeTag, gtfsTtipId, scheduledTime);
 				liveFeed.setLeg(leg);
 				return  liveFeed;
@@ -146,7 +145,7 @@ public class WmataApiImpl implements RealTimeAPI {
 			throw new FeedsNotFoundException("Unknown Exception: "+e);
 		}finally{
 			if(_verbose)
-				logger.debug(loggerName, "#################################################################################");
+				logger.debug(loggerName, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 		}
 		return resp;
 	}
@@ -159,7 +158,7 @@ public class WmataApiImpl implements RealTimeAPI {
 		LegLiveFeed resp = null;
 		try {
 			if(_verbose)
-				logger.debug(loggerName, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+				logger.debug(loggerName, "-------------------------------------------------------------------------------");
 			Long scheduledTime = leg.getStartTime();
 			if (scheduledTime < System.currentTimeMillis())
 				throw new RealTimeDataException("Leg scheduled time is already passed. No estimates possible.");
@@ -168,12 +167,11 @@ public class WmataApiImpl implements RealTimeAPI {
 			String routeTag = leg.getRoute().trim();
 			String gtfsTtipId = leg.getTripId().trim();
 			String mode = leg.getMode();
-			if(equalsIgnoreCase(mode,TraverseMode.BUS.name())){
+			if(TraverseMode.BUS.isSame(mode)){
 				LegLiveFeed liveFeed = getAllBusRealTimeData(gtfsFromStop, gtfsTtipId, routeTag, scheduledTime);
 				liveFeed.setEmptyLeg(leg);
 				return  liveFeed;
-
-			}else if(equalsIgnoreCase(mode,TraverseMode.SUBWAY.name())){
+			}else if(TraverseMode.SUBWAY.isSame(mode)){
 				LegLiveFeed liveFeed =  getAllRailRealTimeData(gtfsFromStop, routeTag, gtfsTtipId, scheduledTime);
 				liveFeed.setEmptyLeg(leg);
 				return  liveFeed;
@@ -186,7 +184,7 @@ public class WmataApiImpl implements RealTimeAPI {
 			throw new FeedsNotFoundException("Unknown Exception: "+e);
 		}finally{
 			if(_verbose)
-				logger.debug(loggerName, "#################################################################################");
+				logger.debug(loggerName, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 		}
 		return resp;
 	}
@@ -205,7 +203,7 @@ public class WmataApiImpl implements RealTimeAPI {
 	 */
 	private LegLiveFeed getAllBusRealTimeData(String gtfsFromStop,String gtfsTripId, String routeTag, Long scheduledTime) throws RealTimeDataException, StopNotFoundException, ExecutionException {
 		List<RealTimePrediction> lstRealTimePredictions = new ArrayList<RealTimePrediction>();
-		logger.debug(loggerName,"WmataApiImpl.getBusRealTimeData() --> gtfsFromStop: "+ gtfsFromStop + ", gtfsTripId: " + gtfsTripId
+		logger.debug(loggerName,"gtfsFromStop: "+ gtfsFromStop + ", gtfsTripId: " + gtfsTripId
 				+ ", routeTag: " + routeTag);
 		LegLiveFeed resp = new LegLiveFeed();
 		SimpleDateFormat dateFormat = new SimpleDateFormat();
@@ -273,9 +271,8 @@ public class WmataApiImpl implements RealTimeAPI {
 	 * @throws ExecutionException the execution exception
 	 */
 	private LegLiveFeed getRailRealTimeData(String formGrfsStopId,String  routeLine,String  tripId,long scheduledTime) throws RealTimeDataException, StopNotFoundException, ExecutionException {
-
-		logger.debug(loggerName,"WmataApiImpl.getRailRealTimeData() --> formGrfsStopId: "+ formGrfsStopId+ ", routeLine: "
-				+ routeLine	+ ", tripId: "+ tripId+ ", scheduledTime: "+ scheduledTime);
+		logger.debug(loggerName,"formGrfsStopId: "+ formGrfsStopId+ ", routeLine: "
+				+ routeLine	+ ", tripId: "+ tripId);
 		LegLiveFeed resp = new LegLiveFeed();
 		SimpleDateFormat dateFormat = new SimpleDateFormat();
 		dateFormat.setTimeZone(TimeZone.getTimeZone(ESTERN_TIMEZONE));
@@ -289,8 +286,10 @@ public class WmataApiImpl implements RealTimeAPI {
 		String tripDestStop = WmataUtil.getWmataStopFromGtfsStopAndLine(gtfsTripDestStop,routeLine,stopMapping).get(0);
 		if(_verbose)
 			logger.debug(loggerName,"Current/Destination: "+apiFromStop+"-"+tripDestStop);
+
 		List<RailPrediction> estimates = cachedApiClient.getRailPrediction(apiFromStop);
 		validateList(estimates, "No Valid Estimation found form API");
+		estimates = new ArrayList<RailPrediction>(estimates);
 		for (Iterator iterator = estimates.iterator(); iterator.hasNext();) {
 			RailPrediction railPrediction = (RailPrediction) iterator.next();
 			if(!StringUtils.equalsIgnoreCase(railPrediction.getDestinationCode(),tripDestStop)){
@@ -300,19 +299,16 @@ public class WmataApiImpl implements RealTimeAPI {
 		validateList(estimates, "No Valid Estimation found after filtering");
 
 		if(_verbose){
-			logger.debug(loggerName,"======  ======  ====== filtered =====  ==========  ==========");
+			logger.debug(loggerName,"Filtered---->");
 			for (RailPrediction rp : estimates) {
-				logger.debug(loggerName,"Destination: "+rp.getDestinationName()+"("+rp.getDestination()+")" +
+				logger.debug(loggerName,"        Destination: "+rp.getDestinationName()+"("+rp.getDestination()+")" +
 						", Line: "+rp.getLine()+", Min: "+rp.getMin());
 			}
-			logger.debug(loggerName,"============  =============== ================ =========");
 		}
 
 		MutablePair<Integer, Long> closestMatch = WmataUtil.getClosestEstimationForRail(estimates, scheduledTime, 0,maxEarlyThresold,maxDelayThresold);
-
 		if (closestMatch == null)
 			throw new RealTimeDataException("Valid minutes to departure not found in response for, Stop Tag: "+formGrfsStopId+", Route Tag: "+routeLine);
-		logger.debug(loggerName,"ClosestMatch: "+(closestMatch.getLeft()/DateUtils.MILLIS_PER_MINUTE)+","+dateFormat.format(closestMatch.getRight())+"\n");
 
 		int arrivalFlag = ETA_FLAG.ON_TIME.ordinal();
 		long estimatedDepartureTime = closestMatch.getRight();
@@ -322,14 +318,10 @@ public class WmataApiImpl implements RealTimeAPI {
 		}else if (diff<0 && Math.abs(diff) >(maxEligibleEarly*DateUtils.MILLIS_PER_MINUTE)){
 			arrivalFlag = TpConstants.ETA_FLAG.EARLY.ordinal();
 		}
-		if(_verbose){
-			logger.debug(loggerName,"Scheduled time: "+dateFormat.format(new Date(scheduledTime)));
-			logger.debug(loggerName,"Estimated time: "+dateFormat.format(new Date(estimatedDepartureTime))+"  "+ETA_FLAG.values()[arrivalFlag].name());
-			logger.debug(loggerName,"Delay : "+((estimatedDepartureTime-scheduledTime)/1000)/60);
-			logger.debug(loggerName,"=====================================================================================");
-		}
+		logger.debug(loggerName,"ClosestMatch: "+(closestMatch.getLeft()/DateUtils.MILLIS_PER_MINUTE)+", "+dateFormat.format(closestMatch.getRight())+"  "+ETA_FLAG.values()[arrivalFlag].name());
+
 		resp = new LegLiveFeed();
-		resp.setTimeDiffInMins(diff);
+		resp.setTimeDiffInMills(diff);
 		resp.setDepartureTime(estimatedDepartureTime);
 		resp.setArrivalTimeFlag(arrivalFlag);
 		return resp;
@@ -349,7 +341,7 @@ public class WmataApiImpl implements RealTimeAPI {
 	 */
 	private LegLiveFeed getAllRailRealTimeData(String formGrfsStopId,String  routeLine,String  tripId,long scheduledTime) throws RealTimeDataException, StopNotFoundException, ExecutionException {
 		List<RealTimePrediction> lstRealTimePredictions = new ArrayList<RealTimePrediction>();
-		logger.debug(loggerName,"WmataApiImpl.getRailRealTimeData() --> formGrfsStopId: "+ formGrfsStopId+ ", routeLine: "
+		logger.debug(loggerName,"formGrfsStopId: "+ formGrfsStopId+ ", routeLine: "
 				+ routeLine	+ ", tripId: "+ tripId+ ", scheduledTime: "+ scheduledTime);
 		SimpleDateFormat dateFormat = new SimpleDateFormat();
 		dateFormat.setTimeZone(TimeZone.getTimeZone(ESTERN_TIMEZONE));
@@ -363,23 +355,25 @@ public class WmataApiImpl implements RealTimeAPI {
 		String tripDestStop = WmataUtil.getWmataStopFromGtfsStopAndLine(gtfsTripDestStop,routeLine,stopMapping).get(0);
 		if(_verbose)
 			logger.debug(loggerName,"Current/Destination: "+apiFromStop+"-"+tripDestStop);
-		List<RailPrediction> estimates = cachedApiClient.getRailPrediction(apiFromStop);
-		validateList(estimates, "No Valid Estimation found form API");
+		List<RailPrediction> apiEstimates = cachedApiClient.getRailPrediction(apiFromStop);
+		validateList(apiEstimates, "No Valid Estimation found form API");
+		List<RailPrediction> estimates = new ArrayList<RailPrediction>();
 		for (Iterator iterator = estimates.iterator(); iterator.hasNext();) {
 			RailPrediction railPrediction = (RailPrediction) iterator.next();
-			if(!StringUtils.equalsIgnoreCase(railPrediction.getDestinationCode(),tripDestStop)){
-				iterator.remove();
+			if(StringUtils.equalsIgnoreCase(railPrediction.getDestinationCode(),tripDestStop)){
+				estimates.add(railPrediction);
 			}
 		}
 		validateList(estimates, "No Valid Estimation found after filtering");
-
-		//		logger.debug(loggerName,"======  ======  ====== filtered =====  ==========  ==========");
+		if(_verbose)
+			logger.debug(loggerName,"Filtered---->");
 		for (RailPrediction rp : estimates) {
-			logger.debug(loggerName,"Destination: "+rp.getDestinationName()+"("+rp.getDestination()+")" +
-					", Line: "+rp.getLine()+", Min: "+rp.getMin());
+			if(_verbose)
+				logger.debug(loggerName,"     Destination: "+rp.getDestinationName()+"("+rp.getDestination()+")" +
+						", Line: "+rp.getLine()+", Min: "+rp.getMin());
 			lstRealTimePredictions.add(new RealTimePrediction(rp));
 		}
-		//		logger.debug(loggerName,"============  =============== ================ =========");
+
 
 		LegLiveFeed resp = new LegLiveFeed();
 		resp.setLstPredictions(lstRealTimePredictions);
@@ -402,8 +396,8 @@ public class WmataApiImpl implements RealTimeAPI {
 	 * @throws ExecutionException
 	 */
 	private LegLiveFeed getBusRealTimeData(String gtfsFromStop,String gtfsTripId,String routeTag,long scheduledTime) throws RealTimeDataException, StopNotFoundException, ExecutionException {
-		logger.debug(loggerName,"WmataApiImpl.getBusRealTimeData() --> gtfsFromStop: "+ gtfsFromStop + ", gtfsTripId: " + gtfsTripId
-				+ ", routeTag: " + routeTag + ", scheduledTime: "+ scheduledTime);
+		logger.debug(loggerName,"gtfsFromStop: "+ gtfsFromStop + ", gtfsTripId: " + gtfsTripId
+				+ ", routeTag: " + routeTag);
 		LegLiveFeed resp = new LegLiveFeed();
 		SimpleDateFormat dateFormat = new SimpleDateFormat();
 		dateFormat.setTimeZone(TimeZone.getTimeZone(ESTERN_TIMEZONE));
@@ -445,15 +439,12 @@ public class WmataApiImpl implements RealTimeAPI {
 			busStop.markUsed();
 			if(!busStopFinalMap.containsKey(gtfsFromStop) && busStop.getUsedCount()>useCountForBusStopToBeFinal ){
 				if(_verbose)
-					System.out.println("stop marked gtfsFromStop:"+gtfsFromStop+", "+busStop);
+					logger.info(loggerName,"stop marked gtfsFromStop:"+gtfsFromStop+", "+busStop);
 				stopMapping.addFinalStopMappingForBus(gtfsFromStop, busStop.getStopId());
 			}
 		}
-
 		MutablePair<Integer, Long> closestMatch = WmataUtil.getClosestEstimationForBus(lstPredictions, scheduledTime, 0 ,maxEarlyThresold,maxDelayThresold);
 		validateNull(closestMatch,"No Closest Match Found For GtfsStop:"+gtfsFromStop);
-		if(_verbose	)
-			logger.debug(loggerName,"ClosestMatch: "+(closestMatch.getLeft()/DateUtils.MILLIS_PER_MINUTE)+","+dateFormat.format(closestMatch.getRight())+"\n");
 
 		int arrivalFlag = ETA_FLAG.ON_TIME.ordinal();
 		long estimatedDepartureTime = closestMatch.getRight();
@@ -463,14 +454,10 @@ public class WmataApiImpl implements RealTimeAPI {
 		}else if (diff<0 && Math.abs(diff) >(maxEligibleEarly *DateUtils.MILLIS_PER_MINUTE)){
 			arrivalFlag = TpConstants.ETA_FLAG.EARLY.ordinal();
 		}
-		if(_verbose){
-			logger.debug(loggerName,"Scheduled time: "+dateFormat.format(new Date(scheduledTime)));
-			logger.debug(loggerName,"Estimated time: "+dateFormat.format(new Date(estimatedDepartureTime))+"  "+ETA_FLAG.values()[arrivalFlag].name());
-			logger.debug(loggerName,"Delay : "+((estimatedDepartureTime-scheduledTime)/1000)/60);
-			logger.debug(loggerName,"=====================================================================================");
-		}
+		if(_verbose	)
+			logger.debug(loggerName,"ClosestMatch: "+(closestMatch.getLeft()/DateUtils.MILLIS_PER_MINUTE)+", "+dateFormat.format(closestMatch.getRight())+"  "+ETA_FLAG.values()[arrivalFlag].name());
 		resp = new LegLiveFeed();
-		resp.setTimeDiffInMins(diff);
+		resp.setTimeDiffInMills(diff);
 		resp.setDepartureTime(estimatedDepartureTime);
 		resp.setArrivalTimeFlag(arrivalFlag);
 		return resp;
@@ -505,7 +492,7 @@ public class WmataApiImpl implements RealTimeAPI {
 			for (BusStop busStop : lstBusStops) {
 				logger.debug(loggerName,"Getting Real time prediction for stop:"+busStop.getStopId()+" - "+busStop.getName());
 				try {
-					List<WmataBusPrediction> lst = cachedApiClient.getBusPredictionAtStop(busStop.getStopId());
+					List<WmataBusPrediction> lst= cachedApiClient.getBusPredictionAtStop(apiStop);
 					if(!ComUtils.isEmptyList(lst)){
 						lstPredictions.addAll(lst);
 						for (WmataBusPrediction predictions : lst) {
@@ -520,9 +507,6 @@ public class WmataApiImpl implements RealTimeAPI {
 		return lstPredictions;
 	}
 
-	public List<LegLiveFeed> getLiveFeeds(List<Leg> leg) {
-		return null;
-	}
 	public int getMaxEarlyThresold() {
 		return maxEarlyThresold;
 	}
@@ -608,10 +592,11 @@ public class WmataApiImpl implements RealTimeAPI {
 	}
 	private void validateTimeLimit(Long scheduledTime) throws RealTimeDataException {
 		long curruntTime =System.currentTimeMillis();
+		if (scheduledTime < curruntTime)
+			throw new RealTimeDataException("Leg scheduled time is already passed. No estimates possible.");
 		long maxTime = curruntTime +(maxRealTimeSupportLimitMin*DateUtils.MILLIS_PER_MINUTE);
 		if(scheduledTime>maxTime)
 			throw new RealTimeDataException("ScheduleTime out Of range to query realtime for time:"+new Date(scheduledTime)+",currunt time:"+new Date(curruntTime));
-
 	}
 	public LoggingService getLogger() {
 		return logger;

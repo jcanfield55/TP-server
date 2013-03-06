@@ -8,6 +8,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name="direction")
 public class Direction {
 	private String title;
+	private String name;
 	private List<Prediction> prediction;
 	private List<Stop> stop;
 
@@ -27,6 +28,16 @@ public class Direction {
 		return prediction;
 	}
 
+
+	@XmlAttribute
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
 	public void setTitle(String title) {
 		this.title = title;
 	}
@@ -40,5 +51,5 @@ public class Direction {
 		return "Direction [prediction=" + prediction + ", stop=" + stop
 				+ ", title=" + title + "]";
 	}
-	
+
 }

@@ -69,6 +69,7 @@ public class RequestParam {
 	public static final String SAVE_PLAN = "savePlan";
 
 	public static final String NIMBLER_APP_TYPE = "appType";
+	public static final String APP_VERSION = "appVersion";
 	public static final String NIMBLER_APP_BUNDLE_ID = "appBundleId";
 
 	public static final String ADV_ENABLE_SF_MUNI    =  "enableSfMuniAdv";

@@ -153,6 +153,11 @@ public class TweetStore {
 			}
 		}
 	}
+	public void clearUrgentAdvisories() {
+		synchronized (agencyToUrgentAdvisoriesMap) {
+			agencyToUrgentAdvisoriesMap.clear();
+		}
+	}
 	/**
 	 * 
 	 * @return
