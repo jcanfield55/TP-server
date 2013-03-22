@@ -14,14 +14,28 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipException;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.onebusaway.gtfs.impl.GtfsDaoImpl;
+import org.onebusaway.gtfs.model.Agency;
+import org.onebusaway.gtfs.model.Route;
+import org.onebusaway.gtfs.model.Stop;
+import org.onebusaway.gtfs.model.StopTime;
+import org.onebusaway.gtfs.model.Trip;
+import org.onebusaway.gtfs.serialization.GtfsReader;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.TreeMultimap;
 import com.nimbler.tp.dataobject.BartRouteInfo;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.service.smtp.MailService;
@@ -29,6 +43,7 @@ import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.GtfsUtils;
 import com.nimbler.tp.util.HtmlUtil;
 import com.nimbler.tp.util.TpConstants;
+import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
 import com.nimbler.tp.util.TpException;
 
 
@@ -55,6 +70,7 @@ public class GtfsDataMonitor {
 	public GtfsDataMonitor() {
 
 	}
+	ArrayListMultimap<String, List> routeStopTimesList = ArrayListMultimap.create();
 	/**
 	 * 
 	 */
@@ -62,6 +78,92 @@ public class GtfsDataMonitor {
 		gtfsBundles = gtfsContext.getGtfsBundles();
 		readGtfsFiles();
 		readBartRouteInfo();
+		createBartStopTimesList();
+	}
+
+	@SuppressWarnings("cast")
+	private void createBartStopTimesList() {
+		try {
+			GtfsReader reader = new GtfsReader();
+			String bartFile = getBartGTFSFile();
+			if(bartFile==null){
+				logger.error(loggerName, "No valid bart file found");
+				return;
+			}
+			reader.setInputLocation(new File(bartFile));
+
+			List<Class<?>> entityClasses = new ArrayList<Class<?>>();
+			entityClasses.add(Agency.class);
+			entityClasses.add(Route.class);
+			entityClasses.add(Trip.class);
+			entityClasses.add(Stop.class);
+			entityClasses.add(StopTime.class);
+			reader.setEntityClasses(entityClasses);
+			GtfsDaoImpl store = new GtfsDaoImpl();
+			reader.setEntityStore(store);
+
+			reader.run();
+			TreeMultimap<String, StopTime> multimap = TreeMultimap.create();
+			ArrayListMultimap<String, String> tripStopTimesArray = ArrayListMultimap.create();
+			SetMultimap<String, String> route_trip = HashMultimap.create();
+			for (StopTime stopTime : store.getAllStopTimes()) {
+				multimap.put(stopTime.getTrip().getId().getId(), stopTime);
+			}
+			for (String key : multimap.keySet()) {
+				SortedSet<StopTime>  sortedSet= multimap.get(key);
+				route_trip.put(sortedSet.iterator().next().getTrip().getRoute().getId().getId(), key);
+				for (StopTime stopTime : sortedSet) {
+					tripStopTimesArray.put(key, stopTime.getStop().getId().getId().toLowerCase());
+				}
+			}
+			for (String route : route_trip.keySet()) {
+				Set<String> trips = route_trip.get(route);
+				for (String trip : trips) {
+					routeStopTimesList.put(route, tripStopTimesArray.get(trip));
+				}
+			}		
+			List<String> itr = new ArrayList<String>(routeStopTimesList.keySet());
+			for (String route : itr) {
+				List[] lst = (List[]) routeStopTimesList.get(route).toArray(new List[0]);
+				List[] temp =  ArrayUtils.clone(lst);
+				OUTER: for (int i = 0; i < lst.length; i++) {
+					List first = lst[i];
+					if(first==null)
+						continue;
+					for (int j = 0; j < temp.length; j++) {
+						List sec = temp[j];
+						if(sec==null || i==j)
+							continue;
+						if(sec.containsAll(first)){
+							lst[i] = null;
+							temp[i] = null;
+							continue OUTER;
+						}
+					}
+				}
+				routeStopTimesList.replaceValues(route, getListFromArray(lst));
+			}
+			System.out.println("Bart Stop sequence built..");
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error(loggerName, e);
+		}
+	}
+
+	/**
+	 * Gets the list from array.
+	 *
+	 * @param lst the lst
+	 * @return the list from array
+	 */
+	private static Iterable<List> getListFromArray(List[] lst) {
+		List<List> res = new ArrayList<List>();
+		for (List list : lst) {
+			if(list!=null && list.size()!=0){
+				res.add(list);
+			}
+		}		
+		return res;
 	}
 
 	/**
@@ -189,6 +291,14 @@ public class GtfsDataMonitor {
 		}
 		return null;
 	}
+	private String getBartGTFSFile() {
+		for (GtfsBundle bundle: gtfsBundles) {
+			if(bundle.getAgencyType().equals(AGENCY_TYPE.BART)){
+				return bundle.getValidFile();
+			}
+		}
+		return null;
+	}
 	/**
 	 * Check single gtfs.
 	 *
@@ -215,11 +325,17 @@ public class GtfsDataMonitor {
 
 			logger.info(loggerName, "Downloading: "+agency+", url:"+gtfsBundle.getDownloadUrl());
 			try {
-				ComUtils.getDownloadFile(downloadFile,gtfsBundle.getDownloadUrl());
+				String url = gtfsBundle.getDownloadUrl();
+				if(url==null)
+					throw new TpException("No Url Found");
+				ComUtils.getDownloadFile(downloadFile,url);
 				logger.debug(loggerName, "Download complete");
 				newMap = utils.getExpireDateFromGtfs(downloadFile);
-			} catch (Exception e) {					
-				result.addError("["+e.getClass().getSimpleName()+"] "+e.getMessage());
+			} catch (Exception e) {		
+				String className=""; 
+				if(!(e instanceof TpException))
+					className= "["+e.getClass().getSimpleName()+"] "; 
+				result.addError(className+e.getMessage());
 				logger.error(loggerName, " Error while downloading gtfs file: "+result.getError()+", for "+agency);
 				result.ignoreErrorInSummery = true;
 			}
@@ -302,4 +418,14 @@ public class GtfsDataMonitor {
 	public void setBartRouteInfo(List<BartRouteInfo> bartRouteInfo) {
 		this.bartRouteInfo = bartRouteInfo;
 	}
+
+	public ArrayListMultimap<String, List> getRouteStopTimesList() {
+		return routeStopTimesList;
+	}
+
+	public void setRouteStopTimesList(
+			ArrayListMultimap<String, List> routeStopTimesList) {
+		this.routeStopTimesList = routeStopTimesList;
+	}
+
 }

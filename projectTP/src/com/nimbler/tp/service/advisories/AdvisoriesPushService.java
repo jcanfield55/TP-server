@@ -3,6 +3,8 @@
  */
 package com.nimbler.tp.service.advisories;
 
+import static org.apache.commons.lang3.StringUtils.join;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -45,6 +47,7 @@ import com.nimbler.tp.mongo.MongoQueryConstant;
 import com.nimbler.tp.mongo.PersistenceService;
 import com.nimbler.tp.service.APNService;
 import com.nimbler.tp.service.LoggingService;
+import com.nimbler.tp.service.smtp.MailService;
 import com.nimbler.tp.service.twitter.TweetStore;
 import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
@@ -110,10 +113,17 @@ public class AdvisoriesPushService {
 	private boolean enablePushNotification = true;
 	@Autowired
 	private BartAlertCriteria bartAlertCriteria = null;
+
+	private boolean isTwittterErrorOpen = false;
+	private boolean enableTwitterErrorNotification = true;
+
 	/**
 	 *<column name,start-end min of day> 
 	 */
 	private Map<String, String> pushTimeInterval = new HashMap<String, String>();
+
+	@Autowired
+	MailService mailService;
 
 	@Autowired
 	private NimblerApps nimblerApps;
@@ -205,17 +215,59 @@ public class AdvisoriesPushService {
 					List<Tweet> tweetList = getTweets(response);
 					if (tweetList!=null)
 						TweetStore.getInstance().setTweet(tweetList, agency);
+					if(isTwittterErrorOpen && enableTwitterErrorNotification){
+						isTwittterErrorOpen = false;
+						issueTweeterRecovery();
+					}
 					break;
 				} catch (Exception e) {
 					String retry="";
 					if(i<2)
 						retry = " - retrying....";
+					else if (enableTwitterErrorNotification){
+						issueTweeterError(e,tweetSources);
+					}
 					logger.error(loggerName, "Error while getting twitter response for source: "+commaSeparatedSource+": "+e.getMessage()+retry);
 					ComUtils.sleep(2000);
 				}
 			}
 		}
 	}
+
+	/**
+	 * Issue tweeter recovery.
+	 */
+	private void issueTweeterRecovery() {
+		try {			
+			mailService.sendMail(TpConstants.OTP_FAIL_NOTIFY_EMAIL_ID, "Twitter Error Recovered..!!!!",
+					"Recovery Time: "+new Date(),false);
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+		}
+
+	}
+
+	/**
+	 * Issue tweeter error.
+	 *
+	 * @param exception the exception
+	 * @param tweetSources the tweet sources
+	 */
+	private void issueTweeterError(Exception exception, String[] tweetSources) {
+		try {
+			if(isTwittterErrorOpen)
+				return;
+			String error = exception.getClass().getSimpleName()+": "+exception.getMessage()+"for source: "+join(tweetSources);
+			mailService.sendMail(TpConstants.OTP_FAIL_NOTIFY_EMAIL_ID, "Error Fetching Tweets..!!!!", error,false);
+			isTwittterErrorOpen = true;
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			mailService.sendMail(TpConstants.OTP_FAIL_NOTIFY_EMAIL_ID, "Error Fetching Tweets..!!!!", "Error:"+exception,false);
+		}
+
+
+	}
+
 	/**
 	 * 
 	 */
@@ -301,9 +353,6 @@ public class AdvisoriesPushService {
 	 */
 	private void pushTweetToBart(int appIdentifier, long lastTimeLeg) {
 		try {			
-			if(appIdentifier!=4){
-				return;
-			}
 			logger.debug(loggerName, "sending tweet to bart...");
 			List<Tweet> tweetList  = TweetStore.getInstance().getTweets(AGENCY_TYPE.BART.ordinal());
 			NimblerParams nimblerParams = 	(NimblerParams) persistenceService.findOne(
@@ -334,9 +383,6 @@ public class AdvisoriesPushService {
 		} catch (Exception e) {
 			logger.error(loggerName, e);
 		}
-
-
-
 	}
 
 	/**
@@ -346,28 +392,23 @@ public class AdvisoriesPushService {
 	 */
 	public List<Tweet> getTweets(String response) {
 		List<Tweet> tweetList = new ArrayList<Tweet>();
-		try {
-			TwitterResponse twitterResponse = (TwitterResponse) JSONUtil.getObjectFromJson(response, TwitterResponse.class);
-			if(twitterResponse!=null && !ComUtils.isEmptyList(twitterResponse.getResults())){
-				for (DefaultTweet dt : twitterResponse.getResults()) {
-					if(!ComUtils.isEmptyString(dt.getTo_user_name()))
-						continue;
-					long tweetTime = parseTweetTime(dt.getCreated_at());
-					boolean validTweet = validateTweet(tweetTime);
-					if (!validTweet)
-						continue;
-					Tweet tweet = new Tweet();
-					tweet.setTweetTime(dt.getCreated_at());
-					tweet.setTime(tweetTime);
-					tweet.setTweet("@"+dt.getFrom_user()+":"+dt.getText());
-					tweet.setSource(agencyTweetSourceIconMap.get(StringUtils.lowerCase(dt.getFrom_user())));
-					tweetList.add(tweet);
-				}
+		TwitterResponse twitterResponse = (TwitterResponse) JSONUtil.getObjectFromJson(response, TwitterResponse.class);
+		if(twitterResponse!=null && !ComUtils.isEmptyList(twitterResponse.getResults())){
+			for (DefaultTweet dt : twitterResponse.getResults()) {
+				if(!ComUtils.isEmptyString(dt.getTo_user_name()))
+					continue;
+				long tweetTime = parseTweetTime(dt.getCreated_at());
+				boolean validTweet = validateTweet(tweetTime);
+				if (!validTweet)
+					continue;
+				Tweet tweet = new Tweet();
+				tweet.setTweetTime(dt.getCreated_at());
+				tweet.setTime(tweetTime);
+				tweet.setTweet("@"+dt.getFrom_user()+":"+dt.getText());
+				tweet.setSource(agencyTweetSourceIconMap.get(StringUtils.lowerCase(dt.getFrom_user())));
+				tweetList.add(tweet);
 			}
-		} catch (Exception e) {
-			logger.error(loggerName, e);
 		}
-
 		return tweetList;
 	}
 	/**
@@ -518,7 +559,7 @@ public class AdvisoriesPushService {
 			queryObject.put(MongoQueryConstant.WHERE, queryExp);
 
 			count = persistenceService.getCount(MONGO_TABLES.users.name() ,queryObject ,User.class);
-			logger.debug(loggerName, "Count----->"+count);
+
 			int totalPages = (int) Math.ceil(count/(double)pageSize);
 			BasicQuery basicQuery = new BasicQuery(queryObject);
 			basicQuery.setLimit(pageSize);
@@ -574,10 +615,13 @@ public class AdvisoriesPushService {
 			String templet = StatusMsgConfig.getInstance().getMsg(PUSH_MSG_CONSTANT.URGENT_TWEET.name());
 			String msg = String.format(templet,agencyType.getText(), tweet);
 			logger.debug(loggerName, "Sending tweet By agency,Tweet: "+tweet+", agency type: "+agencyType);
-			TweetStore.getInstance().addUrgentTweet(new Tweet(msg,System.currentTimeMillis(),true), agencyType.ordinal());
-			int never = -1;
+
+			Tweet tweetObj = new Tweet(msg,System.currentTimeMillis(),true);
+			tweetObj.setSource(agencyTweetSourceIconMap.get(agencyType.ordinal()+""));
+			TweetStore.getInstance().addUrgentTweet(tweetObj, agencyType.ordinal());
+
 			BasicDBObject queryObj = new BasicDBObject();
-			queryObj.put(TpConstants.NUMBER_OF_ALERT, new BasicDBObject(MongoQueryConstant.NOT_EQUAL, never));
+			queryObj.put(TpConstants.NUMBER_OF_ALERT, new BasicDBObject(MongoQueryConstant.GREATER_THAN, 0));
 			queryObj.put(agencyType.getEnableAdvisoryColumnName(), BOOLEAN_VAL.TRUE.ordinal());
 			/*	
 			queryObj.put(TpConstants.APP_TYPE, agencyType.ordinal());
@@ -634,9 +678,8 @@ public class AdvisoriesPushService {
 	public int pushTweetsByApp(String tweet, int appType) {
 		int pushNotification = PUSH_NOTIFICATION.FAIL.ordinal();
 		try {			
-			int never = -1;
 			BasicDBObject queryObj = new BasicDBObject();
-			queryObj.put(TpConstants.NUMBER_OF_ALERT, new BasicDBObject(MongoQueryConstant.NOT_EQUAL, never));
+			queryObj.put(TpConstants.NUMBER_OF_ALERT, new BasicDBObject(MongoQueryConstant.GREATER_THAN, 0));
 			queryObj.put(TpConstants.APP_TYPE, appType);
 			logger.debug(loggerName, "Sending tweet By App,Tweet: "+tweet+", appType : "+appType);
 			/*	if(appType == NIMBLER_APP_TYPE.CALTRAIN.ordinal()){
@@ -1024,6 +1067,43 @@ public class AdvisoriesPushService {
 	public Map<String, String> getAgencyTweetSourceIconMap() {
 		return agencyTweetSourceIconMap;
 	}
+
+
+	public BartAlertCriteria getBartAlertCriteria() {
+		return bartAlertCriteria;
+	}
+
+	public void setBartAlertCriteria(BartAlertCriteria bartAlertCriteria) {
+		this.bartAlertCriteria = bartAlertCriteria;
+	}
+
+
+
+	public boolean isTwittterErrorOpen() {
+		return isTwittterErrorOpen;
+	}
+
+	public void setTwittterErrorOpen(boolean isTwittterErrorOpen) {
+		this.isTwittterErrorOpen = isTwittterErrorOpen;
+	}
+
+	public boolean isEnableTwitterErrorNotification() {
+		return enableTwitterErrorNotification;
+	}
+
+	public void setEnableTwitterErrorNotification(
+			boolean enableTwitterErrorNotification) {
+		this.enableTwitterErrorNotification = enableTwitterErrorNotification;
+	}
+
+	public MailService getMailService() {
+		return mailService;
+	}
+
+	public void setMailService(MailService mailService) {
+		this.mailService = mailService;
+	}
+
 
 	public void setAgencyTweetSourceIconMap(
 			Map<String, String> agencyTweetSourceIconMap) {

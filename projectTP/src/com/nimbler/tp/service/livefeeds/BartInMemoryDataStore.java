@@ -28,7 +28,16 @@ public class BartInMemoryDataStore {
 	/**
 	 * Contains mapping between OTP route names and route names that we are getting in real time data from BART API.
 	 */
-	private Map<String, String> otpRouteToBartRouteMap = new HashMap<String, String>();
+	private Map<String, String> otpRouteToBartRouteMap = new HashMap<String, String>(){
+		@Override
+		public String put(String key, String value) {
+			return super.put(key.toLowerCase(), value);	
+		};
+		@Override
+		public String get(Object key) {
+			return super.get(((String)key).toLowerCase());
+		};
+	};
 	/**
 	 * Contains mapping between route names to its details.
 	 */

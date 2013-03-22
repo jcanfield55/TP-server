@@ -37,8 +37,7 @@ public class BartAlertCriteria {
 	private String majorDelayString = "major delay";
 	private Integer majorDelay = 20;
 	private String patternDigit = "[0-9]+";
-	//	private Long pushIntervalPerFreqInMillSec = 1200000L; //20*60*1000;
-	private Long pushIntervalPerFreqInMillSec = 240000L; //20*60*1000;
+	private Long pushIntervalPerFreqInMillSec = 1200000L; //20*60*1000;
 	private String tweetTimeQuery = "this."+AGENCY_TYPE.BART.getPushTimeColumnName()+" < ( %s - (%s*(this.numberOfAlert-1)))";
 
 	private SortedMap<Integer,Range<Integer>> alertToDelayMap = null; 

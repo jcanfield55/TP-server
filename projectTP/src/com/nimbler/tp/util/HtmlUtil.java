@@ -168,7 +168,7 @@ public class HtmlUtil {
 			boolean res = false;
 			if(oldDate!=null){
 				long days = (oldDate.getTime()-new Date().getTime())/DateUtils.MILLIS_PER_DAY;
-				if(days<7 && days>0)
+				if(days<7 && days>=0)
 					return true;
 			}
 			return res;

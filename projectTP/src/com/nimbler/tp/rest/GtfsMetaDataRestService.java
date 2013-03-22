@@ -259,9 +259,11 @@ public class GtfsMetaDataRestService {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws ClassNotFoundException the class not found exception
 	 */
-	/*@GET
+	@GET
 	@Path("/trips/")	
-	public String getTrips(@QueryParam(RequestParam.AGENCY_AND_ROUTE_IDS)String strAgencyIdAndRouteId) throws UnsupportedEncodingException, IOException, ClassNotFoundException {*/
+	public String getTrips(@QueryParam(RequestParam.AGENCY_AND_ROUTE_IDS)String strAgencyIdAndRouteId) throws UnsupportedEncodingException, IOException, ClassNotFoundException {
+		return handleGetTripsRequest(strAgencyIdAndRouteId);
+	}
 	@POST
 	@Path("/trips/")
 	public String getTrips(@Context HttpServletRequest request) throws UnsupportedEncodingException, IOException, ClassNotFoundException {
@@ -269,7 +271,28 @@ public class GtfsMetaDataRestService {
 		try {
 			Map<String,String> req = ComUtils.parseMultipartRequest(request);
 			String strAgencyIdAndRouteId = req.get(RequestParam.AGENCY_AND_ROUTE_IDS);			
-			long start = System.currentTimeMillis();
+			return handleGetTripsRequest(strAgencyIdAndRouteId);
+		} catch (TpException e) {
+			logger.error(loggerName, e);
+			response = ResponseUtil.createResponse(e);			
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			response = ResponseUtil.createResponse(TP_CODES.INTERNAL_SERVER_ERROR);
+		}
+		String res =  JSONUtil.getResponseJSON(response);
+		return res;
+	}
+
+	/**
+	 * Handle get trips request.
+	 *
+	 * @param strAgencyIdAndRouteId the str agency id and route id
+	 * @return the string
+	 */
+	private String handleGetTripsRequest(String strAgencyIdAndRouteId) {
+		TPResponse response = ResponseUtil.createResponse(TP_CODES.SUCESS);
+		try {
+			//			long start = System.currentTimeMillis();
 			if(ComUtils.isEmptyString(strAgencyIdAndRouteId))
 				throw new TpException(TP_CODES.INVALID_REQUEST);
 			GtfsDataService gtfsDataService =  BeanUtil.getGtfsDataServiceBean();			
@@ -283,7 +306,7 @@ public class GtfsMetaDataRestService {
 			response = ResponseUtil.createResponse(TP_CODES.INTERNAL_SERVER_ERROR);
 		}
 		String res =  JSONUtil.getResponseJSON(response);
-		long end = System.currentTimeMillis();		
+		//		long end = System.currentTimeMillis();		
 		//		System.out.println("GetStopTimes took " + (end - start) + "mill sec");
 		return res;
 	}

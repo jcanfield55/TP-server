@@ -139,7 +139,7 @@ public class NextBusApiImpl implements RealTimeAPI {
 		List<RealTimePrediction> lstRealTimePredictions = new ArrayList<RealTimePrediction>();
 		try {			
 			Long scheduledTime = leg.getStartTime();
-			validateTimeLimit(scheduledTime);
+			//			validateTimeLimit(scheduledTime);
 			String agencyId = leg.getAgencyId();
 			String agencyTag = agencyMap.get(agencyId);
 			if (agencyTag==null)
@@ -165,10 +165,9 @@ public class NextBusApiImpl implements RealTimeAPI {
 				if (predictionList==null || predictionList.size()==0)
 					throw new RealTimeDataException("RealTimePrediction objects not found in Prediction response " +
 							"for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);	
-
-				for (Prediction prediction : predictionList) {
-					//					sb.append(prediction.getTripTag()+"--"+prediction.getMinutes()+", ");
-					if (direction.getTitle().toLowerCase().contains(leg.getHeadsign().toLowerCase())) {
+				if (direction.getTitle().toLowerCase().contains(leg.getHeadsign().toLowerCase())) {
+					for (Prediction prediction : predictionList) {
+						//					sb.append(prediction.getTripTag()+"--"+prediction.getMinutes()+", ");
 						lstRealTimePredictions.add(new RealTimePrediction(prediction));
 						if(_verbose){
 							Long predictedTime = prediction.getEpochTime();
@@ -179,8 +178,8 @@ public class NextBusApiImpl implements RealTimeAPI {
 							System.out.println("Direction: "+leg.getHeadsign()+"-->"+direction.getTitle());
 							System.out.println("");
 						}
-						break;
 					}
+					break;
 				}
 			}
 			if(lstRealTimePredictions.isEmpty()){

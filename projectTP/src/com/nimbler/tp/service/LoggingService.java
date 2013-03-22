@@ -89,7 +89,8 @@ public class LoggingService {
 	 */
 	public void error(String loggerName,  Throwable t) {
 		Logger logger = loggers.get(loggerName);
-		logger.error("", t);
+		if(logger!=null)
+			logger.error("", t);
 	}
 	/**
 	 * 

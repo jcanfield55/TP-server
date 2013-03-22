@@ -113,7 +113,7 @@ public class GtfsUtils {
 	 */
 	public List<String> getColumnsFromFile(File file,String[] columns,String entryName) throws IOException, ParseException, TpException {
 		List<String> res = new ArrayList<String>();
-		if(file == null || !file.exists())
+		if(file == null || !file.exists() || columns==null)
 			return res;
 		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file,entryName),GTFS_ENCODE_FORMAT);
 
