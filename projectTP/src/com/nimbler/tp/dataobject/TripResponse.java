@@ -4,6 +4,7 @@
 package com.nimbler.tp.dataobject;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 public class TripResponse implements Serializable{
@@ -15,6 +16,7 @@ public class TripResponse implements Serializable{
 	private PlannerError error = null;
 	private Map requestParameters;
 	private Long planGenerateTime = 0l;
+	private List<Itinerary> lstItineraries = null;
 
 	public TripResponse(TripPlan plan) {
 		this.plan = plan;
@@ -51,6 +53,18 @@ public class TripResponse implements Serializable{
 		return planGenerateTime;
 	}
 	public void setPlanGenerateTime(long planGenerateTime) {
+		this.planGenerateTime = planGenerateTime;
+	}
+
+	public TripResponse() {
+	}
+	public List<Itinerary> getLstItineraries() {
+		return lstItineraries;
+	}
+	public void setLstItineraries(List<Itinerary> lstItineraries) {
+		this.lstItineraries = lstItineraries;
+	}
+	public void setPlanGenerateTime(Long planGenerateTime) {
 		this.planGenerateTime = planGenerateTime;
 	}
 	@Override

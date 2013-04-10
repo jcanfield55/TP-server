@@ -6,6 +6,9 @@
  */
 package com.nimbler.tp.rest;
 
+import java.util.Collection;
+import java.util.Map;
+
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -165,6 +168,19 @@ public class UserManagementRestService {
 			response.setCode(TP_CODES.FAIL.ordinal());
 		}
 		return getJsonResponse(response);
+	}
+
+	@GET
+	@Path("/orphanGtfsRoutes/")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String getorphanGtfsRouteTag() throws TpException {		
+		try {
+			Map<String, Collection<String>> map =  BeanUtil.getNextBusApiImpl().getOrphanGtfsRouteTag().asMap();
+			return JSONUtil.getJsonFromObj(map);
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+		}
+		return "Not Found";
 	}
 
 	@GET

@@ -43,12 +43,8 @@ public class GtfsMetaExtractor implements Runnable{
 
 	@Override
 	public void run() {		
-		File gtfsFile = null;
 		try {
-			if(!ComUtils.isEmptyString(bundle.getCrackedDataFile()))
-				gtfsFile = new File(bundle.getCrackedDataFile()); 
-			else
-				gtfsFile = new File(bundle.getCurrentDataFile());
+			File gtfsFile =  new File(bundle.getValidFile()); 
 			GtfsUtils utils = new GtfsUtils(logger, loggerName);
 
 			//read agency ids
@@ -57,21 +53,21 @@ public class GtfsMetaExtractor implements Runnable{
 
 			//read and calculate calander.txt
 			try {
-			List<GtfsCalander> lstCalanders = utils.readCalanderGtfs(gtfsFile);			
-			bundle.setLstCalanders(lstCalanders);
-			for (GtfsCalander gtfsCalander : lstCalanders) {
-				int[] weekServiceStatus = gtfsCalander.getWeeklyStatusForService();// all weekday status for particular service
-				String[] serviceOnDays = bundle.getServiceOnDays();
+				List<GtfsCalander> lstCalanders = utils.readCalanderGtfs(gtfsFile);			
+				bundle.setLstCalanders(lstCalanders);
+				for (GtfsCalander gtfsCalander : lstCalanders) {
+					int[] weekServiceStatus = gtfsCalander.getWeeklyStatusForService();// all weekday status for particular service
+					String[] serviceOnDays = bundle.getServiceOnDays();
 
-				for (int i = 0; i < weekServiceStatus.length; i++) {
-					if(weekServiceStatus[i] == 1){ // available
-						if(ComUtils.isEmptyString(serviceOnDays[i]))
-							serviceOnDays[i]= gtfsCalander.getServiceName();
-						else
-							serviceOnDays[i]= serviceOnDays[i]+","+gtfsCalander.getServiceName();
+					for (int i = 0; i < weekServiceStatus.length; i++) {
+						if(weekServiceStatus[i] == 1){ // available
+							if(ComUtils.isEmptyString(serviceOnDays[i]))
+								serviceOnDays[i]= gtfsCalander.getServiceName();
+							else
+								serviceOnDays[i]= serviceOnDays[i]+","+gtfsCalander.getServiceName();
+						}
 					}
 				}
-			}
 			} catch (Exception e) {
 				logger.error(loggerName, e);
 			}

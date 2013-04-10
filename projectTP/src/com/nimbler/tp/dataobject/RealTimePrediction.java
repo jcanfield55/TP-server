@@ -6,7 +6,6 @@ package com.nimbler.tp.dataobject;
 import java.io.Serializable;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.time.DateUtils;
 
 import com.nimbler.tp.dataobject.bart.Estimate;
 import com.nimbler.tp.dataobject.nextbus.Prediction;
@@ -24,6 +23,8 @@ public class RealTimePrediction implements Serializable{
 	private Long seconds;
 	private String vehicleId;
 	private String direction;
+	private String scheduleTime;
+	private String scheduleTripId;
 
 	/**
 	 * 
@@ -52,11 +53,25 @@ public class RealTimePrediction implements Serializable{
 	public void setRouteTag(String routeTag) {
 		this.routeTag = routeTag;
 	}
+
+	public String getScheduleTime() {
+		return scheduleTime;
+	}
+	public void setScheduleTime(String scheduleTime) {
+		this.scheduleTime = scheduleTime;
+	}
 	public Long getEpochTime() {
 		return epochTime;
 	}
 	public void setEpochTime(Long epochTime) {
 		this.epochTime = epochTime;
+	}
+
+	public String getScheduleTripId() {
+		return scheduleTripId;
+	}
+	public void setScheduleTripId(String scheduleTripId) {
+		this.scheduleTripId = scheduleTripId;
 	}
 	public Long getSeconds() {
 		return seconds;
@@ -76,6 +91,7 @@ public class RealTimePrediction implements Serializable{
 	public void setDirection(String direction) {
 		this.direction = direction;
 	}
-
+	public RealTimePrediction() {
+	}
 
 }

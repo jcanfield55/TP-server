@@ -6,6 +6,8 @@
  */
 package com.nimbler.tp.service;
 
+import static java.lang.String.format;
+
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -59,6 +61,12 @@ public class LoggingService {
 	 * @param message
 	 */
 	public void debug(String loggerName, String message) {
+		Logger logger = loggers.get(loggerName);
+		logger.debug(getClassName()+message);
+	}
+
+	public void debug(String loggerName, String message,String...values) {
+		message = format(message,values);
 		Logger logger = loggers.get(loggerName);
 		logger.debug(getClassName()+message);
 	}

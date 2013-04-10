@@ -7,6 +7,7 @@
 package com.nimbler.tp.rest;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -155,6 +156,34 @@ public class TpPlanRestService {
 		//		System.out.println(res);
 		//		System.out.println("============================================================");
 		return res;
+	}
+	@GET
+	@Path("/test/")
+	public String test(@QueryParam("req") String username){
+		System.out.println("------>"+username);
+		return "OK";
+	}
+	@POST
+	@Path("/nextlegs/")
+	@Produces({MediaType.APPLICATION_JSON})
+	public String getNextLegs(@Context HttpServletRequest httpRequest){
+		TripResponse tripResponse = new TripResponse();
+		try {
+			Map<String,String> reqParam = ComUtils.parseMultipartRequest(httpRequest);
+			String strLegs = reqParam.get(RequestParam.LEGS);	
+			//			System.out.println(strLegs);
+			List lstLegs =  JSONUtil.getLegsJson(strLegs);
+			if(ComUtils.isEmptyList(lstLegs))
+				throw new TpException(TP_CODES.INVALID_REQUEST.getCode(),"Error while getting JSON String from plan object.");
+			TpPlanService service = BeanUtil.getPlanService();
+			long start = System.currentTimeMillis();
+			tripResponse = service.getNextLegs(lstLegs);			
+			long end = System.currentTimeMillis();
+			logger.debug(loggerName,"Operation took " + (end - start) + " msec");
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+		}
+		return JSONUtil.getResponseJSON(tripResponse);
 	}
 
 	/**

@@ -1,12 +1,16 @@
 package com.nimbler.tp.service.livefeeds;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+
+import org.apache.commons.collections.bidimap.DualHashBidiMap;
+import org.apache.commons.lang3.StringUtils;
 
 import com.nimbler.tp.common.RealTimeDataException;
 import com.nimbler.tp.dataobject.nextbus.Direction;
@@ -23,16 +27,33 @@ import com.nimbler.tp.util.BeanUtil;
  *
  */
 public class NBInMemoryDataStore {
-	
-	private static NBInMemoryDataStore dataStore = new  NBInMemoryDataStore();
-	
+
+	private static NBInMemoryDataStore dataStore = null;
+
+	static Map<String, String> otpRouteToMuniTag = new HashMap<String, String>();
+
 	private static NextBusApiClient nextBusClient = BeanUtil.getNextBusAPIClient();
 
-	public static NBInMemoryDataStore getInstance() {
+	public static synchronized NBInMemoryDataStore getInstance() {
+		if(dataStore == null){
+			dataStore = new  NBInMemoryDataStore();
+		}
 		return dataStore;
 	}
-
+	private void init() {
+		try {
+			Properties property = new Properties();
+			property.load(NBInMemoryDataStore.class.getClassLoader().getResourceAsStream("conf/OtpRouteToMuniRoutes.properties"));
+			for (Object obj : property.keySet()) {
+				String key = (String) obj;
+				otpRouteToMuniTag.put(key.toLowerCase(), property.getProperty(key));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	private NBInMemoryDataStore() {
+		init();
 	}
 	/**
 	 * List of routes available in NextBus in details. 
@@ -41,7 +62,7 @@ public class NBInMemoryDataStore {
 	/**
 	 * Route tag to route title map.
 	 */
-	private Map<String, String> nextBusRouteMap=  new HashMap<String, String>(); 
+	private Map<String, DualHashBidiMap> nextBusRouteMap=  new HashMap<String, DualHashBidiMap>(); 
 
 	/**
 	 * 
@@ -82,29 +103,29 @@ public class NBInMemoryDataStore {
 	 * @throws RealTimeDataException
 	 */
 	public String getRouteTag(String agencyId, String routeTag) throws RealTimeDataException {
-		if (nextBusRouteMap.size()==0) {
+		String agency = otpRouteToMuniTag.get("default.agency");
+		if(StringUtils.equalsIgnoreCase(agencyId, agency)){
+			String res = otpRouteToMuniTag.get(routeTag.toLowerCase());
+			if(res!=null)
+				return res;	
+		}
+
+		DualHashBidiMap map = nextBusRouteMap.get(agencyId.toLowerCase());
+		if(map == null){
 			NextBusResponse respBody = nextBusClient.getRouteList(agencyId); 
 			if (respBody!=null && respBody.getRoute()!=null && respBody.getRoute().size()>0) {
-				Map<String, String> synchedMap = Collections.synchronizedMap(nextBusRouteMap);
+				map = new DualHashBidiMap();
 				for (Route route : respBody.getRoute()) {
-					synchedMap.put(route.getTag(), route.getTitle());					
+					map.put(route.getTag(), route.getTitle().toLowerCase());					
 				}
+				nextBusRouteMap.put(agencyId.toLowerCase(), map);
 			}
-		}		
-		boolean routeExists = nextBusRouteMap.containsKey(routeTag);
-		if (routeExists)
+		}	
+		if(map==null)
+			return null;
+		if (map.containsKey(routeTag))
 			return routeTag;
-
-		String routeTagInLiveFeed = null;
-		Iterator<String> itr = nextBusRouteMap.keySet().iterator();
-		while (itr.hasNext()) {
-			String tag = itr.next();
-			String title = nextBusRouteMap.get(tag);
-			if (title.equalsIgnoreCase(routeTag)) {
-				routeTagInLiveFeed = tag;
-				break;
-			}
-		}
-		return routeTagInLiveFeed;
+		String route = (String) map.getKey(routeTag.toLowerCase());
+		return route;
 	}
 }

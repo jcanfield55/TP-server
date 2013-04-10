@@ -175,6 +175,10 @@
 		<level value="DEBUG" />
 		<appender-ref ref="loggingService" />
 	</logger>
+	<logger name="org.onebusaway.gtfs.serialization.GtfsReader">
+		<level value="DEBUG" />
+		<appender-ref ref="gtfsmonitoring" />
+	</logger>
 	<logger name="com.nimbler.tp.service.TpPlanService">
 		<level value="DEBUG" />
 		<appender-ref ref="planService" />

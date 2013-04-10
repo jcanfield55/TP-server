@@ -144,6 +144,8 @@ public class Leg {
 
 	private Long duration;
 
+	private Long size;
+
 	public void setDuration(long duration) {
 		this.duration = duration;
 	}
@@ -178,10 +180,17 @@ public class Leg {
 		this.startTime = startTime;
 	}
 
-	public long getEndTime() {
+	public Long getEndTime() {
 		return endTime;
 	}
 
+	public Long getSize() {
+		return size;
+	}
+
+	public void setSize(Long size) {
+		this.size = size;
+	}
 
 	public Double getDistance() {
 		return distance;
@@ -223,11 +232,11 @@ public class Leg {
 		this.agencyUrl = agencyUrl;
 	}
 
-	public int getAgencyTimeZoneOffset() {
+	public Integer getAgencyTimeZoneOffset() {
 		return agencyTimeZoneOffset;
 	}
 
-	public void setAgencyTimeZoneOffset(int agencyTimeZoneOffset) {
+	public void setAgencyTimeZoneOffset(Integer agencyTimeZoneOffset) {
 		this.agencyTimeZoneOffset = agencyTimeZoneOffset;
 	}
 
@@ -310,7 +319,7 @@ public class Leg {
 		this.intermediateStops = intermediateStops;
 	}
 
-	public void setEndTime(long endTime) {
+	public void setEndTime(Long endTime) {
 		this.endTime = endTime;
 	}
 

@@ -24,21 +24,21 @@ public class Itinerary {
 	/**
 	 * Duration of the trip on this itinerary, in milliseconds.
 	 */
-	private long duration = 0;
+	private Long duration;
 
 	/**
 	 * Time that the trip departs.
 	 */
-	private long startTime = 0;
+	private Long startTime;
 	/**
 	 * Time that the trip arrives.
 	 */
-	private long endTime = 0;
+	private Long endTime;
 
 	/**
 	 * How much time is spent walking, in seconds.
 	 */
-	private long walkTime = 0;
+	private Long walkTime ;
 	/**
 	 * How much time is spent on transit, in seconds.
 	 */
@@ -103,52 +103,52 @@ public class Itinerary {
 	}
 
 
-	public long getDuration() {
+	public Long getDuration() {
 		return duration;
 	}
 
 
-	public void setDuration(long duration) {
+	public void setDuration(Long duration) {
 		this.duration = duration;
 	}
 
 
-	public long getStartTime() {
+	public Long getStartTime() {
 		return startTime;
 	}
 
 
-	public void setStartTime(long startTime) {
+	public void setStartTime(Long startTime) {
 		this.startTime = startTime;
 	}
 
 
-	public long getEndTime() {
+	public Long getEndTime() {
 		return endTime;
 	}
 
 
-	public void setEndTime(long endTime) {
+	public void setEndTime(Long endTime) {
 		this.endTime = endTime;
 	}
 
 
-	public long getWalkTime() {
+	public Long getWalkTime() {
 		return walkTime;
 	}
 
 
-	public void setWalkTime(long walkTime) {
+	public void setWalkTime(Long walkTime) {
 		this.walkTime = walkTime;
 	}
 
 
-	public long getTransitTime() {
+	public Long getTransitTime() {
 		return transitTime;
 	}
 
 
-	public void setTransitTime(long transitTime) {
+	public void setTransitTime(Long transitTime) {
 		this.transitTime = transitTime;
 	}
 

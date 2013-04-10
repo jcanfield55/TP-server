@@ -26,7 +26,7 @@ public class RealTimeAPIFactory {
 	 */
 	public RealTimeAPI getLiveFeedAPI(String legMode) {
 		RealTimeAPI realTimeAPI = null;
-		if (legMode.equals(TpConstants.LIVE_FEED_MODES.BUS.name()) || legMode.equals(TpConstants.LIVE_FEED_MODES.TRAM.name())) {
+		if (legMode.equals(TpConstants.LIVE_FEED_MODES.BUS.name()) || legMode.equals(TpConstants.LIVE_FEED_MODES.TRAM.name()) || legMode.equals(TpConstants.LIVE_FEED_MODES.CABLE_CAR.name())) {
 			realTimeAPI =  BeanUtil.getNextBusApiImpl();
 		} else if (legMode.equals(TpConstants.LIVE_FEED_MODES.SUBWAY.name())) {
 			realTimeAPI =  BeanUtil.getBARTApiImpl();

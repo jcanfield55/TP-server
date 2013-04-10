@@ -5,18 +5,11 @@ package com.nimbler.tp.util;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.jayway.jsonpath.JsonPath;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import com.nimbler.tp.dataobject.Itinerary;
 import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.TPResponse;
@@ -98,12 +91,19 @@ public class JSONUtil {
 		TripResponse response =  gson.fromJson(planJsonString, TripResponse.class);
 		return response;
 	}
+
 	/**
 	 * 
 	 * @param obj
 	 * @return
 	 */
 	public static String getResponseJSON(TPResponse obj) {
+		if(obj == null)
+			return null;
+		Gson gson = new Gson();
+		return  gson.toJson(obj);
+	}
+	public static String getResponseJSON(TripResponse obj) {
 		if(obj == null)
 			return null;
 		Gson gson = new Gson();

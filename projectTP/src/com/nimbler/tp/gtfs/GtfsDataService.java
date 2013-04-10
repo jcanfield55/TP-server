@@ -5,24 +5,52 @@ package com.nimbler.tp.gtfs;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.collections.BidiMap;
+import org.apache.commons.collections.Transformer;
+import org.apache.commons.collections.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.time.DurationFormatUtils;
+import org.onebusaway.gtfs.impl.GtfsRelationalDaoImpl;
+import org.onebusaway.gtfs.model.Agency;
+import org.onebusaway.gtfs.model.Route;
+import org.onebusaway.gtfs.model.Stop;
+import org.onebusaway.gtfs.model.StopTime;
+import org.onebusaway.gtfs.model.Trip;
+import org.onebusaway.gtfs.serialization.GtfsReader;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.TreeMultimap;
+import com.nimbler.tp.dataobject.AgencyAndId;
+import com.nimbler.tp.dataobject.BartRouteInfo;
+import com.nimbler.tp.dataobject.Leg;
+import com.nimbler.tp.dataobject.Place;
+import com.nimbler.tp.dataobject.RealTimePrediction;
+import com.nimbler.tp.dataobject.StopTimeType;
 import com.nimbler.tp.dataobject.TPResponse;
 import com.nimbler.tp.service.LoggingService;
+import com.nimbler.tp.service.TpPlanService;
+import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.GtfsUtils;
 import com.nimbler.tp.util.JSONUtil;
 import com.nimbler.tp.util.OperationCode.TP_CODES;
 import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.ResponseUtil;
+import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
 import com.nimbler.tp.util.TpConstants.GTFS_FILE;
 import com.nimbler.tp.util.TpException;
 import com.nimbler.tp.util.ZipUtil;
@@ -31,8 +59,14 @@ public class GtfsDataService {
 
 	@Autowired
 	private LoggingService loggingService;
+
+	private String loggerName = GtfsDataService.class.getName();
+
 	@Autowired
 	private GtfsContext gtfsContext;
+
+	@Autowired
+	private TpPlanService planService;
 
 	/** 
 	 * AGENCY_TYPE, BUNDLE 
@@ -42,23 +76,50 @@ public class GtfsDataService {
 	/**
 	 * file name,columns array
 	 */
-	private Map<String, String[]> gtfsColums;
-	private Map<String, List<String>> stopTimesByTripId = new HashMap<String, List<String>>();
+	private Map<String, String[]> gtfsColumHeaders;
+	/**
+	 * 
+	 */
+	private Map<String, List<String>> rawStopTimesByTripId = new HashMap<String, List<String>>();
 
 	/**
 	 * <agencyOrdinal_routeid,list of data>
 	 */
-	private Map<String, List<String>> tripsByRouteId = new HashMap<String, List<String>>();
+	private Map<String, List<String>> rawTripDataByRouteId = new HashMap<String, List<String>>();
 
-	private String loggerName = GtfsDataService.class.getName();
+	/**
+	 * Maps gtfs trip id to nextbus api trip id for actransit<br \>
+	 * trip id for <b>gtfs --> api</b> <br \>
+	 * e.g <b>3341907-1212WR-DB-Weekday-01</b> --> <b>3341907</b>
+	 */
+	private BidiMap acTransitTripIdMapping = new DualHashBidiMap();
 
-	private Map<String,List<String>> gtfsData = null;
+	/**
+	 * agencyOrdinal_gtfsFile.getName() --> list of rows
+	 */
+	private Map<String,List<String>> gtfsData = new HashMap<String,List<String>>();
+	/**
+	 * 
+	 */
+	private RouteStopIndex bartRouteStops = new RouteStopIndex();
+
+	/**
+	 * contains mapping for tripid --> trip stopid sequence, used for next bus
+	 */
+	TripStopIndex tripStopIndex = new TripStopIndex();
+
+	private List<BartRouteInfo> bartRouteInfo = new ArrayList<BartRouteInfo>();
 
 	private String ageciesToLoad ="1,2,3,4,5,6,7";
+
 	private String allStopTimesZipFile ="gtfsStopTimes.zip";
+
 	private boolean gtfsReadCompleted = false;
 
 	private boolean useInMemoryGtfs = true;
+
+	private int MAX_EARLY_MIN = 5*60;
+	private int MAX_DELAY_MIN = 60*60;
 
 	@SuppressWarnings("unused")
 	@PostConstruct
@@ -69,18 +130,51 @@ public class GtfsDataService {
 		}
 		if(useInMemoryGtfs){
 			new Thread(){
-				public void run() {
+				public void run() {			
 					readGtfsData();
 				};
 			}.start();
 		}
 	}
 
+	protected void test() {
+		Leg leg = new Leg();
+		leg.setStartTime(1365011280000L);
+		leg.setEndTime(1365016740005L);
+		leg.setAgencyId("BART");
+		Place formPlace = new Place();
+		formPlace.setStopId(new AgencyAndId("BART","19TH_N"));
+		leg.setFrom(formPlace);
+		Place toPlace = new Place();
+		toPlace.setStopId(new AgencyAndId("BART","ASHB"));
+		leg.setTo(toPlace);
+		RealTimePrediction realTimePrediction = new RealTimePrediction();
+		realTimePrediction.setEpochTime(1365016680000L);
+		getMatchingScheduleForRealTime(leg, AGENCY_TYPE.BART, realTimePrediction);
+
+	}
+
+	/**
+	 * Read gtfs data.
+	 */
 	private void readGtfsData() {
-		System.out.println("Reading Gtfs Data...");
-		gtfsData = new HashMap<String,List<String>>();
+		long start = System.currentTimeMillis();
+
+		createNextBusStopIndexList();
+		createBartStopIndexList();		
+		readRawGtfsData();
+		readBartRouteInfo();
+
+		long end1 = System.currentTimeMillis();
+		gtfsReadCompleted = true;		
+		System.out.println("All Gtfs read done in "+ (end1 - start) / 1000 + "sec");
+	}
+
+	/**
+	 * Read raw gtfs data.
+	 */
+	private void readRawGtfsData() {
 		String[] arrAgencies = ageciesToLoad.split(",");
-		long start1 = System.currentTimeMillis();
 		for (GTFS_FILE file : GTFS_FILE.values()) {
 			if(file.ordinal()==0)
 				continue;
@@ -88,10 +182,10 @@ public class GtfsDataService {
 				long start = System.currentTimeMillis();
 				if(file.equals(GTFS_FILE.STOP_TIMES)){
 					Map<String, List<String>> temp =  createIndexForColumnWithAgency(arrAgencies,file,"trip_id");
-					stopTimesByTripId.putAll(temp);
+					rawStopTimesByTripId.putAll(temp);
 				}if(file.equals(GTFS_FILE.TRIPS)){
 					Map<String, List<String>> temp =  createIndexForColumnWithAgency(arrAgencies,file,"route_id");
-					tripsByRouteId.putAll(temp);
+					rawTripDataByRouteId.putAll(temp);
 				}else{					
 					Map<String, List<String>> temp =  readGtfsDataByAgency(file,arrAgencies);
 					gtfsData.putAll(temp);					
@@ -99,14 +193,205 @@ public class GtfsDataService {
 				long end = System.currentTimeMillis();
 				System.out.println("read done for: "+file.getFileName()+", Time:"+(end - start) / 1000+ " sec");
 			} catch (TpException e) {
-				loggingService.warn(loggerName,"Error While Reading File:"+file+", "+ e.getMessage());
+				loggingService.warn(loggerName,"[TpException] File:"+file+", "+ e.getMessage());
 			}
 		}
-		long end1 = System.currentTimeMillis();
-		gtfsReadCompleted = true;		
-		System.out.println("All Gtfs read done in "+ (end1 - start1) / 1000 + "sec");
 	}
 
+	/**
+	 * Creates the next bus stop index list {@link TripStopIndex}.
+	 */
+	private void createNextBusStopIndexList() {
+		long start = System.currentTimeMillis();
+		List<Class<?>> lstClasses = new ArrayList<Class<?>>();
+		lstClasses.add(Agency.class);
+		lstClasses.add(Stop.class);
+		lstClasses.add(Route.class);
+		lstClasses.add(Trip.class);
+		lstClasses.add(StopTime.class);
+		for (GtfsBundle bundle : gtfsContext.getGtfsBundles()) {
+			try {
+				if(bundle.getAgencyType().equals(AGENCY_TYPE.AC_TRANSIT)){
+					GtfsRelationalDaoImpl context = GtfsUtils.getGtfsDao(bundle.getValidFile(), lstClasses);
+					tripStopIndex.save(bundle.getAgencyType(), context,new Transformer() {
+						@Override
+						public Object transform(Object obj) {
+							Trip trip = (Trip) obj;
+							return GtfsUtils.getACtransitGtfsTripIdFromApiId(trip.getId().getId());
+						}
+					});
+					for (Trip trip : context.getAllTrips()) {
+						String tripId = trip.getId().getId();
+						String mappedTripId = GtfsUtils.getACtransitGtfsTripIdFromApiId(tripId);
+						if(mappedTripId!=null)
+							acTransitTripIdMapping.put(tripId, mappedTripId);						
+					}
+				}else if (bundle.getAgencyType().equals(AGENCY_TYPE.SFMUNI)) {
+					GtfsRelationalDaoImpl context = GtfsUtils.getGtfsDao(bundle.getValidFile(), lstClasses);
+					tripStopIndex.save(bundle.getAgencyType(), context,new Transformer() {
+						@Override
+						public Object transform(Object obj) {
+							Trip trip = (Trip) obj;
+							return trip.getId().getId();
+						}
+					});
+
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("next bus stop index created..."+ (end - start)/1000 + " sec");
+	}
+
+	/**
+	 * Creates the bart stop index list.
+	 */
+	private void createBartStopIndexList() {
+		try {
+			GtfsReader reader = new GtfsReader();
+			GtfsBundle bartBundle = gtfsContext.getBundle(AGENCY_TYPE.BART);
+			if(bartBundle==null){
+				loggingService.error(loggerName, "No valid bart file found");
+				return;
+			}
+			String bartFile = bartBundle.getValidFile();
+			reader.setInputLocation(new File(bartFile));
+
+			List<Class<?>> entityClasses = new ArrayList<Class<?>>();
+			entityClasses.add(Agency.class);
+			entityClasses.add(Route.class);
+			entityClasses.add(Trip.class);
+			entityClasses.add(Stop.class);
+			entityClasses.add(StopTime.class);
+			reader.setEntityClasses(entityClasses);
+
+			GtfsRelationalDaoImpl store = new GtfsRelationalDaoImpl();
+			reader.setEntityStore(store);
+			reader.run();			
+
+			TreeMultimap<String, StopTime> trip_stoptime = TreeMultimap.create();
+
+			SetMultimap<String, String> route_trip = HashMultimap.create();
+			ArrayListMultimap<String, String> tripStopTimesArray = ArrayListMultimap.create();
+			for (String trip : trip_stoptime.keySet()) {
+				SortedSet<StopTime>  sortedStopTimes= trip_stoptime.get(trip);
+				route_trip.put(sortedStopTimes.iterator().next().getTrip().getRoute().getId().getId(), trip);
+				for (StopTime stopTime : sortedStopTimes) {
+					tripStopTimesArray.put(trip, stopTime.getStop().getId().getId().toLowerCase());
+				}
+			}
+			bartRouteStops.save(route_trip,tripStopTimesArray);
+			System.out.println("Bart Stop sequence built..");
+		} catch (Exception e) {
+			e.printStackTrace();
+			loggingService.error(loggerName, e);
+		}
+	}
+
+	/**
+	 * Read BART routes and trip information used in BART prediction.
+	 */
+	public void readBartRouteInfo() {
+		try {
+			GtfsBundle bartBundle = gtfsContext.getBundle(AGENCY_TYPE.BART);
+			if(bartBundle==null){
+				loggingService.error(loggerName, "No valid bart file found");
+				return;
+			}
+			String bartGtfsFileName = bartBundle.getValidFile();
+			GtfsUtils util = new GtfsUtils(loggingService, loggerName);
+			List<BartRouteInfo> bartRoutes = util.getBARTRoutes(bartGtfsFileName);
+			if (bartRoutes!=null && bartRoutes.size()>0) {
+				util.updateBARTRouteDetails(bartGtfsFileName, bartRoutes);
+				this.bartRouteInfo = bartRoutes;
+				System.out.println(String.format("Gtfs file read complete for    :      [%-15s]", "BART - route info"));
+			}
+		} catch (IOException e) {
+			loggingService.error(loggerName, "Error while extracting BART GTFS files: "+e.getMessage());
+		} catch (TpException e) {
+			loggingService.error(loggerName, "Error while extracting BART GTFS files: "+e.getMessage());
+		} catch (Exception e) {
+			loggingService.error(loggerName, "Error while parsing BART GTFS files: ",e);
+		}
+	}
+
+	/**
+	 * Gets the closest schedule.
+	 *
+	 * @param leg the leg
+	 * @param type the type
+	 * @param realTimePrediction 
+	 * @return the closest schedule
+	 */
+	@SuppressWarnings("unused")
+	public void getMatchingScheduleForRealTime(Leg leg,AGENCY_TYPE type, RealTimePrediction realTimePrediction) {
+		try {
+			long start = System.currentTimeMillis();
+			SimpleDateFormat dateFormat = new SimpleDateFormat();
+			dateFormat.setTimeZone(TimeZone.getTimeZone("PST"));
+			String routeId = leg.getRouteId();
+			String fromStopId=leg.getFrom().getStopId().getId();
+			String toStopId=leg.getTo().getStopId().getId();
+			long realTimeMill = realTimePrediction.getEpochTime();
+			int realTimeSec = ComUtils.getSecondsSinceMidNight(realTimeMill);
+			if(type.equals(AGENCY_TYPE.BART)){
+				Leg reqLeg = getRequestLeg(leg,realTimeMill);				
+				//long start1 = System.currentTimeMillis();
+				StopTimeType stopTimeType = planService.getClosestTime(reqLeg,realTimeMill);
+				//long end = System.currentTimeMillis();
+				//loggingService.debug(loggerName, "OTP bart closest get " + (end - start1)  + " msec");				
+				if(stopTimeType!=null ){										
+					long scheduleTime = ComUtils.getSecondsSinceMidNight(stopTimeType.startTime)*1000;
+					realTimePrediction.setScheduleTime(DurationFormatUtils.formatDuration(scheduleTime,"HH:mm:ss"));
+					realTimePrediction.setScheduleTripId(stopTimeType.tripId);
+					//					System.out.println(realTimePrediction.getScheduleTime()+" - "+realTimePrediction.getScheduleTripId()+"--->"+new Date(realTimeMill));
+				}else{
+					loggingService.debug(loggerName,"No matching found for :"+leg.getTripId()+", date: "+new Date(leg.getStartTime())+", real time: "+new Date(realTimeMill));
+				}
+			}else if (type.equals(AGENCY_TYPE.SFMUNI) || type.equals(AGENCY_TYPE.AC_TRANSIT)){
+				String tripId = realTimePrediction.getTripId();
+				String[] headers = gtfsColumHeaders.get(GTFS_FILE.STOP_TIMES.getName());
+				int stopIndex = ArrayUtils.indexOf(headers, "stop_id");
+				int departTimeIndex = ArrayUtils.indexOf(headers, "departure_time");
+				int tripIdIndex = ArrayUtils.indexOf(headers, "trip_id");
+				String id = null; 
+				if(type.equals(AGENCY_TYPE.AC_TRANSIT)){					
+					id = type.ordinal()+"_"+acTransitTripIdMapping.getKey(tripId);;
+				}else
+					id = type.ordinal()+"_"+tripId;
+				List<String> stopTimes = null;
+				stopTimes=rawStopTimesByTripId.get(id);
+				if(stopTimes==null || stopTimes.isEmpty()){
+					loggingService.info(loggerName, "Stop times found for trip: "+id+",agency:"+type.toString());
+					return;
+				}
+				for (String stopTime : stopTimes) {
+					String[] arrStopTime = stopTime.split(",");
+					if(arrStopTime.length>1 && arrStopTime[stopIndex].equalsIgnoreCase(fromStopId)){						
+						realTimePrediction.setScheduleTime(arrStopTime[departTimeIndex]);						
+						realTimePrediction.setScheduleTripId(arrStopTime[tripIdIndex]);
+						break;
+					}
+				}
+			}
+			long end = System.currentTimeMillis();
+			loggingService.info(loggerName,"("+type.toString()+") took " + (end - start) + " msec");
+		} catch (Exception e) {			
+			loggingService.error(loggerName,e);
+		}
+	}
+
+	private Leg getRequestLeg(Leg leg, long epochTime) {
+		Leg reqLeg = new Leg();
+		reqLeg.setStartTime(epochTime-(MAX_DELAY_MIN*1000));
+		reqLeg.setEndTime(epochTime+(MAX_EARLY_MIN*1000));
+		reqLeg.setAgencyId(leg.getAgencyId());				
+		reqLeg.setFrom(leg.getFrom());
+		reqLeg.setTo(leg.getTo());		
+		return reqLeg;
+	}
 
 	/**
 	 * Gets the gtfs data by agency.
@@ -118,6 +403,9 @@ public class GtfsDataService {
 	 */
 	public Map<String, List<String>> readGtfsDataByAgency(GTFS_FILE gtfsFile, String[] agencyIdOrdinals) throws TpException {
 		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
+		String[] columns = gtfsColumHeaders.get(gtfsFile.getName());
+		if(columns==null || columns.length==0)
+			throw new TpException("Unsuported File: "+gtfsFile.getFileName());
 		try {
 			GtfsUtils gtfsUtils= new GtfsUtils(loggingService, loggerName);
 			for (int i = 0; i < agencyIdOrdinals.length; i++) {
@@ -127,7 +415,7 @@ public class GtfsDataService {
 					continue;
 				}
 				try {
-					List<String> lstData = gtfsUtils.getColumnsFromFile(new File(bundle.getValidFile()),gtfsColums.get(gtfsFile.getName()), gtfsFile.getFileName());
+					List<String> lstData = gtfsUtils.getColumnsFromFile(new File(bundle.getValidFile()),gtfsColumHeaders.get(gtfsFile.getName()), gtfsFile.getFileName());
 					if(lstData!=null)
 						resMap.put(agencyIdOrdinals[i]+"_"+gtfsFile.getName(), lstData);
 				} catch (TpException e) {				
@@ -137,7 +425,7 @@ public class GtfsDataService {
 				}
 			}
 		} catch (Exception e) {
-			throw new TpException(e.getMessage());
+			throw new TpException("Error While reading file: "+gtfsFile.getFileName()+" "+e.getMessage());
 		}
 		return resMap;
 	}
@@ -166,7 +454,7 @@ public class GtfsDataService {
 					loggingService.error(loggerName, "Could Not find index of trip_id for agency: "+agencyIdOrdinals[i]);
 					continue;
 				}
-				List<String> lstData = gtfsUtils.getColumnsFromFile(new File(bundle.getValidFile()),gtfsColums.get(gtfsFile.getName()), gtfsFile.getFileName());
+				List<String> lstData = gtfsUtils.getColumnsFromFile(new File(bundle.getValidFile()),gtfsColumHeaders.get(gtfsFile.getName()), gtfsFile.getFileName());
 				if(lstData!=null){
 					for (String line : lstData) {
 						String key = agencyIdOrdinals[i]+"_"+line.split(",")[index];
@@ -209,7 +497,7 @@ public class GtfsDataService {
 					loggingService.error(loggerName, "Could Not find index of route_id for agency: "+agencyIdOrdinals[i]);
 					continue;
 				}
-				List<String> lstData = gtfsUtils.getColumnsFromFile(new File(bundle.getValidFile()),gtfsColums.get(gtfsFile.getName()), gtfsFile.getFileName());
+				List<String> lstData = gtfsUtils.getColumnsFromFile(new File(bundle.getValidFile()),gtfsColumHeaders.get(gtfsFile.getName()), gtfsFile.getFileName());
 				if(lstData!=null){
 					for (String line : lstData) {
 						String key = agencyIdOrdinals[i]+"_"+line.split(",")[index];
@@ -272,10 +560,10 @@ public class GtfsDataService {
 		}else{
 			if(!gtfsReadCompleted)
 				throw new TpException(TP_CODES.DATA_NOT_EXIST);
-			mapToQuery = stopTimesByTripId;
+			mapToQuery = rawStopTimesByTripId;
 		}
 		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
-		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColums.get(GTFS_FILE.STOP_TIMES.getName())));
+		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColumHeaders.get(GTFS_FILE.STOP_TIMES.getName())));
 		for (int t = 0; t < strAgencyId.length; t++) {
 			String key =  strAgencyId[t];					
 			resMap.put(key, mapToQuery.get(key));
@@ -289,7 +577,7 @@ public class GtfsDataService {
 		synchronized (allStopTimesZipFile) {
 			if(!file.exists()){
 				TPResponse response = ResponseUtil.createResponse(TP_CODES.SUCESS);
-				response.setData(stopTimesByTripId);
+				response.setData(rawStopTimesByTripId);
 				String res =  JSONUtil.getResponseJSON(response);
 				ZipUtil.writeStopTimes(file,res);
 			}
@@ -311,10 +599,10 @@ public class GtfsDataService {
 		}else{
 			if(!gtfsReadCompleted)
 				throw new TpException(TP_CODES.DATA_NOT_EXIST);
-			mapToQuery = tripsByRouteId;
+			mapToQuery = rawTripDataByRouteId;
 		}
 		Map<String, List<String>> resMap = new HashMap<String, List<String>>();
-		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColums.get(GTFS_FILE.TRIPS.getName())));
+		resMap.put(RequestParam.HEADERS, Arrays.asList(gtfsColumHeaders.get(GTFS_FILE.TRIPS.getName())));
 		for (int t = 0; t < strAgencyIdAndRouteId.length; t++) {
 			String key =  strAgencyIdAndRouteId[t];					
 			resMap.put(key, mapToQuery.get(key));
@@ -330,7 +618,7 @@ public class GtfsDataService {
 	 * @return the column index of gtfs file
 	 */
 	public int getColumnIndexOfGtfsFile(GTFS_FILE file,String columnName) {
-		return ArrayUtils.indexOf(gtfsColums.get(file.getName()), columnName);
+		return ArrayUtils.indexOf(gtfsColumHeaders.get(file.getName()), columnName);
 	}
 
 	public GtfsContext getGtfsContext() {
@@ -355,10 +643,10 @@ public class GtfsDataService {
 		this.bundleMap = bundleMap;
 	}
 	public Map<String, String[]> getGtfsColums() {
-		return gtfsColums;
+		return gtfsColumHeaders;
 	}
 	public void setGtfsColums(Map<String, String[]> gtfsColums) {
-		this.gtfsColums = gtfsColums;
+		this.gtfsColumHeaders = gtfsColums;
 	}
 
 
@@ -385,5 +673,47 @@ public class GtfsDataService {
 
 	public void setUseInMemoryGtfs(boolean useInMemoryGtfs) {
 		this.useInMemoryGtfs = useInMemoryGtfs;
-	}	
+	}
+
+
+	public int getMAX_EARLY_MIN() {
+		return MAX_EARLY_MIN;
+	}
+
+	public void setMAX_EARLY_MIN(int mAX_EARLY_MIN) {
+		MAX_EARLY_MIN = mAX_EARLY_MIN;
+	}
+
+	public int getMAX_DELAY_MIN() {
+		return MAX_DELAY_MIN;
+	}
+
+	public void setMAX_DELAY_MIN(int mAX_DELAY_MIN) {
+		MAX_DELAY_MIN = mAX_DELAY_MIN;
+	}
+
+	public List<BartRouteInfo> getBartRouteInfo() {
+		return bartRouteInfo;
+	}
+
+	public void setBartRouteInfo(List<BartRouteInfo> bartRouteInfo) {
+		this.bartRouteInfo = bartRouteInfo;
+	}
+
+	public RouteStopIndex getBartRouteStops() {
+		return bartRouteStops;
+	}
+
+	public void setBartRouteStops(RouteStopIndex bartRouteStops) {
+		this.bartRouteStops = bartRouteStops;
+	}
+
+	public TripStopIndex getTripStopIndex() {
+		return tripStopIndex;
+	}
+
+	public void setTripStopIndex(TripStopIndex tripStopIndex) {
+		this.tripStopIndex = tripStopIndex;
+	}
+
 }

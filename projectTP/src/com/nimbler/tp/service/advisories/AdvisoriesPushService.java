@@ -3,8 +3,6 @@
  */
 package com.nimbler.tp.service.advisories;
 
-import static org.apache.commons.lang3.StringUtils.join;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -114,8 +112,10 @@ public class AdvisoriesPushService {
 	@Autowired
 	private BartAlertCriteria bartAlertCriteria = null;
 
-	private boolean isTwittterErrorOpen = false;
-	private boolean enableTwitterErrorNotification = true;
+
+
+	@Autowired
+	private TwitterMonitor twitterMonitor;
 
 	/**
 	 *<column name,start-end min of day> 
@@ -127,6 +127,7 @@ public class AdvisoriesPushService {
 
 	@Autowired
 	private NimblerApps nimblerApps;
+
 
 	public void init() {	
 		AGENCY_TYPE[] agencyTypes = AGENCY_TYPE.values();
@@ -211,61 +212,24 @@ public class AdvisoriesPushService {
 			for (int i = 0; i < 3; i++) {
 				try {
 					String queryParam = StringUtils.join(list,"+OR+")+ " since:" + ComUtils.getFormatedDate("yyyy-MM-dd");
+
 					String response = getTwitterResponse(queryParam);
 					List<Tweet> tweetList = getTweets(response);
 					if (tweetList!=null)
 						TweetStore.getInstance().setTweet(tweetList, agency);
-					if(isTwittterErrorOpen && enableTwitterErrorNotification){
-						isTwittterErrorOpen = false;
-						issueTweeterRecovery();
-					}
+					twitterMonitor.fetchSucess(tweetSources);
 					break;
 				} catch (Exception e) {
 					String retry="";
 					if(i<2)
 						retry = " - retrying....";
-					else if (enableTwitterErrorNotification){
-						issueTweeterError(e,tweetSources);
-					}
+					else
+						twitterMonitor.fetchFailed(tweetSources,e);
 					logger.error(loggerName, "Error while getting twitter response for source: "+commaSeparatedSource+": "+e.getMessage()+retry);
 					ComUtils.sleep(2000);
 				}
 			}
 		}
-	}
-
-	/**
-	 * Issue tweeter recovery.
-	 */
-	private void issueTweeterRecovery() {
-		try {			
-			mailService.sendMail(TpConstants.OTP_FAIL_NOTIFY_EMAIL_ID, "Twitter Error Recovered..!!!!",
-					"Recovery Time: "+new Date(),false);
-		} catch (Exception e) {
-			logger.error(loggerName, e);
-		}
-
-	}
-
-	/**
-	 * Issue tweeter error.
-	 *
-	 * @param exception the exception
-	 * @param tweetSources the tweet sources
-	 */
-	private void issueTweeterError(Exception exception, String[] tweetSources) {
-		try {
-			if(isTwittterErrorOpen)
-				return;
-			String error = exception.getClass().getSimpleName()+": "+exception.getMessage()+"for source: "+join(tweetSources);
-			mailService.sendMail(TpConstants.OTP_FAIL_NOTIFY_EMAIL_ID, "Error Fetching Tweets..!!!!", error,false);
-			isTwittterErrorOpen = true;
-		} catch (Exception e) {
-			logger.error(loggerName, e);
-			mailService.sendMail(TpConstants.OTP_FAIL_NOTIFY_EMAIL_ID, "Error Fetching Tweets..!!!!", "Error:"+exception,false);
-		}
-
-
 	}
 
 	/**
@@ -1075,25 +1039,6 @@ public class AdvisoriesPushService {
 
 	public void setBartAlertCriteria(BartAlertCriteria bartAlertCriteria) {
 		this.bartAlertCriteria = bartAlertCriteria;
-	}
-
-
-
-	public boolean isTwittterErrorOpen() {
-		return isTwittterErrorOpen;
-	}
-
-	public void setTwittterErrorOpen(boolean isTwittterErrorOpen) {
-		this.isTwittterErrorOpen = isTwittterErrorOpen;
-	}
-
-	public boolean isEnableTwitterErrorNotification() {
-		return enableTwitterErrorNotification;
-	}
-
-	public void setEnableTwitterErrorNotification(
-			boolean enableTwitterErrorNotification) {
-		this.enableTwitterErrorNotification = enableTwitterErrorNotification;
 	}
 
 	public MailService getMailService() {

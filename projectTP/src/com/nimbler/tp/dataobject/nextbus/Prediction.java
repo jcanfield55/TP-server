@@ -14,7 +14,8 @@ public class Prediction {
 	private boolean affectedByLayover;
 	private String block;
 	private String tripTag;
-	
+	private String  dirTitleBecauseNoPredictions;
+
 	@XmlAttribute
 	public long getEpochTime() {
 		return epochTime;
@@ -46,6 +47,13 @@ public class Prediction {
 	@XmlAttribute
 	public String getDirTag() {
 		return dirTag;
+	}
+	@XmlAttribute
+	public String getDirTitleBecauseNoPredictions() {
+		return dirTitleBecauseNoPredictions;
+	}
+	public void setDirTitleBecauseNoPredictions(String dirTitleBecauseNoPredictions) {
+		this.dirTitleBecauseNoPredictions = dirTitleBecauseNoPredictions;
 	}
 	public void setDirTag(String dirTag) {
 		this.dirTag = dirTag;
@@ -86,5 +94,5 @@ public class Prediction {
 				+ minutes + ", seconds=" + seconds + ", tripTag=" + tripTag
 				+ ", vehicle=" + vehicle + "]";
 	}
-	
+
 }

@@ -1,6 +1,8 @@
+/*
+ * @author nirmal
+ */
 package com.nimbler.tp.service.livefeeds;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -8,13 +10,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TimeZone;
 import java.util.TreeMap;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.common.RealTimeDataException;
 import com.nimbler.tp.dataobject.BartRouteInfo;
@@ -26,11 +26,13 @@ import com.nimbler.tp.dataobject.bart.Estimate;
 import com.nimbler.tp.dataobject.bart.EstimateTimeOfDiparture;
 import com.nimbler.tp.dataobject.bart.Route;
 import com.nimbler.tp.dataobject.bart.Station;
-import com.nimbler.tp.gtfs.GtfsDataMonitor;
+import com.nimbler.tp.gtfs.GtfsDataService;
+import com.nimbler.tp.gtfs.RouteStopIndex;
 import com.nimbler.tp.service.livefeeds.cache.BartETDCache;
 import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.TpConstants;
+import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
 /**
  * Implementation class for processing BART real time data for a specif OTP leg.
  * @author nIKUNJ
@@ -56,13 +58,6 @@ public class BARTApiImpl implements RealTimeAPI {
 	public LegLiveFeed getAllRealTimeFeeds(Leg leg) throws FeedsNotFoundException {		
 		List<RealTimePrediction> lstRealTimePredictions = new ArrayList<RealTimePrediction>();
 		try {
-			Long scheduledTime = leg.getStartTime();
-			//SimpleDateFormat dateFormat = new SimpleDateFormat();
-			//dateFormat.setTimeZone(TimeZone.getTimeZone("PST"));
-			//System.out.println(dateFormat.format(new Date(scheduledTime)));
-			//			if (scheduledTime < System.currentTimeMillis())
-			//				throw new RealTimeDataException("Leg scheduled time is already passed. No estimates possible.");
-
 			String agencyId = leg.getAgencyId();
 			String fromStopTag = leg.getFrom().getStopId().getId();
 			String toStopTag = leg.getTo().getStopId().getId();
@@ -107,7 +102,7 @@ public class BARTApiImpl implements RealTimeAPI {
 							targetETD = etd;
 							break;
 						}
-					}else if (isLastStationForStopRoute(fromStopTag, toStopTag, routeId,destinationAbbr)) {
+					}else if (isIntermediateStopinRouteSequence(fromStopTag, toStopTag, routeId,destinationAbbr)) {
 						targetETD = etd;
 						break;
 					}
@@ -126,6 +121,7 @@ public class BARTApiImpl implements RealTimeAPI {
 			LegLiveFeed resp = new LegLiveFeed();
 			resp.setEmptyLeg(leg);
 			resp.setLstPredictions(lstRealTimePredictions);
+			setScheduleTimesInPredisction(lstRealTimePredictions,leg);
 			return resp;
 		} catch (RealTimeDataException e) {
 			throw new FeedsNotFoundException(e.getMessage());
@@ -134,26 +130,35 @@ public class BARTApiImpl implements RealTimeAPI {
 		}		
 	}
 
-	private boolean isLastStationForStopRoute(String fromStopTag,String toStopTag, String routeId, String destinationAbbr) throws RealTimeDataException {
-		GtfsDataMonitor dataMonitor = BeanUtil.getGtfsDataMonitorService();
-		ArrayListMultimap<String, List> routeStopTimes = dataMonitor.getRouteStopTimesList();
+	/**
+	 * Sets the schedule times in predisction.
+	 *
+	 * @param lstRealTimePredictions the lst real time predictions
+	 * @param leg the leg
+	 */
+	private void setScheduleTimesInPredisction(	List<RealTimePrediction> lstRealTimePredictions, Leg leg) {
+		GtfsDataService gtfsDataService = BeanUtil.getGtfsDataServiceBean();
+		for (RealTimePrediction realTimePrediction : lstRealTimePredictions) {			
+			gtfsDataService.getMatchingScheduleForRealTime(leg, AGENCY_TYPE.BART,realTimePrediction);
+		}
+	}
+
+	/**
+	 * Checks if is last station for stop route.
+	 *
+	 * @param fromStopTag the from stop tag
+	 * @param toStopTag the to stop tag
+	 * @param routeId the route id
+	 * @param destinationAbbr the destination abbr
+	 * @return true, if is last station for stop route
+	 * @throws RealTimeDataException the real time data exception
+	 */
+	private boolean isIntermediateStopinRouteSequence(String fromStopTag,String toStopTag, String routeId, String destinationAbbr) throws RealTimeDataException {
+		GtfsDataService gtfsDataService = BeanUtil.getGtfsDataServiceBean();
 		if(routeId==null)
 			throw new RealTimeDataException("No route tag found");
-		List<List> stopTimes = routeStopTimes.get(routeId);
-		if(stopTimes==null)
-			throw new RealTimeDataException("No stoptimes found");
-		for (List stopTime : stopTimes) {
-			int fromIndex = stopTime.indexOf(fromStopTag.toLowerCase());
-			int toIndex = stopTime.indexOf(toStopTag.toLowerCase());
-			int dest = stopTime.indexOf(destinationAbbr.toLowerCase());			
-			if(fromIndex !=-1 && toIndex!=-1 && dest!=-1){
-				if((fromIndex<toIndex && toIndex<=dest ) || 
-						(toIndex<fromIndex && dest<=toIndex )){
-					return true;
-				}
-			}
-		}
-		return false;
+		RouteStopIndex routeStop = gtfsDataService.getBartRouteStops();
+		return routeStop.isInterMediateStopId(routeId, fromStopTag, destinationAbbr, toStopTag);
 	}
 
 	@Override
@@ -187,16 +192,6 @@ public class BARTApiImpl implements RealTimeAPI {
 					break;
 				}
 			}
-			/*if (targetETD == null) {
-				String toStationInRoute = getLastStopOfRoute(routeTag);
-				for (EstimateTimeOfDiparture etd : etds) {
-					String destinationAbbr = etd.getAbbreviation();
-					if (destinationAbbr.equalsIgnoreCase(toStationInRoute)) {//predict on base of last stop of the route
-						targetETD = etd;
-						break;
-					}
-				}
-			}*/
 			//2. Find TO stop in route(using head sign) and compare with ETD 
 			if (targetETD == null) {
 				String routeHeadSign = leg.getHeadsign().trim();
@@ -356,7 +351,7 @@ public class BARTApiImpl implements RealTimeAPI {
 	 */
 
 	private int getRouteDirection(String routeTag, String headSign) {
-		GtfsDataMonitor gtfsBean = BeanUtil.getGtfsDataMonitorService();
+		GtfsDataService gtfsBean = BeanUtil.getGtfsDataServiceBean();
 		List<BartRouteInfo> bartRoutes = gtfsBean.getBartRouteInfo();
 		for (BartRouteInfo info: bartRoutes) {
 			if (info.getRouteTag().equalsIgnoreCase(routeTag)) {
@@ -366,6 +361,7 @@ public class BARTApiImpl implements RealTimeAPI {
 		}
 		return -1;
 	}
+	@Deprecated
 	private void validateTimeLimit(Long scheduledTime) throws RealTimeDataException {
 		long curruntTime =System.currentTimeMillis();
 		long maxTime = curruntTime +(maxRealTimeSupportLimitMin*DateUtils.MILLIS_PER_MINUTE);
@@ -396,6 +392,11 @@ public class BARTApiImpl implements RealTimeAPI {
 	}
 	public void setBartAPIRegKey(String bartAPIRegKey) {
 		this.bartAPIRegKey = bartAPIRegKey;
+	}
+
+	@Override
+	public LegLiveFeed getLegArrivalTime(Leg leg) throws FeedsNotFoundException {
+		throw new FeedsNotFoundException("Not suported");
 	}
 
 }

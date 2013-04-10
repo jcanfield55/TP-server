@@ -114,6 +114,9 @@ public class TpConstants {
 	public static String NIMBLER_PARAMS_NAME ="name";
 	public static String NIMBLER_PARAMS_VALUE="value";
 
+
+
+
 	public enum MONGO_TABLES {
 		users,
 		feedback,
@@ -132,7 +135,8 @@ public class TpConstants {
 	public enum LIVE_FEED_MODES {
 		BUS,
 		TRAM,
-		SUBWAY
+		SUBWAY,
+		CABLE_CAR
 	}
 
 	public enum ETA_FLAG {

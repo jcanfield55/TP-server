@@ -39,7 +39,7 @@ import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
 import com.nimbler.tp.util.TpException;
 
 /**
- * The Class OTPService.
+ * The Class responsible for handling user feedback from application .
  * @author nirmal
  */
 public class TpFeedbackService {
@@ -174,42 +174,7 @@ public class TpFeedbackService {
 		}
 		return filepath;
 	}
-	/**
-	 * 
-	 * @param itineraryId
-	 * @return
-	 *//*
-	private TripPlan getPlanOfItineraryFromDB(String itineraryId) {
-		Itinerary itinerary = (Itinerary) persistenceService.findOne(MONGO_TABLES.itinerary.name(), "id", itineraryId, Itinerary.class);
-		if (itinerary == null)
-			return null;
-		TripPlan plan = (TripPlan) persistenceService.findOne(MONGO_TABLES.plan.name(), "id", itinerary.getPlanId(), TripPlan.class);
-		return plan;
-	}
-	  *//**
-	  * 
-	  * @param legId
-	  * @return
-	  *//*
-	private Itinerary getItineraryOfLegFromDB(String legId) {
-		Leg leg = (Leg) persistenceService.findOne(MONGO_TABLES.leg.name(), "id", legId, Leg.class);
-		if (leg == null)
-			return null;
-		Itinerary itinerary = (Itinerary) persistenceService.findOne(MONGO_TABLES.itinerary.name(), "id", leg.getId(), Itinerary.class);
-		return itinerary;	
-	}*/
-	/**
-	 * 
-	 * @param legId
-	 * @return
-	 *//*
-	private TripPlan getPlanOfLegFromDB(String legId) {
-		Itinerary itinerary  = getItineraryOfLegFromDB(legId);
-		if (itinerary==null)
-			return null;
-		TripPlan plan = (TripPlan) persistenceService.findOne(MONGO_TABLES.plan.name(), "id", itinerary.getPlanId(), TripPlan.class);
-		return plan;
-	}*/
+
 	public PersistenceService getPersistenceService() {
 		return persistenceService;
 	}

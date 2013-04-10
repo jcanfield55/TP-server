@@ -3,8 +3,6 @@
  */
 package com.nimbler.tp.service.livefeeds;
 
-import java.util.List;
-
 import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.LegLiveFeed;
@@ -30,4 +28,13 @@ public interface RealTimeAPI {
 	 * @throws FeedsNotFoundException the feeds not found exception
 	 */
 	public abstract LegLiveFeed getAllRealTimeFeeds(Leg leg) throws FeedsNotFoundException;
+
+	/**
+	 * Gets the leg arrival time.
+	 *
+	 * @param leg the leg
+	 * @return the leg arrival time
+	 * @throws FeedsNotFoundException the feeds not found exception
+	 */
+	public abstract LegLiveFeed getLegArrivalTime(Leg leg) throws FeedsNotFoundException;
 }

@@ -6,6 +6,7 @@ package com.nimbler.tp.rest;
 import static org.apache.commons.lang3.StringUtils.replaceOnce;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -171,7 +172,12 @@ public class RealTimePredictionService {
 			List lstLegs =  JSONUtil.getLegsJson(strLegs);
 			if(ComUtils.isEmptyList(lstLegs))
 				throw new TpException(TP_CODES.INVALID_REQUEST.getCode(),"Error while getting JSON String from plan object.");
+
+			long start = System.currentTimeMillis();
 			List<LegLiveFeed> legLiveFeeds = getAllRealTimeFeedsForLegs(lstLegs);
+			long end = System.currentTimeMillis();
+			logger.debug(loggerName,"Operation took " + (end - start)  + " msec");
+
 			if (!ComUtils.isEmptyList(legLiveFeeds)) 
 				response.setLegLiveFeeds(legLiveFeeds); 
 			else
@@ -362,7 +368,7 @@ public class RealTimePredictionService {
 		List<Leg> applicableLegs = new ArrayList<Leg>();
 		for (Leg leg: legs) {
 			if (leg.getMode().equals(TpConstants.LIVE_FEED_MODES.BUS.name()) || leg.getMode().equals(TpConstants.LIVE_FEED_MODES.SUBWAY.name())
-					|| leg.getMode().equals(TpConstants.LIVE_FEED_MODES.TRAM.name())) {
+					|| leg.getMode().equals(TpConstants.LIVE_FEED_MODES.TRAM.name()) || leg.getMode().equals(TpConstants.LIVE_FEED_MODES.CABLE_CAR.name())) {
 				applicableLegs.add(leg);
 			}
 		}

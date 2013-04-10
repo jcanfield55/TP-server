@@ -31,6 +31,7 @@ public class HtmlUtil {
 	public static final String DATE_FORMAT_PATTERN = "dd-MMM-yyyy";
 	private static final String table="<table width=\"70%\" cellspacing=\"1\" cellpadding=\"1\" border=\"0\" style=\"background: #1879AD; margin-top: 15\">--data--</table>";
 	private static final String ROW_COLSPAN_BG = "#E8E8E8";
+	private static final int	SUMMARY_COLUMS	= 8;
 	/**
 	 * Gets the result table.
 	 *
@@ -202,6 +203,7 @@ public class HtmlUtil {
 		private int expInSevenDay=0;
 		private int crackedService=0;
 		private int expiredCrackedService=0;
+		private int activeService=0;
 
 		public GtfsSummery() {
 		}
@@ -274,6 +276,9 @@ public class HtmlUtil {
 		public void incCanceledService() {
 			this.canceledService++;
 		}
+		public void incActiveService() {
+			this.activeService++;
+		}
 		public void incExpiredService() {
 			this.expiredService++;
 		}
@@ -282,6 +287,10 @@ public class HtmlUtil {
 		}
 		public void incExpiredCrackedService() {
 			this.expiredCrackedService++;
+		}
+
+		public int getActiveService() {
+			return activeService;
 		}
 		public void incNewData() {
 			this.updateService++;
@@ -377,11 +386,12 @@ public class HtmlUtil {
 			res =  "" +
 					"<tr style=\"color: #000;; background: #E8E8E8;\">" +
 					"	<td ><div align=\"left\">"+summery.getAgency()+"</div></td>" +
-					"		<td colspan=\"7\" align=\"center\" style=\"background: "+ROW_COLSPAN_BG+"; color: red;\"><div>"+result.getError()+"</div></td>" +
+					"		<td colspan=\""+SUMMARY_COLUMS+"\" align=\"center\" style=\"background: "+ROW_COLSPAN_BG+"; color: red;\"><div>"+result.getError()+"</div></td>" +
 					"</tr>";
 		}else if(summery.isChange()){
 			res =   "<tr style=\"color: #000; background: #fff;\">" +
 					"<td><div align=\"left\">"+summery.getAgency()+"</div></td>" +
+					"<td><div align=\"center\">"+summery.getActiveService()+"</div></td>" +
 					"<td><div align=\"center\">"+summery.getExpiredService()+"</div></td>" +
 					"<td><div align=\"center\">"+summery.getNewService()+"</div></td>" +
 					"<td><div align=\"center\">"+summery.getCanceledService()+"</div></td>" +
@@ -394,7 +404,7 @@ public class HtmlUtil {
 			res =  "" +
 					"<tr style=\"color: #000;; background: #E8E8E8;\">" +
 					"	<td ><div align=\"left\">"+summery.getAgency()+"</div></td>" +
-					"		<td colspan=\"7\" align=\"center\" style=\"background: "+ROW_COLSPAN_BG+"; color: #0cc712\"><div>"+msg+"</div></td>" +
+					"		<td colspan=\""+SUMMARY_COLUMS+"\" align=\"center\" style=\"background: "+ROW_COLSPAN_BG+"; color: #0cc712\"><div>"+msg+"</div></td>" +
 					"</tr>";
 		}
 		return res;

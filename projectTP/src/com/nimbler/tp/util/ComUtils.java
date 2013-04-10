@@ -67,7 +67,28 @@ public class ComUtils {
 		}
 		return false;
 	}
+	/**
+	 * Gets the list from array.
+	 *
+	 * @param lst the lst
+	 * @return the list from array
+	 */
+	public static Iterable<List> getListFromArray(List[] lst) {
+		List<List> res = new ArrayList<List>();
+		for (List list : lst) {
+			if(list!=null && list.size()!=0){
+				res.add(list);
+			}
+		}		
+		return res;
+	}
+	public static int getSecondsSinceMidNight(long epoch){
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTimeZone(TimeZone.getTimeZone("PST"));
+		calendar.setTimeInMillis(epoch);
+		return calendar.get(Calendar.HOUR_OF_DAY)*60*60 + calendar.get(Calendar.MINUTE)*60 + calendar.get(Calendar.SECOND);
 
+	}
 	/**
 	 * Checks if is empty list.
 	 *

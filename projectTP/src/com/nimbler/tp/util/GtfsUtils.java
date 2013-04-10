@@ -3,6 +3,8 @@
  */
 package com.nimbler.tp.util;
 
+import static org.apache.commons.lang3.StringUtils.substringBefore;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -24,6 +26,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.onebusaway.gtfs.impl.GtfsRelationalDaoImpl;
+import org.onebusaway.gtfs.serialization.GtfsReader;
 
 import com.nimbler.tp.dataobject.BartRouteInfo;
 import com.nimbler.tp.dataobject.Itinerary;
@@ -429,8 +433,17 @@ public class GtfsUtils {
 				summury.incCanceledService();
 			if(tableRow.isExpireinSevenDays())
 				summury.incExpInSevenDay();
+
 			if(tableRow.isOldExpired())
 				summury.incExpiredService();
+
+			if(tableRow.getOldDate()!=null || tableRow.getCrackedDate()!=null){
+				if(tableRow.isCracked() && !tableRow.isCrackedExpired() ){
+					summury.incActiveService();
+				}else if(!tableRow.isCracked() && !tableRow.isOldExpired())
+					summury.incActiveService();
+			}
+
 			if(tableRow.isNewDataAvailable())
 				summury.incNewData();
 			if(tableRow.isSameDate())
@@ -474,6 +487,25 @@ public class GtfsUtils {
 		else
 			sbUrl.append("&date="+map.get("date"));
 		return sbUrl.toString();
+	}
+
+	/**
+	 * Gets the gtfs dao.
+	 *
+	 * @param file the file
+	 * @param entityClasses
+	 * @return the gtfs dao
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public static  GtfsRelationalDaoImpl getGtfsDao(String file, List<Class<?>> entityClasses) throws IOException {
+		GtfsReader reader = new GtfsReader();
+		reader.setInputLocation(new File(file));
+		GtfsRelationalDaoImpl dao = new GtfsRelationalDaoImpl();
+		reader.setEntityStore(dao);
+		if(entityClasses!=null)
+			reader.setEntityClasses(entityClasses);
+		reader.run();
+		return dao;
 	}
 
 	/**
@@ -524,8 +556,6 @@ public class GtfsUtils {
 	public List<BartRouteInfo> getBARTRoutes(String filePath) throws ZipException, IOException, TpException {
 		File file = new File(filePath);
 		List<BartRouteInfo> bartRoutes = new ArrayList<BartRouteInfo>();
-		/*ZipFile zipFile = new ZipFile(file);
-		ZipEntry zipEntry = zipFile.getEntry(TpConstants.ZIP_ROUTES_FILE);*/		
 		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file, TpConstants.ZIP_ROUTES_FILE),GTFS_ENCODE_FORMAT);		
 		if (ComUtils.isEmptyList(lstLines))
 			throw new TpException("BART GTFS: Invalid file, No data found in file: "+file);
@@ -623,5 +653,8 @@ public class GtfsUtils {
 			res[i] =StringUtils.substringBefore(strAgencyId[i], "_");
 		}
 		return res;
+	}
+	public static String getACtransitGtfsTripIdFromApiId(String tripID) {
+		return  substringBefore(tripID, "-");
 	}
 }
