@@ -187,6 +187,10 @@
 		<level value="DEBUG" />
 		<appender-ref ref="syslog" />
 	</logger>
+	<logger name="javapns">
+		<level value="DEBUG" />
+		<appender-ref ref="apn" />
+	</logger>
 
 	<logger name="com.nimbler.tp.service.smtp.MailService">
 		<level value="DEBUG" />

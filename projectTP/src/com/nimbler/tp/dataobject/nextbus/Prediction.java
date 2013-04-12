@@ -1,5 +1,7 @@
 package com.nimbler.tp.dataobject.nextbus;
 
+import java.util.Date;
+
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -86,13 +88,23 @@ public class Prediction {
 	public void setTripTag(String tripTag) {
 		this.tripTag = tripTag;
 	}
+
+	public String finePrint() {
+		return "Prediction [dirTag=" + dirTag + ", tripTag=" + tripTag
+				+ ", minutes=" + minutes + ", seconds=" + seconds
+				+ ", vehicle=" + vehicle + ", date=" + new Date(epochTime)
+		+ ", dirTitleBecauseNoPredictions="
+		+ dirTitleBecauseNoPredictions + "]";
+	}
 	@Override
 	public String toString() {
-		return "Prediction [affectedByLayover=" + affectedByLayover
-				+ ", block=" + block + ", dirTag=" + dirTag + ", epochTime="
-				+ epochTime + ", isDeparture=" + isDeparture + ", minutes="
-				+ minutes + ", seconds=" + seconds + ", tripTag=" + tripTag
-				+ ", vehicle=" + vehicle + "]";
+		return "Prediction [epochTime=" + epochTime + ", seconds=" + seconds
+				+ ", minutes=" + minutes + ", isDeparture=" + isDeparture
+				+ ", dirTag=" + dirTag + ", vehicle=" + vehicle
+				+ ", affectedByLayover=" + affectedByLayover + ", block="
+				+ block + ", tripTag=" + tripTag
+				+ ", dirTitleBecauseNoPredictions="
+				+ dirTitleBecauseNoPredictions + "]";
 	}
 
 }

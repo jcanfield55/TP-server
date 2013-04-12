@@ -5,17 +5,26 @@ package com.nimbler.tp.service;
 
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.mongodb.BasicDBObject;
+import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.dataobject.ApnBundle;
+import com.nimbler.tp.mongo.MongoQueryConstant;
+import com.nimbler.tp.mongo.PersistenceService;
 import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.TpConstants;
+import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
 import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 import com.notnoop.apns.APNS;
 import com.notnoop.apns.ApnsDelegate;
@@ -43,13 +52,17 @@ public class APNService implements ApnsDelegate{
 	private boolean isQueued = false;	
 	private int cacheLenth = 1000;	
 	private List<ApnBundle> lstApnBundles;
-
+	@Autowired
+	private PersistenceService persistenceService;
+	private boolean runInactiveDeviceMonitorThread = true;
+	private int inactiveDeviceMonitorIntervalMin= 30;
 	private int MAX_PAYLOAD = 250;
 	private String	BODY_POST_FIX	= "...";
 
 	private ReconnectPolicy reconnectPolicy =  new EveryHalfHour();
 
 	private Map<NIMBLER_APP_TYPE, ApnsService> serviceMap = null;
+	private static final boolean _debug = false;
 
 	public enum APN_CERT_TYPE{
 		UNDEFINED,
@@ -68,6 +81,20 @@ public class APNService implements ApnsDelegate{
 		serviceMap = new HashMap<TpConstants.NIMBLER_APP_TYPE, ApnsService>();
 		for (ApnBundle bundle : lstApnBundles) {
 			loadService(bundle);
+		}
+		if(runInactiveDeviceMonitorThread){
+			new Thread(){
+				public void run() {
+					while (true) {
+						try {
+							updateInactiveTokens();
+							ComUtils.sleep(inactiveDeviceMonitorIntervalMin*DateUtils.MILLIS_PER_MINUTE);
+						} catch (Exception e) {
+							logger.error(loggerName, e);
+						}
+					}
+				};
+			}.start();
 		}
 	}
 
@@ -91,7 +118,7 @@ public class APNService implements ApnsDelegate{
 			if(reconnectPolicy!=null)
 				serviceBuilder = serviceBuilder.withReconnectPolicy(reconnectPolicy.copy());
 			serviceBuilder = serviceBuilder.withCacheLength(cacheLenth);			
-			ApnsService service = serviceBuilder.withDelegate(this).build();			
+			ApnsService service = serviceBuilder.withDelegate(this).build();
 			serviceMap.put(bundle.getAppType(), service);
 		} catch (InvalidSSLConfig e) {
 			e.printStackTrace();
@@ -240,6 +267,92 @@ public class APNService implements ApnsDelegate{
 			logger.error(loggerName,"Error While closing APN service:",e);   
 		}
 	}
+	/**
+	 * Fetch inactive device tokens from Apple APNS service and
+	 * update them in database. These devices will not get push 
+	 * notifications next time. 
+	 */
+	public void updateInactiveTokens() {
+		try {
+			int PAGE_SIZE = 200;
+			logger.debug(loggerName, "Checking fo for inactive tokens...");
+			if (serviceMap==null || serviceMap.size()==0) {
+				logger.warn(loggerName, "No APN service found.");
+				return;
+			}
+			for (Map.Entry<NIMBLER_APP_TYPE, ApnsService> entry : serviceMap.entrySet()) {
+				NIMBLER_APP_TYPE appType = entry.getKey();
+				ApnsService apnsService = entry.getValue();
+				Map<String, Date> inactiveDevices = apnsService.getInactiveDevices();				
+				printDevices(inactiveDevices,appType);				
+				if (inactiveDevices!=null && inactiveDevices.size()>0) {					
+					List<Object[]> tokensToUpdate  = getLowerCaseListArray(inactiveDevices.keySet(),PAGE_SIZE);
+					for (Object[] tokens : tokensToUpdate) {
+						BasicDBObject query = new BasicDBObject();					
+						query.put(TpConstants.DEVICE_TOKEN, new BasicDBObject(MongoQueryConstant.IN,tokens));				
+						query.put(TpConstants.APP_TYPE, appType.ordinal());
+						Map<String, Object> map = new HashMap<String, Object>();
+						map.put(TpConstants.NUMBER_OF_ALERT, TpConstants.INACTIVE_DEVICES_NO_OF_ALEARTS);
+						int res = persistenceService.updateMulti(MONGO_TABLES.users.name(), query, map);
+						logger.info(loggerName, "updated devices: "+res);
+					}
+				}
+			}
+		} catch (DBException dbe) {
+			logger.error(loggerName, "Error while updating invalid device tokens: ",dbe); 
+		} catch (Exception e) {
+			logger.error(loggerName, "Error while updating invalid device tokens: ",e); 
+		}
+	}
+
+	/**
+	 * Gets the lower case list array.
+	 *
+	 * @param keySet the key set
+	 * @param pageSize the page size
+	 * @return the lower case list array
+	 */
+	private static List<Object[]> getLowerCaseListArray(Collection<String> keySet,int pageSize) {
+		List<Object[]> res = new ArrayList<Object[]>();
+		int i = 1;
+		int totalsize = keySet.size();
+		List<String> elementObj = new ArrayList<String>();
+		for (String token : keySet) {
+			if(!ComUtils.isEmptyString(token)){
+				elementObj.add(token.toLowerCase());
+			}
+			if(i%pageSize==0 || i==totalsize){
+				res.add(elementObj.toArray());
+				elementObj = new ArrayList<String>();
+			}
+			i++;
+		}
+		return res;
+	}
+
+	/**
+	 * Prints the devices.
+	 *
+	 * @param inactiveDevices the inactive devices
+	 * @param appType the app type
+	 */
+	private void printDevices(Map<String, Date> inactiveDevices, NIMBLER_APP_TYPE appType) {
+		try {
+			if(inactiveDevices==null || inactiveDevices.size()==0){
+				logger.info(loggerName, "No inactive Devide found");			
+				return;
+			}
+			logger.info(loggerName, "Inactive devices for app type: "+appType.name());
+			for (Map.Entry<String, Date> entry : inactiveDevices.entrySet()) {
+				String key = entry.getKey();
+				Date value = entry.getValue();
+				logger.debug(loggerName,"      "+ key+"="+value);
+			}
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+		}
+
+	}
 
 	public LoggingService getLogger() {
 		return logger;
@@ -284,6 +397,26 @@ public class APNService implements ApnsDelegate{
 		return sound;
 	}
 
+
+	public boolean isRunInactiveDeviceMonitorThread() {
+		return runInactiveDeviceMonitorThread;
+	}
+
+	public void setRunInactiveDeviceMonitorThread(
+			boolean runInactiveDeviceMonitorThread) {
+		this.runInactiveDeviceMonitorThread = runInactiveDeviceMonitorThread;
+	}
+
+	public int getInactiveDeviceMonitorIntervalMin() {
+		return inactiveDeviceMonitorIntervalMin;
+	}
+
+	public void setInactiveDeviceMonitorIntervalMin(
+			int inactiveDeviceMonitorIntervalMin) {
+		this.inactiveDeviceMonitorIntervalMin = inactiveDeviceMonitorIntervalMin;
+	}
+
+
 	public int getMAX_PAYLOAD() {
 		return MAX_PAYLOAD;
 	}
@@ -323,24 +456,28 @@ public class APNService implements ApnsDelegate{
 
 	@Override
 	public void cacheLengthExceeded(int newCacheLength) {
-		//		System.out.println("APNService.cacheLengthExceeded() --> newCacheLength: "+ newCacheLength);
+		if(_debug)
+			System.out.println("APNService.cacheLengthExceeded() --> newCacheLength: "+ newCacheLength);
 		logger.warn(loggerName, "newCacheLength: " + newCacheLength);
 	}
 	@Override
 	public void connectionClosed(DeliveryError deliveryerror, int i) {
-		//		System.out.println("DeliveryError: "+ deliveryerror+", int: "+ i);		
+		if(_debug)
+			System.out.println("APNService.connectionClosed() --> deliveryerror: "	+ deliveryerror + " i: " + i);
 		logger.warn(loggerName, "DeliveryError: "+ deliveryerror+", int: "+ i);		
 	}
 
 	@Override
 	public void messageSendFailed(ApnsNotification apnsnotification,Throwable throwable) {
-		//		System.out.println("APNService.messageSendFailed() --> apnsnotification: "	+ apnsnotification + " throwable: " + throwable);
-		logger.warn(loggerName,"ApnsNotification: "+ apnsnotification+", Throwable: "+ throwable);
+		if(_debug)
+			System.out.println("APNService.messageSendFailed() --> apnsnotification: "	+ apnsnotification + " throwable: " + throwable);
+		logger.warn(loggerName, "apnsnotification: " + apnsnotification+ " throwable: " + throwable);
 	}
 
 	@Override
 	public void notificationsResent(int resendCount) {
-		//		System.out.println("APNService.notificationsResent() --> resendCount: "	+ resendCount);
+		if(_debug)
+			System.out.println("APNService.notificationsResent() --> resendCount: "	+ resendCount);
 		logger.debug(loggerName, "resendCount: " + resendCount);
 
 	}

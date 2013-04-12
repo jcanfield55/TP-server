@@ -154,6 +154,7 @@ public class TpConstants {
 
 	public static final int ROUTE_DIRECTION_OUTBOUND = 0;
 	public static final int ROUTE_DIRECTION_INBOUND = 1;
+	public static final int INACTIVE_DEVICES_NO_OF_ALEARTS = -2;
 
 	public enum NIMBLER_APP_TYPE {
 		DEFAULT(""),//0

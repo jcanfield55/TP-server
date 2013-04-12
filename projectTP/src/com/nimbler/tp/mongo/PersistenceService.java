@@ -559,6 +559,12 @@ public class PersistenceService {
 	 * @throws DBException the dB exception
 	 */
 	public int update(String collectionName,BasicDBObject query, Map<String, Object> map) throws DBException {
+		return update(collectionName, query, map,false);
+	}
+	public int updateMulti(String collectionName,BasicDBObject query, Map<String, Object> map) throws DBException {
+		return update(collectionName, query, map,true);
+	}
+	public int update(String collectionName,BasicDBObject query, Map<String, Object> map,boolean multi) throws DBException {
 		try {
 			DBCollection collection = mongoOpetation.getCollection(collectionName);
 			BasicDBObject columnToUpdate = new BasicDBObject();
@@ -569,7 +575,11 @@ public class PersistenceService {
 				columnToUpdate.append(key, value);
 			}
 			BasicDBObject multipleColumnUpdate = new BasicDBObject().append(MongoQueryConstant.SET, columnToUpdate);
-			WriteResult res =  collection.update(query, multipleColumnUpdate);
+			WriteResult res = null;
+			if(multi)
+				res = collection.updateMulti(query, multipleColumnUpdate);
+			else
+				res = collection.update(query, multipleColumnUpdate);
 			if(res.getError()!=null || res.getN()==0){
 				logger.error(loggerName, "Update Failed,  Error:"+res.getError()+", count: "+res.getN()+", LastError"+res.getLastError());
 			}

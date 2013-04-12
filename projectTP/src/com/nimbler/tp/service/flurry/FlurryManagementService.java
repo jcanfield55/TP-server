@@ -61,7 +61,6 @@ public class FlurryManagementService {
 	@PostConstruct
 	private void init() {
 		logger.debug(loggerName, "Service Started....");
-
 	}
 	/**
 	 * Request daily flurry report.
@@ -80,12 +79,13 @@ public class FlurryManagementService {
 	 * @param startTime the start time
 	 * @param endTime the end time
 	 */
+	@SuppressWarnings({ "cast", "unchecked" })
 	public void retryRequestDailyFlurryReport() {
 		try {
 			List<FlurryReportStatus> lstFlurryReportStatus = null;  
 			lstFlurryReportStatus = (List<FlurryReportStatus>) persistenceService.findByInFlurry(
 					MONGO_TABLES.flurry_report_status.name(), 
-					"status", new Integer[]{ FLURRY_EVENT_CALL_STATUS.REQUEST_FAILED.ordinal()},
+					"status", new Integer[]{ FLURRY_EVENT_CALL_STATUS.REQUEST_FAILED.ordinal(),FLURRY_EVENT_CALL_STATUS.GENERATE_FAILED.ordinal()},
 					"tryCount",3,FlurryReportStatus.class);
 
 			if(ComUtils.isEmptyList(lstFlurryReportStatus)){

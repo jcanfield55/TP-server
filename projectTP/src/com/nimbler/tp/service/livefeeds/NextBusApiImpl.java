@@ -26,6 +26,7 @@ import com.nimbler.tp.dataobject.nextbus.Predictions;
 import com.nimbler.tp.gtfs.GtfsDataService;
 import com.nimbler.tp.gtfs.TripStopIndex;
 import com.nimbler.tp.service.livefeeds.cache.NextBusPredictionCache;
+import com.nimbler.tp.util.GtfsUtils;
 import com.nimbler.tp.util.PlanUtil;
 import com.nimbler.tp.util.TpConstants;
 import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
@@ -63,7 +64,7 @@ public class NextBusApiImpl implements RealTimeAPI {
 	public LegLiveFeed getLiveFeeds(Leg leg) throws FeedsNotFoundException {
 		LegLiveFeed resp = null;
 		try {
-			//			System.out.println(leg.getTripId()+"-->"+new Date(leg.getStartTime()));
+			//System.out.println(leg.getTripId()+"-->"+new Date(leg.getStartTime()));
 			Long scheduledTime = leg.getStartTime();
 			String agencyId = leg.getAgencyId();
 			String agencyTag = agencyMap.get(agencyId);
@@ -84,58 +85,57 @@ public class NextBusApiImpl implements RealTimeAPI {
 			if (directions==null)
 				throw new RealTimeDataException("Directions not found in Prediction response " +
 						"for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);
-			StringBuilder sb = new StringBuilder();
-			for (Direction direction : directions) {				
-				List<Prediction> predictionList = direction.getPrediction();
-				if (predictionList==null || predictionList.size()==0)
-					throw new RealTimeDataException("Predictions objects not found in Prediction response " +
-							"for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);	
 
-				for (Prediction prediction : predictionList) {
-					sb.append(prediction.getTripTag()+"--"+prediction.getMinutes()+", ");
-					if (prediction.getTripTag().equalsIgnoreCase(leg.getTripId()) && direction.getTitle().toLowerCase().contains(leg.getHeadsign().toLowerCase())) {						
-						resp = new LegLiveFeed();
-						Long predictedTime = prediction.getEpochTime();
-						if(_verbose){
-							System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-							System.out.println("From Stop: "+leg.getFrom().getName()+" -- To Stop: "+leg.getTo().getName()+" -- Route: "+routeTag);
-							System.out.println("Scheduled: "+ scheduledTime+" -- > "+new Date(scheduledTime));
-							System.out.println("Predicted: "+ predictedTime+" -- > "+new Date(predictedTime)+" ("+prediction.getMinutes()+")");
-							System.out.println("Direction: "+leg.getHeadsign()+"-->"+direction.getTitle());
-							System.out.println("");
-						}
-						if (scheduledTime < predictedTime) {
-							int diff = (int) (predictedTime - scheduledTime);
-							diff = diff /( 1000 * 60);
-							if (diff > timeDiffercenceInMin)
-								resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.DELAYED.ordinal());
-							else
-								resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
-							if(_verbose)
-								System.out.println("Difference: "+diff);
-							resp.setTimeDiffInMins(diff);
-						} else {
-							int diff = (int) (scheduledTime - predictedTime);
-							diff = diff /( 1000 * 60);
-							if (diff > timeDiffercenceInMin)
-								resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.EARLY.ordinal());
-							else
-								resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
+			if(_verbose){
+				System.out.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+				System.out.println("From Stop: "+leg.getFrom().getName()+"("+leg.getFrom().getStopId().getId()+") -- To Stop: "+leg.getTo().getName()+"("+leg.getTo().getStopId().getId()+") -- Route: "+routeTag);
+				System.out.println("Scheduled: "+ scheduledTime+" -- > "+new Date(scheduledTime));
+			}
+			OUTER: 
+				for (Direction direction : directions) {				
+					List<Prediction> predictionList = direction.getPrediction();
+					if (predictionList==null || predictionList.size()==0)
+						throw new RealTimeDataException("Predictions objects not found in Prediction response " +
+								"for Agency: "+agencyId+", Stop Tag: "+fromStopTag+", Route Tag: "+routeTag);	
+					for (Prediction prediction : predictionList) {
+						//if (prediction.getTripTag().equalsIgnoreCase(leg.getTripId())) {	//removed for actransit with substring trip id match					
+						if (isTripIdSame(prediction, leg, agencyTag)) {						
+							resp = new LegLiveFeed();
+							Long predictedTime = prediction.getEpochTime();
+							if(_verbose){								
+								System.out.println("Predicted: "+ predictedTime+" -- > "+new Date(predictedTime)+" ("+prediction.getMinutes()+")");
+								System.out.println("Direction: "+leg.getHeadsign()+"-->"+direction.getTitle());
+								System.out.println("");
+							}
+							if (scheduledTime < predictedTime) {
+								int diff = (int) (predictedTime - scheduledTime);
+								diff = diff /( 1000 * 60);
+								if (diff > timeDiffercenceInMin)
+									resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.DELAYED.ordinal());
+								else
+									resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
+								if(_verbose)
+									System.out.println("Difference: "+diff);
+								resp.setTimeDiffInMins(diff);
+							} else {
+								int diff = (int) (scheduledTime - predictedTime);
+								diff = diff /( 1000 * 60);
+								if (diff > timeDiffercenceInMin)
+									resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.EARLY.ordinal());
+								else
+									resp.setArrivalTimeFlag(TpConstants.ETA_FLAG.ON_TIME.ordinal());
 
-							resp.setTimeDiffInMins(diff); 
-							//							System.out.println("Difference: "+diff);
+								resp.setTimeDiffInMins(diff); 
+							}
+							resp.setLeg(leg);
+							resp.setDepartureTime(predictedTime);
+							PlanUtil.setArrivalTime(resp);
+							break OUTER;
+						}else if(_verbose){
+							System.out.println("Non Matched: "+prediction.finePrint());
 						}
-						/*System.out.println(resp.getArrivalTimeFlag());
-						System.out.println("-----------------------------------------------------------------");*/
-						resp.setLeg(leg);
-						resp.setDepartureTime(predictedTime);
-						PlanUtil.setArrivalTime(resp);
-						break;
 					}
 				}
-				if (resp!=null)
-					break;
-			}
 			if (resp == null ) {				
 				//				System.err.println("Real time feeds not found for Trip: "+leg.getTripId()+", From: "+leg.getFrom()+", To: "
 				//						+leg.getTo()+", Starting at: "+new Date(leg.getStartTime())+"-->"+sb.toString()+
@@ -224,6 +224,13 @@ public class NextBusApiImpl implements RealTimeAPI {
 			res= tripStopIndex.isValidStopsForTrip(AGENCY_TYPE.SFMUNI,trip, from, to);
 		}
 		return res;
+	}
+	private boolean isTripIdSame(Prediction prediction, Leg leg, String agencyTag) {
+		String realTimeTripId =  prediction.getTripTag();		
+		String tripID = leg.getTripId();
+		if(equalsIgnoreCase(agencyTag, NEXTBUS_API_NAME.AC_TRANSIT.getName()))
+			tripID = GtfsUtils.getACtransitGtfsTripIdFromApiId(tripID);
+		return equalsIgnoreCase(tripID, realTimeTripId);
 	}
 
 	/**
