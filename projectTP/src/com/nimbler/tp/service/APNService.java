@@ -4,6 +4,8 @@
 package com.nimbler.tp.service;
 
 
+import static org.apache.commons.lang3.StringUtils.trimToNull;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,8 +20,8 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.mongodb.BasicDBObject;
-import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.dataobject.ApnBundle;
+import com.nimbler.tp.dbobject.User.USER_STATE;
 import com.nimbler.tp.mongo.MongoQueryConstant;
 import com.nimbler.tp.mongo.PersistenceService;
 import com.nimbler.tp.util.ComUtils;
@@ -35,6 +37,8 @@ import com.notnoop.apns.DeliveryError;
 import com.notnoop.apns.PayloadBuilder;
 import com.notnoop.apns.ReconnectPolicy;
 import com.notnoop.apns.internal.ReconnectPolicies.EveryHalfHour;
+import com.notnoop.apns.internal.Utilities;
+import com.notnoop.exceptions.ApnsDeliveryErrorException;
 import com.notnoop.exceptions.InvalidSSLConfig;
 import com.notnoop.exceptions.NetworkIOException;
 /**
@@ -283,23 +287,25 @@ public class APNService implements ApnsDelegate{
 			for (Map.Entry<NIMBLER_APP_TYPE, ApnsService> entry : serviceMap.entrySet()) {
 				NIMBLER_APP_TYPE appType = entry.getKey();
 				ApnsService apnsService = entry.getValue();
-				Map<String, Date> inactiveDevices = apnsService.getInactiveDevices();				
-				printDevices(inactiveDevices,appType);				
-				if (inactiveDevices!=null && inactiveDevices.size()>0) {					
-					List<Object[]> tokensToUpdate  = getLowerCaseListArray(inactiveDevices.keySet(),PAGE_SIZE);
-					for (Object[] tokens : tokensToUpdate) {
-						BasicDBObject query = new BasicDBObject();					
-						query.put(TpConstants.DEVICE_TOKEN, new BasicDBObject(MongoQueryConstant.IN,tokens));				
-						query.put(TpConstants.APP_TYPE, appType.ordinal());
-						Map<String, Object> map = new HashMap<String, Object>();
-						map.put(TpConstants.NUMBER_OF_ALERT, TpConstants.INACTIVE_DEVICES_NO_OF_ALEARTS);
-						int res = persistenceService.updateMulti(MONGO_TABLES.users.name(), query, map);
-						logger.info(loggerName, "updated devices: "+res);
+				try {
+					Map<String, Date> inactiveDevices = apnsService.getInactiveDevices();				
+					printDevices(inactiveDevices,appType);				
+					if (inactiveDevices!=null && inactiveDevices.size()>0) {					
+						List<Object[]> tokensToUpdate  = getLowerCaseListArray(inactiveDevices.keySet(),PAGE_SIZE);
+						for (Object[] tokens : tokensToUpdate) {
+							BasicDBObject query = new BasicDBObject();					
+							query.put(TpConstants.DEVICE_TOKEN, new BasicDBObject(MongoQueryConstant.IN,tokens));				
+							query.put(TpConstants.APP_TYPE, appType.ordinal());
+							Map<String, Object> map = new HashMap<String, Object>();
+							map.put(TpConstants.NUMBER_OF_ALERT, TpConstants.INACTIVE_DEVICES_NO_OF_ALEARTS);
+							int res = persistenceService.updateMulti(MONGO_TABLES.users.name(), query, map);
+							logger.info(loggerName, "updated devices: "+res);
+						}
 					}
+				} catch (Exception e) {
+					logger.error(loggerName, "error while getting inactive token, appType:"+appType,e);					
 				}
 			}
-		} catch (DBException dbe) {
-			logger.error(loggerName, "Error while updating invalid device tokens: ",dbe); 
 		} catch (Exception e) {
 			logger.error(loggerName, "Error while updating invalid device tokens: ",e); 
 		}
@@ -343,10 +349,14 @@ public class APNService implements ApnsDelegate{
 				return;
 			}
 			logger.info(loggerName, "Inactive devices for app type: "+appType.name());
+			if(_debug)
+				System.out.println( "Inactive devices for app type: "+appType.name());
 			for (Map.Entry<String, Date> entry : inactiveDevices.entrySet()) {
 				String key = entry.getKey();
 				Date value = entry.getValue();
 				logger.debug(loggerName,"      "+ key+"="+value);
+				if(_debug)
+					System.out.println("      "+ key+"="+value);
 			}
 		} catch (Exception e) {
 			logger.error(loggerName, e);
@@ -469,9 +479,23 @@ public class APNService implements ApnsDelegate{
 
 	@Override
 	public void messageSendFailed(ApnsNotification apnsnotification,Throwable throwable) {
-		if(_debug)
-			System.out.println("APNService.messageSendFailed() --> apnsnotification: "	+ apnsnotification + " throwable: " + throwable);
-		logger.warn(loggerName, "apnsnotification: " + apnsnotification+ " throwable: " + throwable);
+		try {
+			if(_debug)
+				System.out.println("APNService.messageSendFailed() --> apnsnotification: "	+ apnsnotification + " throwable: " + throwable);
+			logger.warn(loggerName, "apnsnotification: " + apnsnotification+ " throwable: " + throwable);
+			if(throwable instanceof ApnsDeliveryErrorException){
+				String token = trimToNull(Utilities.encodeHex(apnsnotification.getDeviceToken()));
+				int code = ((ApnsDeliveryErrorException)throwable).getDeliveryError().code();
+				if(code == DeliveryError.INVALID_TOKEN.code() && token!=null){
+					token = token.toLowerCase();
+					int count = persistenceService.updateSingleIntObject(MONGO_TABLES.users.name(),TpConstants.DEVICE_TOKEN,
+							token, TpConstants.NUMBER_OF_ALERT,USER_STATE.INVALID_TOKEN_FOR_PUSH.code());
+					logger.warn(loggerName, count+" - "+token + "(s) marked "+USER_STATE.INVALID_TOKEN_FOR_PUSH.code());
+				}
+			}	 
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+		}
 	}
 
 	@Override

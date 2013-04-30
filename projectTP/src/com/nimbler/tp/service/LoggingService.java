@@ -67,8 +67,7 @@ public class LoggingService {
 
 	public void debug(String loggerName, String message,String...values) {
 		message = format(message,values);
-		Logger logger = loggers.get(loggerName);
-		logger.debug(getClassName()+message);
+		debug(loggerName, message);
 	}
 	/**
 	 * 

@@ -31,7 +31,9 @@ import org.onebusaway.gtfs.serialization.GtfsReader;
 
 import com.nimbler.tp.dataobject.BartRouteInfo;
 import com.nimbler.tp.dataobject.Itinerary;
+import com.nimbler.tp.dataobject.NimblerGtfsAgency;
 import com.nimbler.tp.dataobject.TripResponse;
+import com.nimbler.tp.gtfs.GtfsBundle;
 import com.nimbler.tp.gtfs.GtfsCalandeDates;
 import com.nimbler.tp.gtfs.GtfsCalander;
 import com.nimbler.tp.gtfs.GtfsMonitorResult;
@@ -116,7 +118,10 @@ public class GtfsUtils {
 	 * @throws TpException the tp exception
 	 */
 	public List<String> getColumnsFromFile(File file,String[] columns,String entryName) throws IOException, ParseException, TpException {
-		List<String> res = new ArrayList<String>();
+		return getColumnsFromFile(file, columns, entryName,true,true);
+	}
+	public List getColumnsFromFile(File file,String[] columns,String entryName,boolean join,boolean withHeader) throws IOException, ParseException, TpException {
+		List res = new ArrayList();
 		if(file == null || !file.exists() || columns==null)
 			return res;
 		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file,entryName),GTFS_ENCODE_FORMAT);
@@ -133,7 +138,9 @@ public class GtfsUtils {
 					colIndex[i]=j;
 			}
 		}
-		res.add(StringUtils.join(columns,","));
+		if(withHeader){
+			res.add(join?StringUtils.join(columns,","):columns);
+		}
 		for (int i = 1; i < lstLines.size(); i++) {					
 			try {
 				String line = lstLines.get(i);
@@ -149,8 +156,7 @@ public class GtfsUtils {
 					if(colIndex[j] !=-1 && colIndex[j] < arrLines.length && arrLines[colIndex[j]]!=null)
 						temp[j] =arrLines[colIndex[j]];
 				}
-
-				res.add(StringUtils.join(temp,","));
+				res.add(join?StringUtils.join(temp,","):temp);
 			} catch (Exception e) {				
 				logger.error(loggerName,"Malformed data Found at line "+i+", data: "+lstLines.get(i),e);				
 			}
@@ -656,5 +662,17 @@ public class GtfsUtils {
 	}
 	public static String getACtransitGtfsTripIdFromApiId(String tripID) {
 		return  substringBefore(tripID, "-");
+	}
+
+	public static NimblerGtfsAgency getAgencyDetail(GtfsBundle bundle,boolean extended) {
+		NimblerGtfsAgency agency = new NimblerGtfsAgency();
+		if(extended){
+			agency.setLastUpdate(bundle.getLastUpdateDate());
+			agency.setAgencyType(bundle.getAgencyType());
+		}
+		agency.setNimberAgencyId(bundle.getAgencyType().ordinal());
+		agency.setAgencies(bundle.getAgencies());
+		agency.setExclusionType(bundle.getExclusionType().getText());
+		return agency;
 	}
 }

@@ -29,6 +29,7 @@ public class OperationCode {
 		INVALID_REQUEST(106, "Invalid Request"),
 		DATA_NOT_EXIST(107, "Data Not Exist"),
 		PERMITION_DENIED(108, "Operation Not Permitted"),
+		USER_ALREADY_EXIST(109, "User Already Exist"),
 		INTERNAL_SERVER_ERROR(500, "Internal Server Error");
 
 		private static final Map<Integer,TP_CODES> lookup	= new HashMap<Integer,TP_CODES>();

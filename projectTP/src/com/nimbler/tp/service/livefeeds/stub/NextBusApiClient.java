@@ -1,3 +1,6 @@
+/*
+ * @author nirmal
+ */
 package com.nimbler.tp.service.livefeeds.stub;
 
 import java.util.List;
@@ -149,6 +152,36 @@ public class NextBusApiClient {
 			throw new RealTimeDataException("Error while getting Next Bus Api prediction "+uie.getMessage());
 		}
 	}
+
+	/**
+	 * Gets the vehicle position.
+	 *
+	 * @param agencyId the agency id
+	 * @param routeTag the route tag
+	 * @param time the time
+	 * @return the vehicle position
+	 * @throws RealTimeDataException the real time data exception
+	 */
+	public NextBusResponse getVehiclePosition(String agencyId, String routeTag,String time) throws RealTimeDataException {
+		try {
+			WebResource webResource = client.resource(baseUrl);
+			MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+			queryParams.add("command", "vehicleLocations");
+			queryParams.add("a", agencyId);
+			if(routeTag!=null)
+				queryParams.add("r", routeTag	);
+			queryParams.add("t", time);
+			ClientResponse resp = webResource.queryParams(queryParams).accept("text/xml").get(ClientResponse.class);			
+			NextBusResponse response =  resp.getEntity(NextBusResponse.class);
+			return response;
+		} catch (ClientHandlerException e) {
+			logger.error(loggerName, e);
+			throw new RealTimeDataException("Error while getting Next Bus VehiclePosition "+e.getMessage());
+		} catch (UniformInterfaceException uie) {
+			logger.error(loggerName, uie);
+			throw new RealTimeDataException("Error while getting Next Bus VehiclePosition "+uie.getMessage());
+		}
+	}
 	public String getBaseUrl() {
 		return baseUrl;
 	}
@@ -170,4 +203,5 @@ public class NextBusApiClient {
 	public void setLogger(LoggingService logger) {
 		this.logger = logger;
 	}
+
 }

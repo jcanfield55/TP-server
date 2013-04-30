@@ -65,6 +65,7 @@ public class RequestParam {
 	public static final String ENABLE_URGENT_NOTIFICATION 	= "enableUrgntNotifSound";
 	public static final String FOR_TODAY = "forToday";	
 	public static final String REQ_ID = "reqId";
+	public static final String DUMMY_TOKEN_ID 		= "dummyTokenId";
 
 	public static final String SAVE_PLAN = "savePlan";
 

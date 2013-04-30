@@ -3,6 +3,7 @@
  */
 package com.nimbler.tp.dataobject;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -23,10 +24,20 @@ public class TPResponse {
 	private String appType = null;
 	private String appBundleId = null;
 	private Map data = null;
+	List<NimblerGtfsAgency> agencies;
 
 	public TPResponse() {
 
 	}
+
+	public List<NimblerGtfsAgency> getAgencies() {
+		return agencies;
+	}
+
+	public void setAgencies(List<NimblerGtfsAgency> agencies) {
+		this.agencies = agencies;
+	}
+
 	public Map getData() {
 		return data;
 	}

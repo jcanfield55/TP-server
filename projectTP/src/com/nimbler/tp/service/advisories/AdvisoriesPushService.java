@@ -317,7 +317,7 @@ public class AdvisoriesPushService {
 	 */
 	private void pushTweetToBart(int appIdentifier, long lastTimeLeg) {
 		try {			
-			logger.debug(loggerName, "sending tweet to bart...");
+			logger.debug(loggerName, "sending tweet to bart..."+appIdentifier);
 			List<Tweet> tweetList  = TweetStore.getInstance().getTweets(AGENCY_TYPE.BART.ordinal());
 			NimblerParams nimblerParams = 	(NimblerParams) persistenceService.findOne(
 					MONGO_TABLES.nimbler_params.name(),TpConstants.NIMBLER_PARAMS_NAME,
@@ -328,8 +328,10 @@ public class AdvisoriesPushService {
 			if(ComUtils.isEmptyList(tweetList)){
 				logger.debug(loggerName, "No tweet to send....");
 				return;
-			}			
+			}
+			//			System.out.println("last teet time: "+new Date(lastTweetSentTime));
 			Tweet latestTweet = tweetList.get(0);
+			//			System.out.println("latestTweete  : "+new Date(latestTweet.getTime()));
 			long maxTweetTime = Math.max(lastTweetSentTime,latestTweet.getTime());
 			ListIterator<Tweet> itrTweet = tweetList.listIterator(tweetList.size());
 			while (itrTweet.hasPrevious()) {

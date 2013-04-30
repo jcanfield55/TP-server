@@ -36,6 +36,12 @@ public class PlanLiveFeeds {
 	public void setLegLiveFeeds(List<LegLiveFeed> legLiveFeeds) {
 		this.legLiveFeeds = legLiveFeeds;
 	}
+	public void addLegLiveFeeds(LegLiveFeed feed) {
+		if(this.legLiveFeeds==null){
+			this.legLiveFeeds = new ArrayList<LegLiveFeed>();
+		}
+		this.legLiveFeeds.add(feed);
+	}
 
 	public String getPlanId() {
 		return planId;

@@ -3,6 +3,8 @@
  */
 package com.nimbler.tp.util;
 
+import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,16 +13,19 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
 import com.nimbler.tp.dataobject.TripPlan;
+import com.nimbler.tp.dataobject.UserStatistics;
 import com.nimbler.tp.dbobject.FeedBack;
 import com.nimbler.tp.dbobject.FeedBack.FEEDBACK_SOURCE_TYPE;
 import com.nimbler.tp.gtfs.GtfsMonitorResult;
 import com.nimbler.tp.gtfs.PlanCompareResult;
+import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 
 /**
  * The Class HtmlUtil.
@@ -501,6 +506,74 @@ public class HtmlUtil {
 				.replace("--source--", FEEDBACK_SOURCE_TYPE.values()[feedback.getSource()].name());
 		return otpFeedback;
 
+	}
+
+	public static String getUserStatistics(List<UserStatistics> lstStatistics) throws IOException {
+		String html = IOUtils.toString(HtmlUtil.class.getClassLoader().getResourceAsStream("conf/html/UserStatistics.html"));				
+		StringBuffer sb = new StringBuffer();
+		UserStatistics total = new UserStatistics();
+		for (UserStatistics statistics : lstStatistics) {
+			statistics.setAppName(NIMBLER_APP_TYPE.values()[statistics.getAppType()].getText());
+			total.setTotal(defaultIfNull(total.getTotal(),0)+statistics.getTotal());
+			total.setUninstalled(defaultIfNull(total.getUninstalled(),0)+statistics.getUninstalled());
+			total.setInvalid(defaultIfNull(total.getInvalid(),0)+statistics.getInvalid());
+
+			total.setCreateInLast24(defaultIfNull(total.getCreateInLast24(),0)+statistics.getCreateInLast24());
+			total.setCreateInLastWeek(defaultIfNull(total.getCreateInLastWeek(),0)+statistics.getCreateInLastWeek());
+			total.setCreateInLastMonth(defaultIfNull(total.getCreateInLastMonth(),0)+statistics.getCreateInLastMonth());
+
+			total.setUpdateInLast24(defaultIfNull(total.getUpdateInLast24(),0)+statistics.getUpdateInLast24());
+			total.setUpdateInLastWeek(defaultIfNull(total.getUpdateInLastWeek(),0)+statistics.getUpdateInLastWeek());
+			total.setUpdateInLastMonth(defaultIfNull(total.getUpdateInLastMonth(),0)+statistics.getUpdateInLastMonth());
+
+			total.setTotalPlan(defaultIfNull(total.getTotalPlan(),0)+statistics.getTotalPlan());
+			total.setPlanInLast24(defaultIfNull(total.getPlanInLast24(),0)+statistics.getPlanInLast24());
+			total.setPlanInLastWeek(defaultIfNull(total.getPlanInLastWeek(),0)+statistics.getPlanInLastWeek());
+			total.setPlanInLastMonth(defaultIfNull(total.getPlanInLastMonth(),0)+statistics.getPlanInLastMonth());
+
+			total.setSubscribedForEveryPush(defaultIfNull(total.getSubscribedForEveryPush(),0)+statistics.getSubscribedForEveryPush());
+			total.setSubscribedRarePush(defaultIfNull(total.getSubscribedRarePush(),0)+statistics.getSubscribedRarePush());
+			total.setDisabledPush(defaultIfNull(total.getDisabledPush(),0)+statistics.getDisabledPush());
+
+			total.setUsingCaltrainAdv(defaultIfNull(total.getUsingCaltrainAdv(),0)+statistics.getUsingCaltrainAdv());
+			total.setUsingBartAdv(defaultIfNull(total.getUsingBartAdv(),0)+statistics.getUsingBartAdv());
+			total.setUsingMuniAdv(defaultIfNull(total.getUsingMuniAdv(),0)+statistics.getUsingMuniAdv());
+			total.setUsingAcTransitAdv(defaultIfNull(total.getUsingAcTransitAdv(),0)+statistics.getUsingAcTransitAdv());
+		}
+		total.setAppName("Total");
+		lstStatistics.add(total);
+		for (UserStatistics statistics : lstStatistics) {
+			sb.append("<tr style=\"color: #000; background: #fff;\">");
+			sb.append("<td><div align=\"center\">"+statistics.getAppName()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getTotal()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getUninstalled()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getInvalid()+"</div></td>" );
+
+			sb.append("<td><div align=\"center\">"+statistics.getCreateInLast24()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getCreateInLastWeek()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getCreateInLastMonth()+"</div></td>" );
+
+			sb.append("<td><div align=\"center\">"+statistics.getUpdateInLast24()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getUpdateInLastWeek()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getUpdateInLastMonth()+"</div></td>" );
+
+			sb.append("<td><div align=\"center\">"+statistics.getTotalPlan()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getPlanInLast24()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getPlanInLastWeek()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getPlanInLastMonth()+"</div></td>" );
+
+			sb.append("<td><div align=\"center\">"+statistics.getSubscribedForEveryPush()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getSubscribedRarePush()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getDisabledPush()+"</div></td>" );
+
+			sb.append("<td><div align=\"center\">"+statistics.getUsingCaltrainAdv()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getUsingBartAdv()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getUsingMuniAdv()+"</div></td>" );
+			sb.append("<td><div align=\"center\">"+statistics.getUsingAcTransitAdv()+"</div></td>" );
+			sb.append("</tr>");
+		}
+		String res = html.replace("--data--", sb.toString());
+		return res;
 	}
 
 }

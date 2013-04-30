@@ -166,6 +166,7 @@ public class TpPlanRestService {
 	@POST
 	@Path("/nextlegs/")
 	@Produces({MediaType.APPLICATION_JSON})
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public String getNextLegs(@Context HttpServletRequest httpRequest){
 		TripResponse tripResponse = new TripResponse();
 		try {
@@ -183,7 +184,8 @@ public class TpPlanRestService {
 		} catch (Exception e) {
 			logger.error(loggerName, e);
 		}
-		return JSONUtil.getResponseJSON(tripResponse);
+		String res = JSONUtil.getResponseJSON(tripResponse);	
+		return res; 
 	}
 
 	/**

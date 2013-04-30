@@ -51,7 +51,7 @@ public class Leg {
 	 * For transit legs, the ID of the route.
 	 * For non-transit legs, null.
 	 */
-	public String routeId = null;
+	private String routeId = null;
 
 
 	private String agencyName;
@@ -145,6 +145,7 @@ public class Leg {
 	private Long duration;
 
 	private Long size;
+	private String vehicleId;
 
 	public void setDuration(long duration) {
 		this.duration = duration;
@@ -206,6 +207,14 @@ public class Leg {
 
 	public void setMode(String mode) {
 		this.mode = mode;
+	}
+
+	public String getVehicleId() {
+		return vehicleId;
+	}
+
+	public void setVehicleId(String vehicleId) {
+		this.vehicleId = vehicleId;
 	}
 
 	public String getRoute() {

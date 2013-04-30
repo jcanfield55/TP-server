@@ -22,6 +22,7 @@ import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.TpConstants;
 import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
 import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
+import com.nimbler.tp.util.TpException;
 /**
  * 
  * @author suresh
@@ -92,6 +93,45 @@ public class UserManagementService {
 			logger.error(loggerName, e.getMessage());
 		}
 	}
+
+	/**
+	 * @throws DBException 
+	 * @return 
+	 * @throws TpException 
+	 * Update token.
+	 *
+	 * @param deviceToken the device token
+	 * @param dummyId the dummy id
+	 * @throws  
+	 */
+	public int updateToken(String deviceToken, String dummyId,int appType) throws TpException, DBException {		
+		BasicDBObject query = new BasicDBObject();			
+		query.put(TpConstants.DEVICE_TOKEN,deviceToken);
+		query.put(TpConstants.APP_TYPE, appType);
+		int count = persistenceService.getCount(MONGO_TABLES.users.name(), query, User.class);
+		if(count>0){
+			persistenceService.deleteUser(deviceToken,appType);
+			logger.info(loggerName, "deleting early registered device token :"+deviceToken + "to replace dummy id: "+dummyId);
+			//System.out.println( "deleting early registered device token :"+deviceToken + "to replace dummy id: "+dummyId);
+		}
+		query = new BasicDBObject();			
+		query.put(TpConstants.DEVICE_TOKEN, dummyId);
+		query.put(TpConstants.APP_TYPE, appType);
+
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put(TpConstants.DEVICE_TOKEN,deviceToken);		
+		map.put(TpConstants.UPDATE_TIME, System.currentTimeMillis());
+		int updateCount = persistenceService.update(MONGO_TABLES.users.name(), query , map,false);
+		//System.out.println("update: "+updateCount);
+		return updateCount;
+	}
+
+	/**
+	 * Gets the user by device token.
+	 *
+	 * @param deviceTockens the device tockens
+	 * @return the user by device token
+	 */
 	public User getUserByDeviceToken(String deviceTockens) {
 		User res = null;
 		try {

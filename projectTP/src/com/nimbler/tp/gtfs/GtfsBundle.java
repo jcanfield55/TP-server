@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.nimbler.tp.dataobject.AgencyDetail;
 import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
 
 /**
@@ -17,15 +18,35 @@ import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
  * @author nirmal
  */
 public class GtfsBundle {
+
+	public enum ExclusionType{
+		DEFAULT("N/A"),
+		BY_AGENCY("By Agency"),
+		BY_RAIL_BUS("By Rail/Bus");
+		private ExclusionType(String text) {
+			this.text = text;
+		}		
+		String text;
+		public String getText() {
+			return text;
+		}
+	}
+
 	private String defaultAgencyId;
 	private String currentDataFile;
 	private String crackedDataFile;
 	private String downloadUrl;
 
 	private String lastUpdateDate;
+	private String advisoryName;
 	private List<String> agencyIds;
 	private List<GtfsCalander> lstCalanders;
 	private List<GtfsCalandeDates> lstCalandeDates;
+	List<AgencyDetail> agencies;
+
+	private String displayName; // used for exclusion button.
+	private ExclusionType exclusionType;
+
 	private boolean enableAgency = true;
 	private boolean enableHashing = true;
 
@@ -55,9 +76,30 @@ public class GtfsBundle {
 	public void setCurrentDataFile(String currentDataFile) {
 		this.currentDataFile = currentDataFile;
 	}
+
+	public String getAdvisoryName() {
+		return advisoryName;
+	}
+	public void setAdvisoryName(String advisoryName) {
+		this.advisoryName = advisoryName;
+	}
 	public String getDownloadUrl() {
 		return downloadUrl;
 	}
+	public ExclusionType getExclusionType() {
+		return exclusionType;
+	}
+	public void setExclusionType(ExclusionType exclusionType) {
+		this.exclusionType = exclusionType;
+	}
+	public String getDisplayName() {
+		return displayName;
+	}
+
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
+	}
+
 	public void setDownloadUrl(String downloadUrl) {
 		this.downloadUrl = downloadUrl;
 	}
@@ -86,6 +128,12 @@ public class GtfsBundle {
 	public void setLstCalandeDates(List<GtfsCalandeDates> lstCalandeDates) {
 		this.lstCalandeDates = lstCalandeDates;
 	}
+	public List<AgencyDetail> getAgencies() {
+		return agencies;
+	}
+	public void setAgencies(List<AgencyDetail> agencies) {
+		this.agencies = agencies;
+	}
 	public boolean isExtracted() {
 		return isExtracted;
 	}
@@ -112,6 +160,7 @@ public class GtfsBundle {
 	public boolean isEnableAgency() {
 		return enableAgency;
 	}
+
 	public void setEnableAgency(boolean enableAgency) {
 		this.enableAgency = enableAgency;
 	}

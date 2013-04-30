@@ -118,7 +118,7 @@ public class ApnsConnectionImpl implements ApnsConnection {
 							throw new IOException("Unexpected command byte " + command);
 						}
 						int statusCode = bytes[1] & 0xFF;
-                        DeliveryError e = DeliveryError.ofCode(statusCode);
+						DeliveryError e = DeliveryError.ofCode(statusCode);
 
 						int id = Utilities.parseBytes(bytes[2], bytes[3], bytes[4], bytes[5]);
 
@@ -174,7 +174,7 @@ public class ApnsConnectionImpl implements ApnsConnection {
 			}
 		}
 		Thread t = new MonitoringThread();
-        t.setDaemon(true);
+		t.setDaemon(true);
 		t.start();
 	}
 	// This method is only called from sendMessage.  sendMessage

@@ -208,76 +208,127 @@
 
 	<bean id="gtfsMonitoring" class="com.nimbler.tp.gtfs.GtfsDataMonitor"
 		init-method="init">
-		<property name="downloadDirectory" value="c:/otp_/GTFS/tmp/" />
+		<property name="downloadDirectory" value="E:/nimbler/GTFS/tmp/" />
 		<property name="loggerName">
 			<value>com.nimbler.tp.gtfs.GtfsDataMonitor</value>
-		</property>		
+		</property>
 	</bean>
 	<bean id="gtfsContext" class="com.nimbler.tp.gtfs.GtfsContext">
 		<property name="gtfsBundles">
-			<list>				
- 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+			<list>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="BART" />
-					<property name="currentDataFile" value="c:/otp_/gtfs//BART.zip" />
-					<property name="downloadUrl" value="http://bart.gov/dev/schedules/google_transit.zip" />
+					<property name="currentDataFile" value="E:/nimbler/GTFS/BART.zip" />
+					<property name="downloadUrl"
+						value="http://bart.gov/dev/schedules/google_transit.zip" />
 					<property name="lastUpdateDate" value="20120910" />
 					<property name="agencyType" value="BART" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="$agency_id" />
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="Menlo-Midday" />
-					<property name="currentDataFile" value="c:/otp_/gtfs//Menlo-Midday.zip" />
+					<property name="currentDataFile" value="E:/nimbler/GTFS/Menlo-Midday.zip" />
 					<property name="downloadUrl"
 						value="http://www.menlopark.org/departments/trn/google/google_transit.zip" />
 					<property name="lastUpdateDate" value="20120910" />
-					 <property name="agencyType" value="MENLO_MIDDAY" />
+					<property name="agencyType" value="MENLO_MIDDAY" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="Menlo" />
 				</bean>
-				 <bean class="com.nimbler.tp.gtfs.GtfsBundle">
-					<property name="defaultAgencyId" value="ACtransit" />
-					<property name="currentDataFile" value="c:/otp_/gtfs//ACtransit.zip" />
-					<property name="crackedDataFile" value="c:/otp_/gtfs//ACtransit_hack.zip" />
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="defaultAgencyId" value="AC Transit" />
+					<property name="currentDataFile"
+						value="E:\nimbler\GTFS\AC-GTFSExtJune152013\AC-GTFSExtJune152013.zip" />
 					<property name="downloadUrl"
 						value="http://www.actransit.org/wp-content/plugins/download-monitor/download.php?id=5" />
 					<property name="lastUpdateDate" value="20120910" />
 					<property name="agencyType" value="AC_TRANSIT" />
-				</bean> 
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="AC Transit" />
+
+				</bean>
 				<bean class="com.nimbler.tp.gtfs.CaltrainGtfsBundle">
 					<property name="defaultAgencyId" value="Caltrain" />
-					<property name="currentDataFile" value="c:/otp_/gtfs/Caltrain.zip" />
+					<property name="currentDataFile" value="E:/nimbler/GTFS/Caltrain.zip" />
 					<property name="downloadUrl"
 						value="http://www.caltrain.com/Assets/GTFS/caltrain/google_transit.zip" />
-						<property name="lastUpdateDate" value="20120912" />
+					<property name="lastUpdateDate" value="20120912" />
 					<property name="agencyType" value="CALTRAIN" />
-				</bean> 
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="Caltrain" />
+
+				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="SF-ferries" />
-					<property name="currentDataFile" value="c:/otp_/gtfs/SF-ferries.zip" />
-					<property name="downloadUrl" value="http://trilliumtransit.com/transit_feeds/sfbay-ferries-ca-us/gtfs.zip" />
+					<property name="currentDataFile" value="E:/nimbler/GTFS/SF-ferries.zip" />
+					<property name="downloadUrl"
+						value="http://trilliumtransit.com/transit_feeds/sfbay-ferries-ca-us/gtfs.zip" />
 					<property name="lastUpdateDate" value="20130106" />
-					<property name="enableAgency" value="false" />						
 					<property name="agencyType" value="SF_FERRIES" />
-				</bean> 
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="agencies">
+						<list>
+							<bean class="com.nimbler.tp.dataobject.AgencyDetail">
+								<property name="gtfsAgencyId" value="8" />
+								<property name="agencyName" value="Blue &amp; Gold Fleet" />
+								<property name="displayName" value="Blue &amp; Gold" />
+							</bean>
+							<bean class="com.nimbler.tp.dataobject.AgencyDetail">
+								<property name="gtfsAgencyId" value="10" />
+								<property name="agencyName" value="Harbor Bay Ferry" />
+								<property name="displayName" value="Harbor Bay" />
+							</bean>
+							<bean class="com.nimbler.tp.dataobject.AgencyDetail">
+								<property name="gtfsAgencyId" value="11" />
+								<property name="agencyName" value="Baylink" />
+								<property name="displayName" value="Baylink" />
+							</bean>
+							<bean class="com.nimbler.tp.dataobject.AgencyDetail">
+								<property name="gtfsAgencyId" value="12" />
+								<property name="agencyName" value="Golden Gate Ferry" />
+								<property name="displayName" value="Golden Gate" />
+							</bean>
+						</list>
+					</property>
+				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="VTA" />
-					<property name="currentDataFile" value="c:/otp_/gtfs//VTA.zip" />					
+					<property name="currentDataFile" value="E:/nimbler/GTFS//VTA.zip" />
 					<property name="downloadUrl"
-								value="http://www.vta.org/dev/data/google_transit.zip " />
+						value="http://www.vta.org/dev/data/google_transit.zip " />
 					<property name="lastUpdateDate" value="20130106" />
 					<property name="agencyType" value="VTA" />
-				</bean> 
-			 	<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="exclusionType" value="BY_RAIL_BUS" />
+					<property name="displayName" value="VTA" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="SFMTA" />
-					<property name="currentDataFile" value="c:/otp_/gtfs//SFMTA.zip" />					
-					<property name="downloadUrl" value="http://www.sfmta.com/transitdata/google_transit.zip" />
+					<property name="currentDataFile" value="E:/nimbler/GTFS//SFMTA.zip" />
+					<property name="downloadUrl"
+						value="http://www.sfmta.com/transitdata/google_transit.zip" />
 					<property name="lastUpdateDate" value="20130106" />
-						<property name="agencyType" value="SFMUNI" />
-				</bean>   
-			<!-- 	<bean class="com.nimbler.tp.gtfs.GtfsBundle">
-					<property name="defaultAgencyId" value="WMATA" />
-					<property name="currentDataFile" value="c:/otp_/gtfs/wmata.zip" />
-					<property name="agencyType" value="WMATA" />
-					<property name="downloadUrl" value="http://lrg.wmata.com/GTFS_data/google_transit.zip" />
-					<property name="lastUpdateDate" value="20130110" />
-				</bean>   -->
+					<property name="agencyType" value="SFMUNI" />
+					<property name="exclusionType" value="BY_RAIL_BUS" />
+					<property name="displayName" value="Muni" />
+
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="defaultAgencyId" value="samtrans-ca-us" />
+					<property name="currentDataFile" value="E:/nimbler/GTFS//SamTrans.zip" />
+					<property name="downloadUrl"
+						value="http://www.samtrans.com/Assets/GTFS/samtrans/google+transit+SamTrans+04-22-2013-My66BhE528ghop8.zipp" />
+					<property name="lastUpdateDate" value="20130406" />
+					<property name="agencyType" value="SAM_TRANS" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="$agency_name" />
+
+				</bean>
+				<!-- <bean class="com.nimbler.tp.gtfs.GtfsBundle"> <property name="defaultAgencyId" 
+					value="WMATA" /> <property name="currentDataFile" value="E:/nimbler/GTFS/wmata.zip" 
+					/> <property name="agencyType" value="WMATA" /> <property name="downloadUrl" 
+					value="http://lrg.wmata.com/GTFS_data/google_transit.zip" /> <property name="lastUpdateDate" 
+					value="20130110" /> </bean> -->
 			</list>
 		</property>
 	</bean>
@@ -291,7 +342,7 @@
 		
 	<bean id="dBHealthMonitoringService" class="com.nimbler.tp.gtfs.DBHealthMonitoringService" />
 	
-	<bean id="gtfsDataService" class="com.nimbler.tp.gtfs.GtfsDataService">
+	<bean id="gtfsDataService" class="com.nimbler.tp.gtfs.GtfsDataService">	
 	<property name="gtfsColums">
 		<map>
 			<entry key="agency" value="agency_id,agency_name,agency_url" />
@@ -301,9 +352,9 @@
 			<entry key="stop_times" value="trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,shape_dist_traveled" />
 			<entry key="calendar" value="service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date" />
 			<entry key="calendar_dates" value="service_id,date,exception_type" />
-			<entry key="fare_attributes" value="fare_id,price,currency_type,payment_method,transfers,transfer_duration" />
+		<!-- 	<entry key="fare_attributes" value="fare_id,price,currency_type,payment_method,transfers,transfer_duration" />
 			<entry key="fare_rules" value="fare_id,route_id,origin_id,destination_id,contains_id" />
-			<entry key="shapes" value="shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled" />
+			<entry key="shapes" value="shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled" /> -->
 <!-- 			<entry key="frequencies" value="" />
 			<entry key="transfers" value="" />
 			<entry key="feed_info" value="" /> -->

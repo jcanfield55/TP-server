@@ -20,12 +20,15 @@ import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.LegLiveFeed;
 import com.nimbler.tp.dataobject.RealTimePrediction;
 import com.nimbler.tp.dataobject.nextbus.Direction;
+import com.nimbler.tp.dataobject.nextbus.NbVehicle;
 import com.nimbler.tp.dataobject.nextbus.NextBusResponse;
 import com.nimbler.tp.dataobject.nextbus.Prediction;
 import com.nimbler.tp.dataobject.nextbus.Predictions;
+import com.nimbler.tp.dataobject.nextbus.VehiclePosition;
 import com.nimbler.tp.gtfs.GtfsDataService;
 import com.nimbler.tp.gtfs.TripStopIndex;
 import com.nimbler.tp.service.livefeeds.cache.NextBusPredictionCache;
+import com.nimbler.tp.service.livefeeds.cache.NextBusVehiclePositionCache;
 import com.nimbler.tp.util.GtfsUtils;
 import com.nimbler.tp.util.PlanUtil;
 import com.nimbler.tp.util.TpConstants;
@@ -47,7 +50,7 @@ public class NextBusApiImpl implements RealTimeAPI {
 	@Autowired
 	GtfsDataService gtfsDataService;
 
-	enum NEXTBUS_API_NAME{
+	public enum NEXTBUS_API_NAME{
 		AC_TRANSIT("actransit"),
 		SF_MUNI("sf-muni");
 		private NEXTBUS_API_NAME(String name){
@@ -204,6 +207,30 @@ public class NextBusApiImpl implements RealTimeAPI {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see com.nimbler.tp.service.livefeeds.RealTimeAPI#getVehiclePosition(com.nimbler.tp.dataobject.Leg)
+	 */
+	@Override
+	public VehiclePosition getVehiclePosition(Leg leg)	throws FeedsNotFoundException {
+		String agencyId = leg.getAgencyId();
+		String agencyTag = agencyMap.get(agencyId);
+		if (agencyTag==null)
+			throw new FeedsNotFoundException("Agency not supported for Real Time feeds: "+agencyId);
+		String vehicleID = leg.getVehicleId();
+		String routeName = leg.getRoute();		
+		String logData = "agencyId: "+agencyId+", route: "+routeName+", vehicleId:"+vehicleID;
+		NbVehicle nbVehicle = NextBusVehiclePositionCache.getInstance().getVehiclePosition(agencyTag, vehicleID);
+		if (nbVehicle==null){				
+			throw new FeedsNotFoundException("No Prediction"+ logData);
+		}		
+		VehiclePosition  position = VehiclePosition.of(nbVehicle);
+		position.setId(leg.getId());
+		position.setHeadsign(leg.getHeadsign());
+		position.setRouteShortName(leg.getRouteShortName());
+		position.setMode(leg.getMode());
+		return position;
+	}
+
 	/**
 	 * Checks if is direction match.
 	 *
@@ -340,9 +367,9 @@ public class NextBusApiImpl implements RealTimeAPI {
 	 */
 	private void setScheduleTimesInPredisction(	List<RealTimePrediction> lstRealTimePredictions, Leg leg, String agencyTag) {
 		AGENCY_TYPE type = null;
-		if("actransit".equalsIgnoreCase(agencyTag))
+		if(NEXTBUS_API_NAME.AC_TRANSIT.getName().equalsIgnoreCase(agencyTag))
 			type = AGENCY_TYPE.AC_TRANSIT;
-		else if("sf-muni".equalsIgnoreCase(agencyTag))
+		else if(NEXTBUS_API_NAME.SF_MUNI.getName().equalsIgnoreCase(agencyTag))
 			type = AGENCY_TYPE.SFMUNI;
 		if(type==null){
 			System.out.println("[ERROR] no agency type found for agencyTag: "+agencyTag);
@@ -374,6 +401,5 @@ public class NextBusApiImpl implements RealTimeAPI {
 	public void setOrphanGtfsRouteTag(Multimap<String, String> orphanGtfsRouteTag) {
 		this.orphanGtfsRouteTag = orphanGtfsRouteTag;
 	}
-
 
 }

@@ -35,7 +35,6 @@ import com.nimbler.tp.util.TpException;
  * @author nirmal
  *
  */
-@SuppressWarnings("unchecked")
 public class GtfsDataMonitor {
 
 	@Autowired

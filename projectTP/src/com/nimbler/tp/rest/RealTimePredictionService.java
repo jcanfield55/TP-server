@@ -6,7 +6,6 @@ package com.nimbler.tp.rest;
 import static org.apache.commons.lang3.StringUtils.replaceOnce;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +27,7 @@ import com.nimbler.tp.dataobject.LiveFeedResponse;
 import com.nimbler.tp.dataobject.PlanLiveFeeds;
 import com.nimbler.tp.dataobject.TraverseMode;
 import com.nimbler.tp.dataobject.TripPlan;
+import com.nimbler.tp.dataobject.nextbus.VehiclePosition;
 import com.nimbler.tp.mongo.PersistenceService;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.service.TpPlanService;
@@ -156,6 +156,34 @@ public class RealTimePredictionService {
 		String res =  getJsonResponse(response);
 		return res;
 	}
+	@POST
+	@Path("/vehiclePosition/")
+	@SuppressWarnings("unchecked")
+	public String getVehiclePosition(@Context HttpServletRequest httpRequest) {
+		PlanLiveFeeds response = new PlanLiveFeeds();
+		try {
+			Map<String,String> reqParam = ComUtils.parseMultipartRequest(httpRequest);
+			String strLegs = reqParam.get(RequestParam.LEGS);	
+			List<Leg> lstLegs =  JSONUtil.getLegsJson(strLegs);
+			if(ComUtils.isEmptyList(lstLegs))
+				throw new TpException(TP_CODES.INVALID_REQUEST.getCode(),"Error while getting JSON String from plan object.");
+
+			LegLiveFeed legLiveFeeds = getVehiclePositionsForLegs(lstLegs);
+			if (legLiveFeeds!=null && legLiveFeeds.getLstVehiclePositions()!=null && legLiveFeeds.getLstVehiclePositions().size()>0) 
+				response.addLegLiveFeeds(legLiveFeeds); 
+			else
+				response.setError(TP_CODES.DATA_NOT_EXIST.getCode());
+		} catch (TpException tpe) {
+			logger.error(loggerName, tpe.getErrMsg());
+			response.setError(tpe.getErrCode());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			response.setError(TP_CODES.FAIL.getCode());
+		}
+		String res =  getJsonResponse(response);
+		//System.out.println(res);
+		return res;
+	}
 
 	/**
 	 * Predict real time by legs.
@@ -247,6 +275,33 @@ public class RealTimePredictionService {
 			}
 		}
 		return lstRes;
+	}
+
+	/**
+	 * Gets the vehicle positions for legs.
+	 *
+	 * @param legs the legs
+	 * @return the vehicle positions for legs
+	 */
+	private LegLiveFeed getVehiclePositionsForLegs(List<Leg> legs) {
+		LegLiveFeed legLiveFeed = new LegLiveFeed();
+		//legs = getApplicableLegs(legs);	
+		if(ComUtils.isEmptyList(legs)){
+			//logger.debug(loggerName, "Live feeds not applicable for any of the legs: "+legs); 
+			return null;
+		}
+		for (Leg leg : legs) {
+			try {
+				RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg.getMode());
+				VehiclePosition vehiclePosition = liveFeedAPI.getVehiclePosition(leg);
+				if (vehiclePosition!=null) {
+					legLiveFeed.addVehiclePosition(vehiclePosition);
+				}
+			} catch (FeedsNotFoundException e) {
+				logger.info(loggerName, e.getMessage());
+			}
+		}
+		return legLiveFeed;
 	}
 
 	/**
@@ -477,7 +532,7 @@ public class RealTimePredictionService {
 			itinerary.addLeg(transit);
 			itinerary.addLeg(lastWalk);
 
-			System.out.println(JSONUtil.getJsonFromObj(itinerary.getLegs()));
+			//			System.out.println(JSONUtil.getJsonFromObj(itinerary.getLegs()));
 			LegLiveFeed legFeed = new LegLiveFeed();
 			legFeed.setLeg(transit);
 			legFeed.setTimeDiffInMins(6);

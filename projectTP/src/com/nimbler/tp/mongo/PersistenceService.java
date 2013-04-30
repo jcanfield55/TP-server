@@ -333,6 +333,24 @@ public class PersistenceService {
 			throw new DBException(e.getMessage());
 		}
 	}
+
+	public void deleteUser(String deviceToken,int appType) throws DBException {
+		try {
+			Query query = new Query();
+			query.addCriteria(Criteria.where(TpConstants.DEVICE_TOKEN).is(deviceToken).and(TpConstants.APP_TYPE).is(appType));
+			mongoOpetation.remove(MONGO_TABLES.users.name(),query);
+		}  catch (DataAccessResourceFailureException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage()); 
+		} catch (MongoException e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			throw new DBException(e.getMessage());
+		}
+
+	}
 	/**
 	 * 
 	 * @param collectionName
@@ -623,18 +641,20 @@ public class PersistenceService {
 	 * @param columnValue
 	 * @param updataColumn
 	 * @param updateValue
+	 * @return 
 	 */
-	public void updateSingleObject(String collectionName, String column, String columnValue, String updataColumn, Object updateValue) throws DBException {
+	public int updateSingleObject(String collectionName, String column, String columnValue, String updataColumn, Object updateValue) throws DBException {
 		try {
 			Criteria criteria = Criteria.where(column).is(columnValue);
 			Query query = new Query();
 			query.addCriteria(criteria);
 
 			Update update = Update.update(updataColumn, updateValue);
-			WriteResult res = mongoOpetation.updateMulti(collectionName, query, update);
-			if(res.getError()!=null || res.getN()==0){
+			WriteResult res = mongoOpetation.updateFirst(collectionName, query, update);
+			if(res.getError()!=null){
 				logger.error(loggerName, "Update Failed,  Error:"+res.getError()+", count: "+res.getN()+", LastError"+res.getLastError());
 			}
+			return res.getN();
 		}  catch (DataAccessResourceFailureException e) {
 			logger.error(loggerName, e);
 			throw new DBException(e.getMessage()); 
@@ -860,4 +880,5 @@ public class PersistenceService {
 	public void setExecutorService(ExecutorService executorService) {
 		this.executorService = executorService;
 	}
+
 }

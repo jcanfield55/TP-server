@@ -6,6 +6,7 @@ package com.nimbler.tp.service.livefeeds;
 import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.LegLiveFeed;
+import com.nimbler.tp.dataobject.nextbus.VehiclePosition;
 /**
  * 
  * @author nIKUNJ
@@ -37,4 +38,6 @@ public interface RealTimeAPI {
 	 * @throws FeedsNotFoundException the feeds not found exception
 	 */
 	public abstract LegLiveFeed getLegArrivalTime(Leg leg) throws FeedsNotFoundException;
+
+	public abstract VehiclePosition getVehiclePosition(Leg leg) throws FeedsNotFoundException;
 }

@@ -38,6 +38,8 @@ import com.google.common.collect.TreeMultimap;
 import com.nimbler.tp.dataobject.AgencyAndId;
 import com.nimbler.tp.dataobject.BartRouteInfo;
 import com.nimbler.tp.dataobject.Leg;
+import com.nimbler.tp.dataobject.NimblerApps;
+import com.nimbler.tp.dataobject.NimblerGtfsAgency;
 import com.nimbler.tp.dataobject.Place;
 import com.nimbler.tp.dataobject.RealTimePrediction;
 import com.nimbler.tp.dataobject.StopTimeType;
@@ -67,6 +69,9 @@ public class GtfsDataService {
 
 	@Autowired
 	private TpPlanService planService;
+
+	@Autowired
+	private NimblerApps nimblerApps;
 
 	/** 
 	 * AGENCY_TYPE, BUNDLE 
@@ -110,7 +115,7 @@ public class GtfsDataService {
 
 	private List<BartRouteInfo> bartRouteInfo = new ArrayList<BartRouteInfo>();
 
-	private String ageciesToLoad ="1,2,3,4,5,6,7";
+	private String ageciesToLoad ="1,2,3,4,5,6,7,9";
 
 	private String allStopTimesZipFile ="gtfsStopTimes.zip";
 
@@ -328,7 +333,7 @@ public class GtfsDataService {
 	@SuppressWarnings("unused")
 	public void getMatchingScheduleForRealTime(Leg leg,AGENCY_TYPE type, RealTimePrediction realTimePrediction) {
 		try {
-			long start = System.currentTimeMillis();
+			//			long start = System.currentTimeMillis();
 			SimpleDateFormat dateFormat = new SimpleDateFormat();
 			dateFormat.setTimeZone(TimeZone.getTimeZone("PST"));
 			String routeId = leg.getRouteId();
@@ -376,8 +381,8 @@ public class GtfsDataService {
 					}
 				}
 			}
-			long end = System.currentTimeMillis();
-			loggingService.info(loggerName,"("+type.toString()+") took " + (end - start) + " msec");
+			//			long end = System.currentTimeMillis();
+			//			loggingService.info(loggerName,"("+type.toString()+") took " + (end - start) + " msec");
 		} catch (Exception e) {			
 			loggingService.error(loggerName,e);
 		}
@@ -608,6 +613,30 @@ public class GtfsDataService {
 			resMap.put(key, mapToQuery.get(key));
 		}
 		return resMap;
+	}
+
+	/**
+	 * Gets the nimbler agency details for app.
+	 *
+	 * @param appType the app type
+	 * @return the nimbler agency details for app
+	 * @throws TpException the tp exception
+	 */
+	public List<NimblerGtfsAgency> getNimblerAgencyDetailsForApp(Integer appType,boolean extended) throws TpException {
+		Map<Integer, String> map = nimblerApps.getAppIdentifierToAgenciesMap();
+		String agencies = map.get(appType);
+		if(agencies==null)
+			throw new TpException("Invalid app type");
+		String[] arrAgencies = agencies.split(",");		
+		List<NimblerGtfsAgency> nimblerGtfsAgencies = new ArrayList<NimblerGtfsAgency>();
+		List<GtfsBundle> lstBundles =  gtfsContext.getGtfsBundles();
+		for (GtfsBundle bundle : lstBundles) {		
+			NimblerGtfsAgency nimblerGtfsAgency =  GtfsUtils.getAgencyDetail(bundle,extended);
+			if(bundle.getAdvisoryName()!=null && ArrayUtils.contains(arrAgencies, nimblerGtfsAgency.getNimberAgencyId()+""))
+				nimblerGtfsAgency.setAdvisoryName(bundle.getAdvisoryName());			
+			nimblerGtfsAgencies.add(nimblerGtfsAgency);
+		}
+		return nimblerGtfsAgencies;
 	}
 
 	/**

@@ -26,6 +26,7 @@ import com.nimbler.tp.dataobject.UserCredential;
 import com.nimbler.tp.dbobject.Login;
 import com.nimbler.tp.mongo.PersistenceService;
 import com.nimbler.tp.service.LoggingService;
+import com.nimbler.tp.service.livefeeds.cache.NextBusVehiclePositionCache;
 import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.TpConstants;
@@ -59,6 +60,7 @@ public class StartupManager {
 			imageRepository.mkdirs();
 		createIndex();
 		addCredentials();
+		NextBusVehiclePositionCache.getInstance();
 	}
 	public static void main(String[] args) {
 		new StartupManager();

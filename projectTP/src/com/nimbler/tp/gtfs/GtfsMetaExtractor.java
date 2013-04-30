@@ -3,6 +3,9 @@
  */
 package com.nimbler.tp.gtfs;
 
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -16,9 +19,11 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.DigestUtils;
 
+import com.nimbler.tp.dataobject.AgencyDetail;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.GtfsUtils;
+import com.nimbler.tp.util.TpConstants.GTFS_FILE;
 
 
 /**
@@ -111,10 +116,44 @@ public class GtfsMetaExtractor implements Runnable{
 				datesAndServiceWithException.put(key, StringUtils.join(value, ","));
 			}
 			bundle.setDatesAndServiceWithException(datesAndServiceWithException);
+			handleAgencyDetails(gtfsFile,utils);
 			bundle.setExtracted(true);	
 			System.out.println(String.format("Gtfs file read complete for    :      [%-15s]", getBundle().getDefaultAgencyId()));
 		} catch (Exception e) {
 			logger.error(loggerName, e);			
+		}
+	}
+
+	/**
+	 * Save agency details.
+	 *
+	 * @param gtfsFile the gtfs file
+	 * @param utils the utils
+	 */
+	private void handleAgencyDetails(File gtfsFile, GtfsUtils utils) {
+		try {
+			if(bundle.getAgencies()==null){
+				List<AgencyDetail> lstAgencyDetails = new ArrayList<AgencyDetail>();
+				List<String[]> lst = utils.getColumnsFromFile(gtfsFile, new String[]{"agency_id","agency_name"}, GTFS_FILE.AGENCY.getFileName(),false,false);
+				for (String[] data : lst) {
+					AgencyDetail detail = new AgencyDetail();
+					String agencyName = trimToEmpty(data[1]);
+					detail.setAgencyName(agencyName);
+					String displayName = bundle.getDisplayName();
+					String agencyId = defaultIfBlank(data[0], bundle.getDefaultAgencyId());
+					if("$agency_id".equalsIgnoreCase(displayName)){
+						detail.setDisplayName(agencyId);
+					}else if("$agency_name".equalsIgnoreCase(displayName)){
+						detail.setDisplayName(agencyName);
+					}else
+						detail.setDisplayName(displayName);
+					detail.setGtfsAgencyId(agencyId);
+					lstAgencyDetails.add(detail);
+				}
+				bundle.setAgencies(lstAgencyDetails);
+			}
+		} catch (Exception e) {
+			logger.error(loggerName, e);
 		}
 	}
 

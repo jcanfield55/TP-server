@@ -17,6 +17,7 @@ public class TpConstants {
 
 	public static final String FILE_OTP_PROPERTY          = "conf/tp.properties";	
 	public static final String FILE_SPRING_CONFIGURATION  = "conf/spring/ApplicationContext.xml";	
+	public static final String FILE_SPRING_CONTEXT  = "conf/spring-context.json";	
 	public static final String FILE_LOG_CONFIGURATION     = "conf/logging/log4j.xml";
 	public static final String FILE_USER_CREDENTIAL       = "conf/user.xml";
 
@@ -85,7 +86,7 @@ public class TpConstants {
 	public static final String DEVICE_ID 			= "deviceId";
 	public static final String NUMBER_OF_ALERT 		= "numberOfAlert";
 	public static final String MAX_WALK_DISTANCE 	= "maxWalkDistance";
-	public static final String DEVICE_TOKEN 		= "deviceToken";
+	public static final String DEVICE_TOKEN 		= "deviceToken";	
 	public static final String LAST_ALERT_TIME 		= "lastAlertTime";
 	public static final String LAST_PUSH_TIME 		= "lastPushTime";
 	public static final String CREATE_TIME 		= "createTime";
@@ -182,14 +183,16 @@ public class TpConstants {
 	}
 
 	public enum AGENCY_TYPE {
-		DEFAULT("lastPushTime","","",""),
-		CALTRAIN("lastPushTime","enableCaltrainAdv","Caltrain","lastReadTimeCaltrain"),//lastPushTimeCaltrain
-		BART("lastPushTimeBart","enableBartAdv","BART","lastReadTimeBart"),
-		SFMUNI("lastPushTimeSfMuni","enableSfMuniAdv","SF Muni","lastReadTimeSfMuni"),
-		AC_TRANSIT("lastPushTimeAct","enableAcTransitAdv","AC Transit","lastReadTimeAct"),
-		VTA("","","VTA",""),
-		MENLO_MIDDAY("","","Menlo-Midday",""),
-		SF_FERRIES("","","SF-ferries","");
+		DEFAULT("lastPushTime","","",""),//0
+		CALTRAIN("lastPushTime","enableCaltrainAdv","Caltrain","lastReadTimeCaltrain"),//lastPushTimeCaltrain 1
+		BART("lastPushTimeBart","enableBartAdv","BART","lastReadTimeBart"),//2
+		SFMUNI("lastPushTimeSfMuni","enableSfMuniAdv","SF Muni","lastReadTimeSfMuni"),//3
+		AC_TRANSIT("lastPushTimeAct","enableAcTransitAdv","AC Transit","lastReadTimeAct"),//4
+		VTA("","","VTA",""),//5
+		MENLO_MIDDAY("","","Menlo-Midday",""),//6
+		SF_FERRIES("","","SF-ferries",""),//7
+		WMATA("","","WMATA",""),//8
+		SAM_TRANS("lastPushTimeSam","enableSamAdv","SamTrans","lastReadTimeSam");//9
 		private String lastReadTimeColumnName;
 
 		private String pushTimeColumnName;
@@ -198,7 +201,7 @@ public class TpConstants {
 
 		public String getPushTimeColumnName() {
 			return pushTimeColumnName;
-		}
+		}	
 		private AGENCY_TYPE(String pushTimeColumnName,
 				String enableAdvisoryColumnName,String txt,String readTime) {
 			this.pushTimeColumnName = pushTimeColumnName;

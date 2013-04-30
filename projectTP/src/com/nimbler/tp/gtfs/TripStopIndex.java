@@ -49,11 +49,13 @@ public class TripStopIndex {
 	public boolean isValidStopsForTrip(AGENCY_TYPE type,String tripId,String from,String to) {
 		Map<String, List<String>> trip_st = trip_stopTimes.get(type);
 		if(trip_st!=null){
-			List<String> stops = trip_st.get(tripId);			
-			int fromIndex = stops.indexOf(from.toLowerCase());
-			int toIndex = stops.indexOf(to.toLowerCase());						
-			if(fromIndex !=-1 && toIndex!=-1 && fromIndex<toIndex){
-				return true;
+			List<String> stops = trip_st.get(tripId);
+			if(stops!=null){
+				int fromIndex = stops.indexOf(from.toLowerCase());
+				int toIndex = stops.indexOf(to.toLowerCase());						
+				if(fromIndex !=-1 && toIndex!=-1 && fromIndex<toIndex){
+					return true;
+				}
 			}
 		}
 		return false;

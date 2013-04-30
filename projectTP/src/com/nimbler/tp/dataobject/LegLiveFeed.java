@@ -1,8 +1,11 @@
 package com.nimbler.tp.dataobject;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.time.DateUtils;
+
+import com.nimbler.tp.dataobject.nextbus.VehiclePosition;
 
 /**
  * 
@@ -18,6 +21,7 @@ public class LegLiveFeed {
 	private Integer timeDiffInMins;
 	private Integer arrivalTimeFlag;	
 	private List<RealTimePrediction> lstPredictions;
+	private List<VehiclePosition> lstVehiclePositions ;
 
 
 	public Leg getLeg() {
@@ -32,6 +36,18 @@ public class LegLiveFeed {
 		this.lstPredictions = lstPredictions;
 	}
 
+	public List<VehiclePosition> getLstVehiclePositions() {
+		return lstVehiclePositions;
+	}
+
+	public void setLstVehiclePositions(List<VehiclePosition> lstVehiclePositions) {
+		this.lstVehiclePositions = lstVehiclePositions;
+	}
+	public void addVehiclePosition(VehiclePosition vehiclePosition) {
+		if(lstVehiclePositions == null)
+			lstVehiclePositions = new ArrayList<VehiclePosition>();
+		this.lstVehiclePositions.add(vehiclePosition);
+	}
 	/**
 	 * 
 	 * @param leg

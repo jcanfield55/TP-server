@@ -37,11 +37,25 @@ public class User implements Serializable {
 		BIKE_TRANSIT
 	}
 
+	public enum USER_STATE{
+		PUSH_DISABLED(-1),
+		UNINSTALLED(-2),
+		INVALID_TOKEN_FOR_PUSH(-3);
+		int code;
+		private USER_STATE(int code) {
+			this.code = code;
+		}
+		public int code() {
+			return code;
+		}
+	}
+
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -8231065322203477262L;
 	private String id; 
+	private transient String randomId; 
 	private String deviceId;
 	private int numberOfAlert;
 	private String deviceToken;
@@ -141,6 +155,13 @@ public class User implements Serializable {
 
 	public void setNotifTimingMorning(int notifTimingMorning) {
 		this.notifTimingMorning = notifTimingMorning;
+	}
+
+	public String getRandomId() {
+		return randomId;
+	}
+	public void setRandomId(String randomId) {
+		this.randomId = randomId;
 	}
 	public int getNotifTimingMidday() {
 		return notifTimingMidday;

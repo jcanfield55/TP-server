@@ -244,11 +244,13 @@ public class TpPlanService {
 			lstOtpParams.add("fromStopId="+URLEncoder.encode(leg.getFrom().getStopId().getId()));
 			lstOtpParams.add("toStopId="+URLEncoder.encode(leg.getTo().getStopId().getId()));
 			lstOtpParams.add("startTime="+leg.getStartTime());
-			lstOtpParams.add("size="+leg.getSize());
+			Long size = leg.getSize();
+			if(size==null || size == 0L)
+				size = 15L;			
+			lstOtpParams.add("size="+ size);
 			if(leg.getEndTime()!=null)
 				lstOtpParams.add("endTime="+leg.getEndTime());
-			String url = baseUrl+"?"+StringUtils.join(lstOtpParams, "&");
-			//			System.out.println(url);
+			String url = baseUrl+"?"+StringUtils.join(lstOtpParams, "&");			
 			String planJsonString = HttpUtils.getHttpResponse(url);
 			Itinerary itinerary = (Itinerary) JSONUtil.getObjectFromJson(planJsonString,Itinerary.class);	
 			trimData(itinerary);

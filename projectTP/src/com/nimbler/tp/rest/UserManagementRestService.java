@@ -6,7 +6,9 @@
  */
 package com.nimbler.tp.rest;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.DefaultValue;
@@ -20,13 +22,18 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.dataobject.NimblerApps;
+import com.nimbler.tp.dataobject.NimblerGtfsAgency;
 import com.nimbler.tp.dataobject.TPCountResponse;
 import com.nimbler.tp.dataobject.TPResponse;
+import com.nimbler.tp.dataobject.UserStatistics;
 import com.nimbler.tp.dbobject.User;
+import com.nimbler.tp.gtfs.GtfsDataService;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.service.UserManagementService;
 import com.nimbler.tp.service.flurry.FlurryManagementService;
 import com.nimbler.tp.util.BeanUtil;
+import com.nimbler.tp.util.ComUtils;
+import com.nimbler.tp.util.HtmlUtil;
 import com.nimbler.tp.util.JSONUtil;
 import com.nimbler.tp.util.OperationCode.TP_CODES;
 import com.nimbler.tp.util.PersistantHelper;
@@ -81,7 +88,6 @@ public class UserManagementRestService {
 			if (deviceid == null || alertCount == -2 || deviceToken == null || maxWalkDistance == null)
 				throw new TpException(TP_CODES.INVALID_REQUEST);
 
-			UserManagementService alertService = BeanUtil.getUserManagementService();
 			logger.debug(loggerName, "Preferences are :"+deviceid+","+ alertCount + ","+ deviceToken+","+maxWalkDistance);
 
 			User reqUserValue = new User();
@@ -111,6 +117,7 @@ public class UserManagementRestService {
 			reqUserValue.setTransitMode(transitMod);
 			reqUserValue.setMaxBikeDist(maxBikeDist);
 
+			UserManagementService alertService = BeanUtil.getUserManagementService();
 			alertService.saveAlertPreferences(reqUserValue);
 			response.setCode(TP_CODES.SUCESS.getCode()); 
 		} catch (TpException e) {
@@ -119,6 +126,27 @@ public class UserManagementRestService {
 		} catch (Exception e) {
 			logger.error(loggerName, e);
 			response.setCode(TP_CODES.FAIL.ordinal());
+		}
+		return getJsonResponse(response);
+	}
+
+	@GET
+	@Path("/preferences/update/token")	
+	public String updateDeviceToken(@QueryParam(RequestParam.DEVICE_TOKEN)String deviceToken,
+			@QueryParam(RequestParam.DUMMY_TOKEN_ID)String dummyId,@QueryParam(TpConstants.APP_TYPE)String appType){
+		TPResponse response = null;
+		try {
+			if(ComUtils.isEmptyString(deviceToken) || ComUtils.isEmptyString(dummyId) || ComUtils.isEmptyString(appType))
+				throw new TpException(TP_CODES.INVALID_REQUEST);
+			UserManagementService alertService = BeanUtil.getUserManagementService();
+			logger.debug(loggerName, "Dummy token updated: "+dummyId+"-->"+deviceToken);
+			int count = alertService.updateToken(deviceToken,dummyId,Integer.parseInt(appType));
+			response = new TPResponse((count>0)?TP_CODES.SUCESS:TP_CODES.DATA_NOT_EXIST);
+		} catch (TpException e) {			
+			response = ResponseUtil.createResponse(e);
+		}catch (Exception e) {
+			logger.error(loggerName, e);
+			response = new TPResponse(TP_CODES.FAIL);
 		}
 		return getJsonResponse(response);
 	}
@@ -169,6 +197,28 @@ public class UserManagementRestService {
 		}
 		return getJsonResponse(response);
 	}
+	@GET
+	@Path("/state/")
+	@Produces(MediaType.TEXT_HTML)
+	public String getUserState() throws TpException {
+		try {
+			PersistantHelper persistanceHelper = new PersistantHelper();
+			List<NIMBLER_APP_TYPE> appTypes = new ArrayList<TpConstants.NIMBLER_APP_TYPE>();
+			appTypes.add(NIMBLER_APP_TYPE.CALTRAIN);
+			appTypes.add(NIMBLER_APP_TYPE.SF_BAY_AREA);
+
+			List<UserStatistics> lstStatistics = new ArrayList<UserStatistics>();
+			for (NIMBLER_APP_TYPE type : appTypes) {
+				UserStatistics statistics =  persistanceHelper.getUserStatistics(type.ordinal());
+				lstStatistics.add(statistics);
+			}			
+			String res = HtmlUtil.getUserStatistics(lstStatistics);
+			return res; 
+		} catch (Exception e) {
+			logger.error(loggerName, e);			
+		}
+		return "Error While getting data";
+	}
 
 	@GET
 	@Path("/orphanGtfsRoutes/")
@@ -202,7 +252,6 @@ public class UserManagementRestService {
 	}
 	@GET
 	@Path("getAppType")
-	@Produces(MediaType.TEXT_PLAIN)
 	public String getAppType(
 			@QueryParam(RequestParam.NIMBLER_APP_BUNDLE_ID) String appBundleId) {
 		String res = "";
@@ -217,6 +266,30 @@ public class UserManagementRestService {
 		}
 		return res;
 	}
+
+	@GET
+	@Path("getAppAgencies")
+	public String getAppAgencyDetails(
+			@QueryParam(TpConstants.APP_TYPE) Integer appType) {
+		TPResponse tpResponse = null;
+		try {
+			GtfsDataService dataService = BeanUtil.getGtfsDataServiceBean();
+			List<NimblerGtfsAgency> agencies = dataService.getNimblerAgencyDetailsForApp(appType,false);
+			if(agencies!=null){
+				tpResponse = ResponseUtil.createResponse(TP_CODES.SUCESS);
+				tpResponse.setAgencies(agencies);
+			}else{
+				tpResponse = ResponseUtil.createResponse(TP_CODES.DATA_NOT_EXIST);
+			}
+		} catch (TpException e) {
+			tpResponse = ResponseUtil.createResponse(e);
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			tpResponse =new TPResponse(TP_CODES.FAIL);
+		}
+		return JSONUtil.getResponseJSON(tpResponse);
+	}
+
 	/**
 	 * 
 	 * @param appBundleId

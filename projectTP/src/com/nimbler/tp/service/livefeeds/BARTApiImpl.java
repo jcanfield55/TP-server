@@ -26,6 +26,7 @@ import com.nimbler.tp.dataobject.bart.Estimate;
 import com.nimbler.tp.dataobject.bart.EstimateTimeOfDiparture;
 import com.nimbler.tp.dataobject.bart.Route;
 import com.nimbler.tp.dataobject.bart.Station;
+import com.nimbler.tp.dataobject.nextbus.VehiclePosition;
 import com.nimbler.tp.gtfs.GtfsDataService;
 import com.nimbler.tp.gtfs.RouteStopIndex;
 import com.nimbler.tp.service.livefeeds.cache.BartETDCache;
@@ -396,6 +397,11 @@ public class BARTApiImpl implements RealTimeAPI {
 
 	@Override
 	public LegLiveFeed getLegArrivalTime(Leg leg) throws FeedsNotFoundException {
+		throw new FeedsNotFoundException("Not suported");
+	}
+
+	@Override
+	public VehiclePosition getVehiclePosition(Leg leg) throws FeedsNotFoundException {
 		throw new FeedsNotFoundException("Not suported");
 	}
 
