@@ -46,7 +46,7 @@ public class NextBusVehiclePositionCache {
 
 	private static String keySeparator = "--";
 
-	private int cacheExpirationTimeInSec = 120;
+	private int cacheExpirationTimeInSec = 300;
 	private int concurrencyLevel = 2;
 	private int updateIntervalMsec = 20000;
 	/**

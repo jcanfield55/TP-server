@@ -192,7 +192,19 @@ public class TpConstants {
 		MENLO_MIDDAY("","","Menlo-Midday",""),//6
 		SF_FERRIES("","","SF-ferries",""),//7
 		WMATA("","","WMATA",""),//8
-		SAM_TRANS("lastPushTimeSam","enableSamAdv","SamTrans","lastReadTimeSam");//9
+		SAM_TRANS("lastPushTimeSam","enableSamAdv","SamTrans","lastReadTimeSam"),//9		
+		ACE("","","ACE",""),//10
+		ANGEL_ISLAND_FERRY("","","Angel Ferry",""),//11
+		CAPITOL_CORRIDOR("","","Capitol Corridor",""),//12
+		COUNTY_CONNECTION("","","County Connection",""),//13
+		DUMBARTON_EXPRESS("","","Dumbarton Express",""),//14
+		EMERY_GO_ROUND("","","Emery Go-Round",""),//15
+		MARIN_TRANSIT("","","Marin Transit",""),//16
+		SANTA_ROSA("","","Santa Rosa CityBus",""),//17
+		STANFORD_MARGUERITE_SHUTTLE("","","Stanford Shuttle",""),//18
+		UNION_CITY_TRANSIT("","","Union City Transit",""),//19
+		YOUNTVILLE_SHUTTLE("","","YountvilleShuttle","");//20
+
 		private String lastReadTimeColumnName;
 
 		private String pushTimeColumnName;
@@ -283,7 +295,7 @@ public class TpConstants {
 
 		public String getName() {
 			return name;
-		}
+		}		
 		public String getFileName() {
 			return name+ext;
 		}
