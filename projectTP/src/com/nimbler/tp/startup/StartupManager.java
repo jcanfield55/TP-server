@@ -16,7 +16,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import org.apache.log4j.xml.DOMConfigurator;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import com.nimbler.tp.TPApplicationContext;
@@ -25,7 +24,6 @@ import com.nimbler.tp.dataobject.Credential;
 import com.nimbler.tp.dataobject.UserCredential;
 import com.nimbler.tp.dbobject.Login;
 import com.nimbler.tp.mongo.PersistenceService;
-import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.service.livefeeds.cache.NextBusVehiclePositionCache;
 import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
@@ -45,11 +43,8 @@ public class StartupManager {
 		init();
 	}
 
-	private void init() {
-		DOMConfigurator.configure(LoggingService.class.getClassLoader().getResource(TpConstants.FILE_LOG_CONFIGURATION));
-		ComUtils.readHtmlTemplet();
-		TPApplicationContext.getInstance();
-		//BeanUtil.getGtfsDataMonitorService().readGtfsFiles(); Called By Bean initialization
+	private void init() {		
+		ComUtils.readHtmlTemplet();				
 		System.out.println("\n");
 		System.out.println("Image Repository Relative Path: "+TpConstants.REPO_RELATIVE_PATH);
 		System.out.println("\n==============================================================================");

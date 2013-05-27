@@ -83,6 +83,7 @@ public class UserManagementService {
 				map.put(RequestParam.BIKE_TRIANGLE_BIKEFRIENDLY, usr.getBikeTriangleBikeFriendly());
 				map.put(RequestParam.BIKE_TRIANGLE_FLAT, usr.getBikeTriangleFlat());
 				map.put(RequestParam.BIKE_TRIANGLE_QUICK, usr.getBikeTriangleQuick());
+				map.put("appVer", usr.getAppVer());
 				persistenceService.update(MONGO_TABLES.users.name(), query , map);
 			} else {
 				usr.setCreateTime(time);

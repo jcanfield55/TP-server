@@ -8,7 +8,8 @@ package com.nimbler.tp.rest;
 
 import javax.ws.rs.Path;
 
-import com.nimbler.tp.TPApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.nimbler.tp.service.LoggingService;
 
 /**
@@ -17,9 +18,11 @@ import com.nimbler.tp.service.LoggingService;
  * @author nirmal
  */
 @Path("/event/")
+@Deprecated
 public class TpEventLoggingRestService {
 
-	private LoggingService logger = (LoggingService)TPApplicationContext.getInstance().getBean("loggingService");
+	@Autowired
+	private LoggingService logger ;
 	private String loggerName;
 
 	/*@POST

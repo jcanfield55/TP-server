@@ -17,7 +17,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
-import com.nimbler.tp.TPApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.dataobject.Itinerary;
@@ -50,7 +51,8 @@ import com.nimbler.tp.util.TpException;
 @Path("/livefeeds/")
 public class RealTimePredictionService {
 
-	private LoggingService logger = (LoggingService)TPApplicationContext.getInstance().getBean("loggingService");
+	@Autowired
+	private LoggingService logger;
 	private String loggerName;
 
 	@GET

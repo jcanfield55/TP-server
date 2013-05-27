@@ -7,16 +7,17 @@
     <welcome-file>login.jsp</welcome-file>
     <welcome-file>default.jsp</welcome-file>
   </welcome-file-list>
-  <listener>
-    <listener-class>com.nimbler.tp.startup.TpContextListner</listener-class>
-  </listener>
   <context-param>
     <param-name>contextConfigLocation</param-name>
     <param-value>WEB-INF/classes/conf/spring/ServiceRegistry.xml
-		WEB-INF/classes/conf/spring/security-applicationContext.xml</param-value>
+        WEB-INF/classes/conf/spring/ApplicationContext.xml
+		WEB-INF/classes/conf/spring/security-applicationContext.xml</param-value>		
   </context-param>
   <listener>
     <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+    <listener>
+    <listener-class>com.nimbler.tp.startup.TpContextListner</listener-class>
   </listener>
   <servlet>
     <servlet-name>TPRestService</servlet-name>

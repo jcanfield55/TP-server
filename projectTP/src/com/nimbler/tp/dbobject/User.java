@@ -81,6 +81,8 @@ public class User implements Serializable {
 	private int enableUrgntNotifSound;
 	private int appType = NIMBLER_APP_TYPE.CALTRAIN.ordinal() ;//nimbler app type
 
+	private String appVer;
+
 	/* Nimbler 1.2 */
 
 	private int enableSfMuniAdv = BOOLEAN_VAL.FALSE.ordinal();
@@ -121,8 +123,6 @@ public class User implements Serializable {
 
 	}
 
-
-
 	public double getBikeTriangleQuick() {
 		return bikeTriangleQuick;
 	}
@@ -142,6 +142,8 @@ public class User implements Serializable {
 	public void setLastPushTimeAct(long lastPushTimeAct) {
 		this.lastPushTimeAct = lastPushTimeAct;
 	}
+
+
 	public long getLastPushTimeSfMuni() {
 		return lastPushTimeSfMuni;
 	}
@@ -151,6 +153,15 @@ public class User implements Serializable {
 
 	public int getNotifTimingMorning() {
 		return notifTimingMorning;
+	}
+
+
+	public String getAppVer() {
+		return appVer;
+	}
+
+	public void setAppVer(String appVer) {
+		this.appVer = appVer;
 	}
 
 	public void setNotifTimingMorning(int notifTimingMorning) {

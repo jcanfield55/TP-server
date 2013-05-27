@@ -19,8 +19,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.dataobject.NimblerApps;
 import com.nimbler.tp.dataobject.NimblerGtfsAgency;
 import com.nimbler.tp.dataobject.TPCountResponse;
@@ -50,7 +50,8 @@ import com.nimbler.tp.util.TpException;
 @Path("/users/")
 public class UserManagementRestService {
 
-	private LoggingService logger = (LoggingService)TPApplicationContext.getInstance().getBean("loggingService");
+	@Autowired
+	private LoggingService logger;
 	private String loggerName;
 
 	@GET
@@ -80,6 +81,7 @@ public class UserManagementRestService {
 			@QueryParam(RequestParam.BIKE_TRIANGLE_BIKEFRIENDLY)double bikeTriangleBikeFriendly,
 			@QueryParam(RequestParam.BIKE_TRIANGLE_FLAT)double bikeTriangleFlat,
 			@QueryParam(RequestParam.BIKE_TRIANGLE_QUICK)double bikeTriangleQuick,
+			@QueryParam(RequestParam.APP_VERSION) String appVersion,
 
 			@DefaultValue("1") @QueryParam(RequestParam.NIMBLER_APP_TYPE)int appType) throws TpException {
 
@@ -116,7 +118,7 @@ public class UserManagementRestService {
 
 			reqUserValue.setTransitMode(transitMod);
 			reqUserValue.setMaxBikeDist(maxBikeDist);
-
+			reqUserValue.setAppVer(appVersion);
 			UserManagementService alertService = BeanUtil.getUserManagementService();
 			alertService.saveAlertPreferences(reqUserValue);
 			response.setCode(TP_CODES.SUCESS.getCode()); 

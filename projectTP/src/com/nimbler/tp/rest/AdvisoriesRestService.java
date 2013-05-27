@@ -16,8 +16,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.dataobject.TweetResponse;
 import com.nimbler.tp.dbobject.AdvisoryFetchLog;
 import com.nimbler.tp.dbobject.AdvisoryFetchLog.ADVISORY_FETCH_EVENT;
@@ -44,7 +44,8 @@ import com.nimbler.tp.util.TpException;
 @Path("/advisories/")
 public class AdvisoriesRestService {
 
-	private LoggingService logger = (LoggingService)TPApplicationContext.getInstance().getBean("loggingService");
+	@Autowired
+	private LoggingService logger;
 	private String loggerName;
 
 	@GET

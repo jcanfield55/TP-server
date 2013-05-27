@@ -5,7 +5,7 @@
  */
 package com.nimbler.tp;
 
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.web.context.WebApplicationContext;
 
 import com.nimbler.tp.util.TpConstants;
 
@@ -75,22 +75,25 @@ public class TPApplicationContext {
 	private static TPApplicationContext ctxt = new TPApplicationContext();
 
 	/** The main ctxt. */
-	ClassPathXmlApplicationContext mainCtxt;
+	//	ClassPathXmlApplicationContext mainCtxt;
+
+	WebApplicationContext mainCtxt;
 
 
 	/**
 	 * Instantiates a new tP application context.
 	 */
 	private TPApplicationContext(){
-		load();
+		//		load();
 	}
 
 	/**
 	 * Load.
 	 */
 	private void load() {
-		mainCtxt = new ClassPathXmlApplicationContext(getBeanList());
+		//		mainCtxt = new ClassPathXmlApplicationContext(getBeanList());
 		System.out.println("Context Initialized...");
+
 	}
 
 	/**
@@ -139,5 +142,9 @@ public class TPApplicationContext {
 	 */
 	public static Object getBeanByName(String beanName) {
 		return getInstance().getBean(beanName);
+	}
+
+	public void setContext(WebApplicationContext ctx) {
+		this.mainCtxt = ctx;
 	}
 }

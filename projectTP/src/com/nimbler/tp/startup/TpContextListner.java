@@ -8,6 +8,11 @@ package com.nimbler.tp.startup;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import com.nimbler.tp.TPApplicationContext;
+
 /**
  * @author nirmal
  *
@@ -26,6 +31,9 @@ public class TpContextListner implements ServletContextListener{
 	 */
 	@Override
 	public void contextInitialized(ServletContextEvent arg0) {
+		WebApplicationContext ctx = WebApplicationContextUtils.getRequiredWebApplicationContext(arg0.getServletContext());
+		TPApplicationContext.getInstance().setContext(ctx);
+		System.out.println("Context Initialized...");
 		new StartupManager();
 	}
 

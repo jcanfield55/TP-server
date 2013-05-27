@@ -228,6 +228,10 @@
 		<level value="DEBUG" />
 		<appender-ref ref="apn" />
 	</logger>	
+	<logger name="org.springframework.web">
+		<level value="WARN" />
+		<appender-ref ref="syslog" />
+	</logger>	
 	<logger name="console">
 		<level value="DEBUG" />
 		<appender-ref ref="stdout" />

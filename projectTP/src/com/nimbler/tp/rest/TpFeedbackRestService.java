@@ -19,7 +19,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-import com.nimbler.tp.TPApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.nimbler.tp.dataobject.TPResponse;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.service.TpFeedbackService;
@@ -37,7 +38,8 @@ import com.nimbler.tp.util.TpException;
 @Path("/feedback/") 
 public class TpFeedbackRestService {
 
-	private LoggingService logger = (LoggingService)TPApplicationContext.getInstance().getBean("loggingService");
+	@Autowired
+	private LoggingService logger;
 	private String loggerName;
 
 
