@@ -59,8 +59,8 @@ public class GtfsMetaDataRestService {
 			List<GtfsBundle> lstBundles =  gtfsDataMonitor.getGtfsBundles();
 			Map<String, String> res = new HashMap<String, String>();
 			for (GtfsBundle gtfsBundle : lstBundles) {
-				if(gtfsBundle.isEnableAgency())
-					res.putAll(getMapWithAgencies(gtfsBundle, gtfsBundle.getLastUpdateDate()));
+					if(gtfsBundle.isEnableAgency())
+						res.putAll(getMapWithAgencies(gtfsBundle, gtfsBundle.getLastUpdateDate()));
 			}
 			response = new GtfsResponse(TP_CODES.SUCESS);
 			((GtfsResponse)response).setGtfsUpdateTime(res);

@@ -5,7 +5,6 @@ package com.nimbler.tp.gtfs;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -54,7 +53,9 @@ import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.ResponseUtil;
 import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
 import com.nimbler.tp.util.TpConstants.GTFS_FILE;
+import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 import com.nimbler.tp.util.TpException;
+import com.nimbler.tp.util.WmataUtil;
 import com.nimbler.tp.util.ZipUtil;
 
 public class GtfsDataService {
@@ -115,7 +116,7 @@ public class GtfsDataService {
 
 	private List<BartRouteInfo> bartRouteInfo = new ArrayList<BartRouteInfo>();
 
-	private String ageciesToLoad ="1,2,3,4,5,6,7,9";
+	private String ageciesToLoad ="1,2,3,4,5,6,7,9,10,11,12,13,14,15,16,17,18,19,20";
 
 	private String allStopTimesZipFile ="gtfsStopTimes.zip";
 
@@ -333,25 +334,18 @@ public class GtfsDataService {
 	@SuppressWarnings("unused")
 	public void getMatchingScheduleForRealTime(Leg leg,AGENCY_TYPE type, RealTimePrediction realTimePrediction) {
 		try {
-			//			long start = System.currentTimeMillis();
-			SimpleDateFormat dateFormat = new SimpleDateFormat();
-			dateFormat.setTimeZone(TimeZone.getTimeZone("PST"));
 			String routeId = leg.getRouteId();
 			String fromStopId=leg.getFrom().getStopId().getId();
 			String toStopId=leg.getTo().getStopId().getId();
 			long realTimeMill = realTimePrediction.getEpochTime();
-			int realTimeSec = ComUtils.getSecondsSinceMidNight(realTimeMill);
+
 			if(type.equals(AGENCY_TYPE.BART)){
 				Leg reqLeg = getRequestLeg(leg,realTimeMill);				
-				//long start1 = System.currentTimeMillis();
-				StopTimeType stopTimeType = planService.getClosestTime(reqLeg,realTimeMill);
-				//long end = System.currentTimeMillis();
-				//loggingService.debug(loggerName, "OTP bart closest get " + (end - start1)  + " msec");				
+				StopTimeType stopTimeType = planService.getClosestTime(reqLeg,realTimeMill,NIMBLER_APP_TYPE.SF_BAY_AREA.ordinal()+"");
 				if(stopTimeType!=null ){										
 					long scheduleTime = ComUtils.getSecondsSinceMidNight(stopTimeType.startTime)*1000;
 					realTimePrediction.setScheduleTime(DurationFormatUtils.formatDuration(scheduleTime,"HH:mm:ss"));
 					realTimePrediction.setScheduleTripId(stopTimeType.tripId);
-					//					System.out.println(realTimePrediction.getScheduleTime()+" - "+realTimePrediction.getScheduleTripId()+"--->"+new Date(realTimeMill));
 				}else{
 					loggingService.debug(loggerName,"No matching found for :"+leg.getTripId()+", date: "+new Date(leg.getStartTime())+", real time: "+new Date(realTimeMill));
 				}
@@ -380,9 +374,18 @@ public class GtfsDataService {
 						break;
 					}
 				}
+			}else if(type.equals(AGENCY_TYPE.WMATA)){
+				TimeZone tz = WmataUtil.getTimeZone();
+				Leg reqLeg = getRequestLeg(leg,realTimeMill);
+				StopTimeType stopTimeType = planService.getClosestTime(reqLeg,realTimeMill,NIMBLER_APP_TYPE.WDC.ordinal()+"");
+				if(stopTimeType!=null ){
+					long scheduleTime = ComUtils.getSecondsSinceMidNight(stopTimeType.startTime,tz)*1000;
+					realTimePrediction.setScheduleTime(DurationFormatUtils.formatDuration(scheduleTime,"HH:mm:ss"));
+					realTimePrediction.setScheduleTripId(stopTimeType.tripId);
+				}
 			}
-			//			long end = System.currentTimeMillis();
-			//			loggingService.info(loggerName,"("+type.toString()+") took " + (end - start) + " msec");
+		} catch (TpException e) {
+			loggingService.debug(loggerName,e.getMessage());
 		} catch (Exception e) {			
 			loggingService.error(loggerName,e);
 		}
@@ -392,7 +395,7 @@ public class GtfsDataService {
 		Leg reqLeg = new Leg();
 		reqLeg.setStartTime(epochTime-(MAX_DELAY_MIN*1000));
 		reqLeg.setEndTime(epochTime+(MAX_EARLY_MIN*1000));
-		reqLeg.setAgencyId(leg.getAgencyId());				
+		reqLeg.setAgencyId(leg.getFrom().getStopId().getAgencyId());
 		reqLeg.setFrom(leg.getFrom());
 		reqLeg.setTo(leg.getTo());		
 		return reqLeg;
@@ -623,7 +626,7 @@ public class GtfsDataService {
 	 * @throws TpException the tp exception
 	 */
 	public List<NimblerGtfsAgency> getNimblerAgencyDetailsForApp(Integer appType,boolean extended) throws TpException {
-		Map<Integer, String> map = nimblerApps.getAppIdentifierToAgenciesMap();
+		Map<Integer, String> map = nimblerApps.getAppRouteSupportAgencies();
 		String agencies = map.get(appType);
 		if(agencies==null)
 			throw new TpException("Invalid app type");
@@ -631,10 +634,12 @@ public class GtfsDataService {
 		List<NimblerGtfsAgency> nimblerGtfsAgencies = new ArrayList<NimblerGtfsAgency>();
 		List<GtfsBundle> lstBundles =  gtfsContext.getGtfsBundles();
 		for (GtfsBundle bundle : lstBundles) {		
-			NimblerGtfsAgency nimblerGtfsAgency =  GtfsUtils.getAgencyDetail(bundle,extended);
-			if(bundle.getAdvisoryName()!=null && ArrayUtils.contains(arrAgencies, nimblerGtfsAgency.getNimberAgencyId()+""))
-				nimblerGtfsAgency.setAdvisoryName(bundle.getAdvisoryName());			
-			nimblerGtfsAgencies.add(nimblerGtfsAgency);
+			if(ArrayUtils.contains(arrAgencies, bundle.getAgencyType().ordinal()+"")){
+				NimblerGtfsAgency nimblerGtfsAgency =  GtfsUtils.getAgencyDetail(bundle,extended);
+				if(bundle.getAdvisoryName()!=null)
+					nimblerGtfsAgency.setAdvisoryName(bundle.getAdvisoryName());			
+				nimblerGtfsAgencies.add(nimblerGtfsAgency);
+			}
 		}
 		return nimblerGtfsAgencies;
 	}

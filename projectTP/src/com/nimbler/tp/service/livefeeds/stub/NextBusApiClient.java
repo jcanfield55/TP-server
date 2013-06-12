@@ -20,7 +20,7 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 /**
  * REST client for NextBus real time API.
- * @author suresh
+ * @author suresh,nirmal
  *
  */
 public class NextBusApiClient {

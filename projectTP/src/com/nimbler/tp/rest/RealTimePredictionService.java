@@ -6,6 +6,8 @@ package com.nimbler.tp.rest;
 import static org.apache.commons.lang3.StringUtils.replaceOnce;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,10 +19,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.common.FeedsNotFoundException;
+import com.nimbler.tp.common.RealTimeDataException;
 import com.nimbler.tp.dataobject.Itinerary;
 import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.LegLiveFeed;
@@ -29,11 +35,18 @@ import com.nimbler.tp.dataobject.PlanLiveFeeds;
 import com.nimbler.tp.dataobject.TraverseMode;
 import com.nimbler.tp.dataobject.TripPlan;
 import com.nimbler.tp.dataobject.nextbus.VehiclePosition;
+import com.nimbler.tp.dataobject.wmata.GtfsStop;
+import com.nimbler.tp.dataobject.wmata.RailLine;
+import com.nimbler.tp.dataobject.wmata.RailStation;
+import com.nimbler.tp.dataobject.wmata.StopMapping;
+import com.nimbler.tp.dataobject.wmata.WmataRouteDetails;
 import com.nimbler.tp.mongo.PersistenceService;
 import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.service.TpPlanService;
+import com.nimbler.tp.service.livefeeds.NextBusApiImpl;
 import com.nimbler.tp.service.livefeeds.RealTimeAPI;
 import com.nimbler.tp.service.livefeeds.RealTimeAPIFactory;
+import com.nimbler.tp.service.livefeeds.WmataApiImpl;
 import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
 import com.nimbler.tp.util.JSONUtil;
@@ -42,6 +55,7 @@ import com.nimbler.tp.util.PlanUtil;
 import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.TpConstants;
 import com.nimbler.tp.util.TpConstants.ETA_FLAG;
+import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 import com.nimbler.tp.util.TpException;
 /**
  * 
@@ -53,6 +67,13 @@ public class RealTimePredictionService {
 
 	@Autowired
 	private LoggingService logger;
+
+	@Autowired
+	TpPlanService planService;
+
+	@Autowired
+	NextBusApiImpl nextBusApiImpl;
+
 	private String loggerName;
 
 	@GET
@@ -77,7 +98,7 @@ public class RealTimePredictionService {
 			}
 			for (Leg leg : legs) {
 				try {
-					RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg.getMode());
+					RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg);
 					LegLiveFeed legFeed = liveFeedAPI.getLiveFeeds(leg);
 					if (legFeed!=null)
 						response.addLegLiveFeed(legFeed);
@@ -110,7 +131,6 @@ public class RealTimePredictionService {
 			) {
 		PlanLiveFeeds response = new PlanLiveFeeds();
 		try {
-			TpPlanService planService = BeanUtil.getPlanService();
 			List<Itinerary> itineraries =planService.getFullItinerariesByIds(itineraryId.split(","));
 			if ( ComUtils.isEmptyList(itineraries) ) 
 				throw new TpException(TP_CODES.DATA_NOT_EXIST.getCode());
@@ -167,10 +187,11 @@ public class RealTimePredictionService {
 			Map<String,String> reqParam = ComUtils.parseMultipartRequest(httpRequest);
 			String strLegs = reqParam.get(RequestParam.LEGS);	
 			List<Leg> lstLegs =  JSONUtil.getLegsJson(strLegs);
+			int  appType =  NumberUtils.toInt(reqParam.get(TpConstants.APP_TYPE),-1);  
 			if(ComUtils.isEmptyList(lstLegs))
 				throw new TpException(TP_CODES.INVALID_REQUEST.getCode(),"Error while getting JSON String from plan object.");
 
-			LegLiveFeed legLiveFeeds = getVehiclePositionsForLegs(lstLegs);
+			LegLiveFeed legLiveFeeds = getVehiclePositionsForLegs(lstLegs,appType);
 			if (legLiveFeeds!=null && legLiveFeeds.getLstVehiclePositions()!=null && legLiveFeeds.getLstVehiclePositions().size()>0) 
 				response.addLegLiveFeeds(legLiveFeeds); 
 			else
@@ -220,7 +241,7 @@ public class RealTimePredictionService {
 			response.setError(TP_CODES.FAIL.getCode());
 		}
 		String res =  getJsonResponse(response);
-		//System.out.println(res);
+		//System.out.println("Realtime--> "+res);
 		return res;
 	}
 
@@ -240,7 +261,7 @@ public class RealTimePredictionService {
 		}
 		for (Leg leg : legs) {
 			try {
-				RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg.getMode());
+				RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg);
 				LegLiveFeed legFeed = liveFeedAPI.getLiveFeeds(leg);
 				if (legFeed!=null) {
 					itinFeeds.addLegLiveFeed(legFeed);
@@ -267,7 +288,7 @@ public class RealTimePredictionService {
 		}
 		for (Leg leg : legs) {
 			try {
-				RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg.getMode());
+				RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg);
 				LegLiveFeed legFeed = liveFeedAPI.getAllRealTimeFeeds(leg);
 				if (legFeed!=null) {
 					lstRes.add(legFeed);
@@ -283,18 +304,21 @@ public class RealTimePredictionService {
 	 * Gets the vehicle positions for legs.
 	 *
 	 * @param legs the legs
+	 * @param appType 
 	 * @return the vehicle positions for legs
 	 */
-	private LegLiveFeed getVehiclePositionsForLegs(List<Leg> legs) {
+	private LegLiveFeed getVehiclePositionsForLegs(List<Leg> legs, int appType) {
 		LegLiveFeed legLiveFeed = new LegLiveFeed();
 		//legs = getApplicableLegs(legs);	
 		if(ComUtils.isEmptyList(legs)){
 			//logger.debug(loggerName, "Live feeds not applicable for any of the legs: "+legs); 
 			return null;
 		}
+		// for backward compability.
+		boolean isSfBayApp = (appType==NIMBLER_APP_TYPE.SF_BAY_AREA.ordinal()) ||  (appType==NIMBLER_APP_TYPE.CALTRAIN.ordinal());
 		for (Leg leg : legs) {
 			try {
-				RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg.getMode());
+				RealTimeAPI liveFeedAPI = isSfBayApp?nextBusApiImpl:RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg);
 				VehiclePosition vehiclePosition = liveFeedAPI.getVehiclePosition(leg);
 				if (vehiclePosition!=null) {
 					legLiveFeed.addVehiclePosition(vehiclePosition);
@@ -325,8 +349,89 @@ public class RealTimePredictionService {
 		}
 
 	}
-
+	Map<String, WmataRouteDetails> wmataCache = new HashMap<String, WmataRouteDetails>();
 	@GET
+	@Path("/wmata/")
+	public String getWmataStops(@QueryParam("name") String sortname) {
+		try {
+			WmataRouteDetails details = wmataCache.get(sortname);
+			if(details==null){
+				details = BeanUtil.getWMATAApiImpl().getApiClient().getBusRouteDetails("wateq3gxqzb9s597qky6khd7", sortname);
+				if(details!=null)
+					wmataCache.put(sortname, details);
+			}
+			return JSONUtil.getJsonFromObj(details);
+		} catch (RealTimeDataException e) {
+			e.printStackTrace();
+		} catch (TpException e) {
+			e.printStackTrace();
+		}
+		return "Not Found";
+	}
+	@GET
+	@Path("/busstop/")
+	public String getStops(@QueryParam("s") String stopID,@QueryParam("r") String routeId) {
+		try {
+			WmataApiImpl apiImpl =  (WmataApiImpl) TPApplicationContext.getInstance().getBean("wmataApiImpl");
+			StopMapping stopMapping =  apiImpl.getStopMapping();
+			Map<String, GtfsStop> stopIdMap = stopMapping.getBusGtfsStopsById();
+			GtfsStop gtfsStop = stopIdMap.get(stopID);
+			if(gtfsStop==null){
+				return " No gtfs Stop";
+			}
+			return JSONUtil.getJsonFromObj(gtfsStop.getBusStopsForRoute(routeId));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "Error";
+	}
+	@GET
+	@Path("/railstop/")
+	public String getRailStops(@QueryParam("gtfsStopId") String gtfsStopId,@QueryParam("line") String line) {
+		try {
+			WmataApiImpl apiImpl =  (WmataApiImpl) TPApplicationContext.getInstance().getBean("wmataApiImpl");
+			StopMapping stopMapping =  apiImpl.getStopMapping();
+			List<RailStation> res = new ArrayList<RailStation>();
+			GtfsStop gtfsStop = stopMapping.getRailGtfsStopsById().get(gtfsStopId);
+			Map<RailLine, List<RailStation>> lstGtfsStops = stopMapping.getRailStationByRailLine();
+			for (Map.Entry<RailLine, List<com.nimbler.tp.dataobject.wmata.RailStation>> entry : lstGtfsStops.entrySet()) {
+				List<RailStation> railStations = entry.getValue();
+				RailLine railLine = entry.getKey();
+				if (StringUtils.equalsIgnoreCase(railLine.getDisplayName(),line)){
+					for (RailStation rs : railStations) {
+						if(!ComUtils.isEmptyList(gtfsStop.getLstRailStations()) && gtfsStop.getLstRailStations().get(0).haveStationCode(rs.getCode())){
+							res.add(rs);
+						}
+					}
+					break;
+				}
+
+			}
+
+			return JSONUtil.getJsonFromObj(res);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "Error";
+	}
+	@GET
+	@Path("/getgtfsstop/")
+	public String getGtfsStops(@QueryParam("s") String stopID,@QueryParam("c") String code) {
+		try {
+			WmataApiImpl apiImpl =  (WmataApiImpl) TPApplicationContext.getInstance().getBean("wmataApiImpl");
+			StopMapping stopMapping =  apiImpl.getStopMapping();
+			Collection<RailStation> gtfsStop = stopMapping.getAllRailStations();
+			List<GtfsStop> res = new ArrayList<GtfsStop>();
+
+
+
+			return JSONUtil.getJsonFromObj(res);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "Error";
+	}
+	/*	@GET
 	@Path("/plan/")
 	@Deprecated
 	public String predictWholePlan(@QueryParam(RequestParam.PLAN_ID) String planId) {
@@ -380,7 +485,7 @@ public class RealTimePredictionService {
 			response.setError(TP_CODES.FAIL.getCode());
 		}
 		return getJsonResponse(response);
-	}
+	}*/
 	/**
 	 * ######################################   PRIVATE API ##############################################################
 	 */
@@ -551,4 +656,17 @@ public class RealTimePredictionService {
 			e.printStackTrace();
 		}
 	}
+	public TpPlanService getPlanService() {
+		return planService;
+	}
+	public void setPlanService(TpPlanService planService) {
+		this.planService = planService;
+	}
+	public NextBusApiImpl getNextBusApiImpl() {
+		return nextBusApiImpl;
+	}
+	public void setNextBusApiImpl(NextBusApiImpl nextBusApiImpl) {
+		this.nextBusApiImpl = nextBusApiImpl;
+	}
+
 }

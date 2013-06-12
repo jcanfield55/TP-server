@@ -70,13 +70,14 @@ public class RequestParam {
 	public static final String SAVE_PLAN = "savePlan";
 
 	public static final String NIMBLER_APP_TYPE = "appType";
-	public static final String APP_VERSION = "appVersion";
+	public static final String APP_VERSION = "appVer";
 	public static final String NIMBLER_APP_BUNDLE_ID = "appBundleId";
 
 	public static final String ADV_ENABLE_SF_MUNI    =  "enableSfMuniAdv";
 	public static final String ADV_ENABLE_BART       =  "enableBartAdv";	
 	public static final String ADV_ENABLE_CALTRAIN   =  "enableCaltrainAdv"; 
 	public static final String ADV_ENABLE_AC_TRANSIT =  "enableAcTransitAdv";
+	public static final String ADV_ENABLE_WMATA =  "enableWmataAdv";
 
 	public static final String  TRANSIT_MODE     = "transitMode" ;     
 	public static final String  MAX_BIKE_DISTANCE = "maxBikeDist";

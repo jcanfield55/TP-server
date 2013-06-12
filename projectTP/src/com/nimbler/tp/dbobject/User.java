@@ -66,6 +66,7 @@ public class User implements Serializable {
 	private long lastReadTimeBart;
 	private long lastReadTimeAct;
 	private long lastReadTimeSfMuni;
+	private long lastReadTimeWmata;
 
 	private long lastPushTime;//caltrain app
 	private long lastPushTimeCaltrain;
@@ -89,6 +90,10 @@ public class User implements Serializable {
 	private int enableBartAdv = BOOLEAN_VAL.TRUE.ordinal();
 	private int enableCaltrainAdv = BOOLEAN_VAL.TRUE.ordinal();
 	private int enableAcTransitAdv = BOOLEAN_VAL.FALSE.ordinal();
+	private Integer enableWmataAdv = BOOLEAN_VAL.TRUE.ordinal();
+
+	private Long lastPushTimeWmata;
+
 
 	private int transitMode;
 	private double maxBikeDist;
@@ -122,6 +127,46 @@ public class User implements Serializable {
 	public User() {
 
 	}
+
+
+	public long getLastPushTimeCaltrain() {
+		return lastPushTimeCaltrain;
+	}
+
+
+	public void setLastPushTimeCaltrain(long lastPushTimeCaltrain) {
+		this.lastPushTimeCaltrain = lastPushTimeCaltrain;
+	}
+
+
+	public Long getLastPushTimeWmata() {
+		return lastPushTimeWmata;
+	}
+
+
+	public void setLastPushTimeWmata(Long lastPushTimeWmata) {
+		this.lastPushTimeWmata = lastPushTimeWmata;
+	}
+
+
+	public Integer getEnableWmataAdv() {
+		return enableWmataAdv;
+	}
+
+	public long getLastReadTimeWmata() {
+		return lastReadTimeWmata;
+	}
+
+
+	public void setLastReadTimeWmata(long lastReadTimeWmata) {
+		this.lastReadTimeWmata = lastReadTimeWmata;
+	}
+
+
+	public void setEnableWmataAdv(Integer enableWmataAdv) {
+		this.enableWmataAdv = enableWmataAdv;
+	}
+
 
 	public double getBikeTriangleQuick() {
 		return bikeTriangleQuick;

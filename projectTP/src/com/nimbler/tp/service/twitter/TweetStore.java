@@ -51,7 +51,11 @@ public class TweetStore {
 	 * @return
 	 */
 	public List<Tweet> getTweets(int agencyType) {
-		return agencyToAdvisoriesMap.get(agencyType); 
+		List<Tweet> lst =agencyToAdvisoriesMap.get(agencyType);
+		if(lst==null)
+			lst = new ArrayList<Tweet>();
+		return lst;
+
 	}
 	/**
 	 * 

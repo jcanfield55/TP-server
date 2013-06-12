@@ -402,7 +402,7 @@ public class BARTApiImpl implements RealTimeAPI {
 
 	@Override
 	public VehiclePosition getVehiclePosition(Leg leg) throws FeedsNotFoundException {
-		throw new FeedsNotFoundException("Not suported");
+		throw new FeedsNotFoundException("VehiclePosition Not suported for bart");
 	}
 
 }

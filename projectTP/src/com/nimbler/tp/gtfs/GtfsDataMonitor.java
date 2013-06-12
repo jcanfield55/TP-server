@@ -68,7 +68,7 @@ public class GtfsDataMonitor {
 				throw new TpException("No bundle found");
 			logger.debug(loggerName, "Starting Monitoring for "+gtfsBundles.size()+" bundles");
 			List<GtfsMonitorResult> lstMonitorResults = new ArrayList<GtfsMonitorResult>();			
-			for (GtfsBundle gtfsBundle : gtfsBundles){				
+			for (GtfsBundle gtfsBundle : gtfsBundles){ 
 				GtfsMonitorResult result = checkSingleGtfs(gtfsBundle);
 				GtfsUtils.meargeMonitorResult(result);
 				GtfsUtils.setGtfsSummery(result);
@@ -76,7 +76,7 @@ public class GtfsDataMonitor {
 			}			
 			for (GtfsMonitorResult gtfsMonitorResult : lstMonitorResults) {
 				logger.info(loggerName, gtfsMonitorResult.getGtfsSummury()+"");
-			}			
+			}
 			List<String> lstAttachement = HtmlUtil.getResultTable(lstMonitorResults);
 			String strSummery = HtmlUtil.getResultSummeryTable(lstMonitorResults);
 			mailService.sendMail(TpConstants.GTFS_DATA_COMPARE_MAIL_ID,TpConstants.GTFS_DATA_COMPARE_MAIL_SUBJECT,strSummery,true,lstAttachement,lstAttachement);
@@ -174,7 +174,7 @@ public class GtfsDataMonitor {
 				ComUtils.getDownloadFile(downloadFile,url);
 				logger.debug(loggerName, "Download complete");
 				newMap = utils.getExpireDateFromGtfs(downloadFile);
-			} catch (Exception e) {		
+			} catch (Exception e) {					
 				String className=""; 
 				if(!(e instanceof TpException))
 					className= "["+e.getClass().getSimpleName()+"] "; 

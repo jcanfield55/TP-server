@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.jayway.jsonpath.JsonPath;
 import com.nimbler.tp.dataobject.Itinerary;
@@ -31,7 +32,7 @@ public class JSONUtil {
 	public static String getJsonFromObj(Object obj) throws TpException {
 		if(obj == null)
 			return null;
-		Gson gson = new Gson();
+		Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 		String response =  gson.toJson(obj);
 		if (response==null)
 			throw new TpException(TP_CODES.FAIL.getCode(),"Error while getting JSON String from plan object.");

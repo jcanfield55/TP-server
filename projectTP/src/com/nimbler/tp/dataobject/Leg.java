@@ -5,6 +5,8 @@ package com.nimbler.tp.dataobject;
 
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlAttribute;
+
 /**
  * One leg of a trip -- that is, a temporally continuous piece of the journey that takes place on a
  * particular vehicle (or on foot).
@@ -141,6 +143,9 @@ public class Leg {
 	private String boardRule;
 
 	private String alightRule;
+
+	@XmlAttribute
+	public Boolean rentedBike;
 
 	private Long duration;
 
@@ -535,6 +540,5 @@ public class Leg {
 			return false;
 		return true;
 	}*/
-
 
 }

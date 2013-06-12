@@ -3,13 +3,10 @@
  */
 package com.nimbler.tp.service.advisories;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,23 +15,22 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.Vector;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.document.mongodb.query.BasicQuery;
 
 import com.jayway.jsonpath.JsonPath;
 import com.mongodb.BasicDBObject;
 import com.nimbler.tp.common.DBException;
-import com.nimbler.tp.dataobject.DefaultTweet;
-import com.nimbler.tp.dataobject.DefaultTweet.TwitterResponse;
 import com.nimbler.tp.dataobject.NimblerApps;
 import com.nimbler.tp.dataobject.ThresholdBoard;
 import com.nimbler.tp.dataobject.Tweet;
@@ -49,8 +45,6 @@ import com.nimbler.tp.service.smtp.MailService;
 import com.nimbler.tp.service.twitter.TweetStore;
 import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
-import com.nimbler.tp.util.HttpUtils;
-import com.nimbler.tp.util.JSONUtil;
 import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.StatusMsgConfig;
 import com.nimbler.tp.util.TpConstants;
@@ -58,13 +52,13 @@ import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
 import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
 import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 import com.nimbler.tp.util.TpConstants.PUSH_MSG_CONSTANT;
-import com.nimbler.tp.util.TpException;
 
 /**
  * 
- * @author nIKUNJ
+ * @author nIKUNJ,nirmal
  *
  */
+@SuppressWarnings("unchecked")
 public class AdvisoriesPushService {
 
 	@Autowired 
@@ -78,9 +72,6 @@ public class AdvisoriesPushService {
 
 	private String loggerName = "com.nimbler.tp.service.advisories.AdvisoriesService";
 
-	private String timeIntervalInMin = "3";
-
-	private String tweetUrl = "http://search.twitter.com/search.json";
 
 	private Map<Integer, String> agencyTweetSourceMap;
 
@@ -89,8 +80,6 @@ public class AdvisoriesPushService {
 	private int pushIntervalStartTime = 5; // in hour
 
 	private int pushIntervalEndTime = 22;
-
-	private int validTweetHours = 6;
 
 	private int thresholdToInc = 1;
 
@@ -116,6 +105,8 @@ public class AdvisoriesPushService {
 
 	@Autowired
 	private TwitterMonitor twitterMonitor;
+	@Autowired
+	TwitterSearchManager twitterSearchApi;
 
 	/**
 	 *<column name,start-end min of day> 
@@ -142,38 +133,33 @@ public class AdvisoriesPushService {
 			for (int i = 1; i <= maxAlertThreshhold; i++) 
 				boards.add(new ThresholdBoard(agency.ordinal(),i));
 		}
-		//		addDefaultBartLastTweetTime();
-	}
-
-	private void addDefaultBartLastTweetTime() {
-		try {
-			NimblerParams nimblerParams = 	(NimblerParams) persistenceService.findOne(
-					MONGO_TABLES.nimbler_params.name(),TpConstants.NIMBLER_PARAMS_NAME,
-					AGENCY_TYPE.BART.getLastReadTimeColumnName(), NimblerParams.class);
-			if(nimblerParams==null){
-				nimblerParams = new NimblerParams();
-				nimblerParams.setName(AGENCY_TYPE.BART.getPushTimeColumnName());
-				nimblerParams.setValue(DateUtils.addHours(new Date(),-6).getTime()+"");
-				persistenceService.addObject(MONGO_TABLES.nimbler_params.name(), nimblerParams);
-			}
-		} catch (DBException e) {
-			e.printStackTrace();
-		}
 	}
 
 	/**
 	 * Reset all counters.
+	 * @param agencies
 	 */
-	public void resetAllCounters() {		
+	public void resetAllCounters(Integer[] agencies) {
 		synchronized (thresholdLock) {
-			for (Vector<ThresholdBoard> thresholdBoard : thresholdBoards.values()) {
-				for (ThresholdBoard board : thresholdBoard) {
+			for (Integer agency : agencies) {
+				Vector<ThresholdBoard> boards =  thresholdBoards.get(agency);
+				if(boards==null){
+					logger.error(loggerName, "No ThresholdBoards found to reset for agency id "+agency);
+					continue;
+				}
+				for (ThresholdBoard board : boards) {
 					logger.debug(loggerName, "before reset Threshold + Increament: "+board.getThreshold()+"+"+board.getIncreamentCount()+"");
 					board.resetCounter();
 				}			
 			}
 		}
 		logger.info(loggerName, "All threshold counters reset.");
+	}
+
+	public void onDayFinish(String strAgencies) {
+		Integer[] agencies = ComUtils.splitToIntArray(strAgencies);
+		resetAllCounters(agencies);
+		clearUrgentAdvisories(agencies);
 	}
 	/**
 	 * 
@@ -182,10 +168,6 @@ public class AdvisoriesPushService {
 		try {
 			logger.debug(loggerName, "Fetching Tweets.......");
 			fetchTweets();
-			if(getCurrentPushIntervalName()==null){
-				logger.info(loggerName, "Not valid push time, skipping");
-				return;
-			}
 			if(!enablePushNotification){
 				logger.warn(loggerName, "Push notification Disabled, skipping..");
 				return;
@@ -205,23 +187,16 @@ public class AdvisoriesPushService {
 			Integer agency = agencies.next();
 			String commaSeparatedSource = agencyTweetSourceMap.get(agency);
 			String[] tweetSources = commaSeparatedSource.split(",");
-			List<String> list = new ArrayList<String>();
-			for (String source: tweetSources){
-				list.add("from:"+source.trim());
-			}
-			for (int i = 0; i < 3; i++) {
+			int tryCount = 3;
+			for (int i = 0; i < tryCount; i++) {
 				try {
-					String queryParam = StringUtils.join(list,"+OR+")+ " since:" + ComUtils.getFormatedDate("yyyy-MM-dd");
-
-					String response = getTwitterResponse(queryParam);
-					List<Tweet> tweetList = getTweets(response);
-					if (tweetList!=null)
-						TweetStore.getInstance().setTweet(tweetList, agency);
+					List<Tweet> tweetList = twitterSearchApi.fetchTweets(tweetSources,agencyTweetSourceIconMap);
+					TweetStore.getInstance().setTweet(tweetList, agency);
 					twitterMonitor.fetchSucess(tweetSources);
 					break;
 				} catch (Exception e) {
 					String retry="";
-					if(i<2)
+					if(i<(tryCount-1))
 						retry = " - retrying....";
 					else
 						twitterMonitor.fetchFailed(tweetSources,e);
@@ -241,6 +216,12 @@ public class AdvisoriesPushService {
 		Set<ThresholdIncData> boardsToInc = new HashSet<ThresholdIncData>();
 		while (appIdentifiers.hasNext()) {
 			int appIdentifier = appIdentifiers.next();
+
+			TimeZone tz = ComUtils.getAppTimeZone(appIdentifier);
+			if(getCurrentPushIntervalName(tz)==null){
+				logger.info(loggerName, "Not valid push time for App: "+appIdentifier+", skipping");
+				continue;
+			}
 			//For many agencies in one app: use this for sending push to specific app for specific agencies
 			String agencies = apps.getAppIdentifierToAgenciesMap().get(appIdentifier);
 			String[] agencyArr = agencies.split(",");
@@ -329,9 +310,8 @@ public class AdvisoriesPushService {
 				logger.debug(loggerName, "No tweet to send....");
 				return;
 			}
-			//			System.out.println("last teet time: "+new Date(lastTweetSentTime));
+
 			Tweet latestTweet = tweetList.get(0);
-			//			System.out.println("latestTweete  : "+new Date(latestTweet.getTime()));
 			long maxTweetTime = Math.max(lastTweetSentTime,latestTweet.getTime());
 			ListIterator<Tweet> itrTweet = tweetList.listIterator(tweetList.size());
 			while (itrTweet.hasPrevious()) {
@@ -356,32 +336,6 @@ public class AdvisoriesPushService {
 	 * @param response
 	 * @return
 	 */
-	public List<Tweet> getTweets(String response) {
-		List<Tweet> tweetList = new ArrayList<Tweet>();
-		TwitterResponse twitterResponse = (TwitterResponse) JSONUtil.getObjectFromJson(response, TwitterResponse.class);
-		if(twitterResponse!=null && !ComUtils.isEmptyList(twitterResponse.getResults())){
-			for (DefaultTweet dt : twitterResponse.getResults()) {
-				if(!ComUtils.isEmptyString(dt.getTo_user_name()))
-					continue;
-				long tweetTime = parseTweetTime(dt.getCreated_at());
-				boolean validTweet = validateTweet(tweetTime);
-				if (!validTweet)
-					continue;
-				Tweet tweet = new Tweet();
-				tweet.setTweetTime(dt.getCreated_at());
-				tweet.setTime(tweetTime);
-				tweet.setTweet("@"+dt.getFrom_user()+":"+dt.getText());
-				tweet.setSource(agencyTweetSourceIconMap.get(StringUtils.lowerCase(dt.getFrom_user())));
-				tweetList.add(tweet);
-			}
-		}
-		return tweetList;
-	}
-	/**
-	 * 
-	 * @param response
-	 * @return
-	 */
 	public List<Long> getTweetTime(String response) {
 		List<String> createdDate = JsonPath.read(response, TpConstants.TWEET_CREATED);
 		List<Long> time = new ArrayList<Long>();
@@ -389,22 +343,6 @@ public class AdvisoriesPushService {
 			time.add(ComUtils.convertIntoTime(date.substring(0,date.length()-6)));
 		}
 		return time;
-	}
-	public Long parseTweetTime(String date) {
-		return ComUtils.convertIntoTime(date.substring(0,date.length()-6));
-	}
-	/**
-	 * 
-	 * @param userid
-	 * @return
-	 * @throws TpException 
-	 * @throws UnsupportedEncodingException 
-	 */
-	private String getTwitterResponse(String queryParameter) throws  UnsupportedEncodingException, TpException {
-		String response =null;
-		String baseUrl = tweetUrl + "?q=" + URLEncoder.encode(queryParameter, "UTF-8")+"&rpp=100";
-		response = HttpUtils.getHttpResponse(baseUrl);
-		return response;
 	}
 	/**
 	 * 	
@@ -429,13 +367,13 @@ public class AdvisoriesPushService {
 				alertMsg = StatusMsgConfig.getInstance().getMsg(PUSH_MSG_CONSTANT.SF_REGULAR_TWEET.name());
 				alertMsg = String.format(alertMsg, "%s",agencyType.getText(),"%s");
 			}			
-
+			TimeZone timeZone = ComUtils.getAppTimeZone(appType.ordinal());
 			BasicDBObject queryObject = new BasicDBObject();
-			boolean isWeekEnd = ComUtils.isWeekEnd();
+			boolean isWeekEnd = ComUtils.isWeekEnd(timeZone);
 			if(isWeekEnd){
 				queryObject.put(RequestParam.NOTIF_TIMING_WEEKEND, BOOLEAN_VAL.TRUE.ordinal());
 			}else{
-				String intervalColumnName = getCurrentPushIntervalName(); //morning/evening
+				String intervalColumnName = getCurrentPushIntervalName(timeZone); //morning/evening
 				if(intervalColumnName==null){
 					logger.info(loggerName, "No valid interval column found for current time (possibly entered in blackout), skip sending.....");
 					return count;
@@ -507,11 +445,12 @@ public class AdvisoriesPushService {
 			AGENCY_TYPE agencyType = AGENCY_TYPE.BART;
 
 			BasicDBObject queryObject = new BasicDBObject();
-			boolean isWeekEnd = ComUtils.isWeekEnd();
+			TimeZone timeZone = ComUtils.getAppTimeZone(appType.ordinal());
+			boolean isWeekEnd = ComUtils.isWeekEnd(timeZone);
 			if(isWeekEnd){
 				queryObject.put(RequestParam.NOTIF_TIMING_WEEKEND, BOOLEAN_VAL.TRUE.ordinal());
 			}else{
-				String intervalColumnName = getCurrentPushIntervalName(); //morning/evening
+				String intervalColumnName = getCurrentPushIntervalName(timeZone); //morning/evening
 				if(intervalColumnName==null){
 					logger.info(loggerName, "No valid interval column found for current time (possibly entered in blackout), skip sending.....");
 					return count;
@@ -663,6 +602,7 @@ public class AdvisoriesPushService {
 			for (int pageNumber=0; pageNumber<totalPage; pageNumber++) {
 				basicQuery.setLimit(pageSize);
 				basicQuery.setSkip(pageSize*pageNumber);
+
 				List<User> resultSet = persistenceService.findByQuery(MONGO_TABLES.users.name(),basicQuery,User.class);
 				if (resultSet==null || resultSet.size()==0)
 					break;
@@ -735,34 +675,6 @@ public class AdvisoriesPushService {
 	 * 
 	 * @return
 	 */
-	public String getTweetUrl() {
-		return tweetUrl;
-	}
-	/**
-	 * 
-	 * @param tweetUrl
-	 */
-	public void setTweetUrl(String tweetUrl) {
-		this.tweetUrl = tweetUrl;
-	}
-	/**
-	 * 
-	 * @return
-	 */
-	public String getTimeIntervalInMin() {
-		return timeIntervalInMin;
-	}
-	/**
-	 * 
-	 * @param timeIntervalInMin
-	 */
-	public void setTimeIntervalInMin(String timeIntervalInMin) {
-		this.timeIntervalInMin = timeIntervalInMin;
-	}
-	/**
-	 * 
-	 * @return
-	 */
 	public APNService getApnService() {
 		return apnService;
 	}
@@ -776,8 +688,12 @@ public class AdvisoriesPushService {
 	/**
 	 * 
 	 */
-	public void clearUrgentAdvisories() {
-		TweetStore.getInstance().clearUrgentAdvisories();
+	public void clearUrgentAdvisories(Integer[] agencies) {
+		logger.debug(loggerName, "clearing for agency: "+ToStringBuilder.reflectionToString(agencies));
+		logger.debug(loggerName,"before...."+ TweetStore.getInstance().getUrgentTweets(ArrayUtils.toPrimitive(agencies)).toString());
+		TweetStore.getInstance().clearUrgentAdvisories(agencies);
+		logger.debug(loggerName,"after...."+ TweetStore.getInstance().getUrgentTweets(ArrayUtils.toPrimitive(agencies)).toString());
+		logger.debug(loggerName, "done....");
 	}
 	/**
 	 * 
@@ -789,22 +705,15 @@ public class AdvisoriesPushService {
 		SUCCESS,
 		NO_DEVICE_FOUND
 	}
-	/**
-	 * 
-	 * @return
-	 */
-	private boolean isValidPushTimeForCalTrain() {		
-		int current = NumberUtils.toInt(DateFormatUtils.format(new Date(), "HH"));
-		return pushIntervalStartTime<=current && pushIntervalEndTime>current; 
-	}
 
 	/**
 	 * Gets the current push interval name.
 	 *
 	 * @return the current push interval name
 	 */
-	private String getCurrentPushIntervalName(){
+	private String getCurrentPushIntervalName(TimeZone timeZone){
 		Calendar c =  Calendar.getInstance();
+		c.setTimeZone(timeZone);
 		int currentMins = c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE);
 		for (Entry<String, String> entry : pushTimeInterval.entrySet()) {
 			String name = entry.getKey();
@@ -817,15 +726,7 @@ public class AdvisoriesPushService {
 		}
 		return null;
 	}
-	/**
-	 * 
-	 * @param createdDate
-	 * @return
-	 */
-	private boolean validateTweet(Long createdDate) {
-		long oldtimeLimit = System.currentTimeMillis()- (validTweetHours * DateUtils.MILLIS_PER_HOUR);		
-		return (createdDate > oldtimeLimit);
-	}
+
 	/**
 	 * 
 	 * @return
@@ -868,12 +769,7 @@ public class AdvisoriesPushService {
 	public void setPushIntervalEndTime(int pushIntervalEndTime) {
 		this.pushIntervalEndTime = pushIntervalEndTime;
 	}
-	public int getValidTweetHours() {
-		return validTweetHours;
-	}
-	public void setValidTweetHours(int validTweetHours) {
-		this.validTweetHours = validTweetHours;
-	}
+
 
 	public int getMaxTweetTextSizeToSend() {
 		return maxTweetTextSizeToSend;

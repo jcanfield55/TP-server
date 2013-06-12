@@ -1,5 +1,6 @@
 package com.nimbler.tp.service.advisories;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -7,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.document.mongodb.query.BasicQuery;
 
@@ -200,9 +202,21 @@ public class TwitterAdvisoriesService implements AdvisoriesService {
 			return user.getLastReadTimeBart();
 		} else if (agency == AGENCY_TYPE.AC_TRANSIT.ordinal()) {
 			return user.getLastReadTimeAct();
-		} else {
+		} else if (agency == AGENCY_TYPE.SFMUNI.ordinal()) {
 			return user.getLastReadTimeSfMuni();
+		} else {//dynamic for all other
+			try {
+				String strMethod = AGENCY_TYPE.values()[agency].getLastReadTimeColumnName();
+				strMethod = StringUtils.capitalize(strMethod);
+				Method method = user.getClass().getMethod("get"+strMethod);
+				Object val = method.invoke(user);
+				if(val!=null)
+					return (Long)val;
+			} catch (Exception e) {
+				logger.error(loggerName, "user:"+ user + ", agency: \" + agency",e);
+			}
 		}
+		return 0;
 	}
 	/**
 	 * 

@@ -1,6 +1,5 @@
 package com.nimbler.tp.dataobject;
 
-import com.nimbler.tp.util.ComUtils;
 
 public class Tweet {
 
@@ -35,14 +34,6 @@ public class Tweet {
 
 
 	public Long getTime() {
-		if(time==null || tweetTime!=null){
-			try {
-				time = ComUtils.convertIntoTime(tweetTime.substring(0,tweetTime.length()-6));
-			} catch (Exception e) {
-				System.out.println("Error while convering time");
-			}
-
-		}
 		return time;
 	}
 

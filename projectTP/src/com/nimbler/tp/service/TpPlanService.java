@@ -6,6 +6,8 @@
  */
 package com.nimbler.tp.service;
 
+import static org.apache.commons.lang3.StringUtils.defaultString;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
@@ -37,6 +39,7 @@ import com.nimbler.tp.util.JSONUtil;
 import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.TpConstants;
 import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
+import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 import com.nimbler.tp.util.TpException;
 
 /**
@@ -54,6 +57,10 @@ public class TpPlanService {
 	 * 
 	 */
 	private String loggerName;
+	/**
+	 * <apptype, routerid>
+	 */
+	private Map<String, String> appTypeToRouterID;
 
 	public static String OTP_DATE_FORMAT="MM/dd/yyyy";
 	public static String OTP_TIME_FORMAT="hh:mm a";
@@ -146,10 +153,16 @@ public class TpPlanService {
 				if(val!=null)
 					lstOtpParams.add( TpConstants.OTP_PARAMETERS[i]+"="+URLEncoder.encode(val));
 			}			
+			String routerId = getAppRouterId(reqMap.get(RequestParam.NIMBLER_APP_TYPE));
+			if(routerId!=null){
+				lstOtpParams.add(RequestParam.ROURER_ID+"="+URLEncoder.encode(routerId));
+			}
 			String url = TpConstants.SERVER_URL+"ws/plan?"+StringUtils.join(lstOtpParams, "&");
 			long start = System.currentTimeMillis();
+			logger.debug(loggerName, "Plan URL: "+url);
 			//			System.out.println(url);
 			String planJsonString = HttpUtils.getHttpResponse(url);
+			//			logger.debug(loggerName, planJsonString);
 			//			System.out.println(planJsonString);
 			long planGenerationTime = System.currentTimeMillis()-start;
 			reqMap.put(RequestParam.TIME_TRIP_PLAN, planGenerationTime+"");
@@ -159,10 +172,15 @@ public class TpPlanService {
 				logger.debug(loggerName, "No plan found, possoble error:"+response.getError());
 				return response;
 			}
+
+			setPlanUrl(response);
+
 			TripPlan plan = response.getPlan();
 			plan.setDeviceId(deviceId);
 			plan.setAppType(NumberUtils.toInt(reqMap.get(TpConstants.APP_TYPE)));
-			plan.setCreateTime(System.currentTimeMillis()); 
+			plan.setCreateTime(System.currentTimeMillis());
+			plan.setRequestParameters(response.getRequestParameters());
+			plan.setRequestUrl(url);
 			List<Itinerary> itineraries = plan.getItineraries();
 
 			String strSavePlan = StringUtils.defaultString(reqMap.get(RequestParam.SAVE_PLAN),"true");
@@ -199,18 +217,39 @@ public class TpPlanService {
 		return response;	
 	}
 
+	private String getAppRouterId(String app) {
+		String appType = defaultString(app,NIMBLER_APP_TYPE.CALTRAIN.ordinal()+"");
+		return appTypeToRouterID.get(appType);		
+	}
+
+	/**
+	 * Gets the graph meta data.
+	 *
+	 * @param appType the app type
+	 * @return the graph meta data
+	 * @throws TpException the tp exception
+	 */
+	public String getGraphMetaData(String appType) throws TpException {
+		String url = TpConstants.SERVER_META_DATA;
+		String routerId = getAppRouterId(appType);
+		if(routerId!=null)
+			url = url+"?"+RequestParam.ROURER_ID+"="+URLEncoder.encode(routerId);
+		String metadata = HttpUtils.getHttpResponse(url);
+		return metadata;
+	}
+
 	/**
 	 * Gets the next legs.
 	 *
 	 * @param lstLegs the lst legs
 	 * @return the next legs
 	 */
-	public TripResponse getNextLegs(List<Leg> lstLegs) {
+	public TripResponse getNextLegs(List<Leg> lstLegs,String appType) {
 		TripResponse tripResponse = new TripResponse();
 		long time = System.currentTimeMillis();
 		List<Itinerary> lstResLegs = new ArrayList<Itinerary>();
 		for (Leg leg : lstLegs) {
-			Itinerary itinerary =  getNextLegs(leg);
+			Itinerary itinerary =  getNextLegs(leg,appType);
 			//printLeg(leg,itinerary);
 			lstResLegs.add(itinerary);
 		}		
@@ -236,14 +275,18 @@ public class TpPlanService {
 	 * @param leg the leg
 	 * @return the next leg
 	 */
-	public Itinerary getNextLegs(Leg leg) {		
+	public Itinerary getNextLegs(Leg leg,String appType) {		
 		try {
 			String baseUrl = TpConstants.SERVER_URL+"ws/nimbler/nextTripFromStop";
 			List<String> lstOtpParams = new ArrayList<String>();
-			lstOtpParams.add("agency="+URLEncoder.encode(leg.getAgencyId()));
+			lstOtpParams.add("agency="+URLEncoder.encode(leg.getFrom().getStopId().getAgencyId()));
 			lstOtpParams.add("fromStopId="+URLEncoder.encode(leg.getFrom().getStopId().getId()));
 			lstOtpParams.add("toStopId="+URLEncoder.encode(leg.getTo().getStopId().getId()));
 			lstOtpParams.add("startTime="+leg.getStartTime());
+			String routerId = getAppRouterId(appType);
+			if(routerId!=null){
+				lstOtpParams.add(RequestParam.ROURER_ID+"="+URLEncoder.encode(routerId));
+			}
 			Long size = leg.getSize();
 			if(size==null || size == 0L)
 				size = 15L;			
@@ -262,24 +305,27 @@ public class TpPlanService {
 		return null;
 	}
 
-	public StopTimeType getClosestTime(Leg leg,long time) {		
-		try {
-			String baseUrl = TpConstants.SERVER_URL+"ws/nimbler/closestSchedule";
-			//			String baseUrl = "http://localhost:7070/opentripplanner-api-webapp/ws/nimbler/closestSchedule";
-			List<String> lstOtpParams = new ArrayList<String>();
-			lstOtpParams.add("agency="+URLEncoder.encode(leg.getAgencyId()));
-			lstOtpParams.add("fromStopId="+URLEncoder.encode(leg.getFrom().getStopId().getId()));
-			lstOtpParams.add("toStopId="+URLEncoder.encode(leg.getTo().getStopId().getId()));
-			lstOtpParams.add("startTime="+leg.getStartTime());
-			lstOtpParams.add("time="+time);			
-			lstOtpParams.add("endTime="+leg.getEndTime());
-			String url = baseUrl+"?"+StringUtils.join(lstOtpParams, "&");			
-			String planJsonString = HttpUtils.getHttpResponse(url);			
-			StopTimeType stopTimeList = (StopTimeType) JSONUtil.getObjectFromJson(planJsonString,StopTimeType.class);
-			return stopTimeList;
-		} catch (Exception e) {
-			logger.error(loggerName, e);
+	public StopTimeType getClosestTime(Leg leg,long time,String appType) throws TpException {
+		String baseUrl = TpConstants.SERVER_URL+"ws/nimbler/closestSchedule";
+		//			String baseUrl = "http://localhost:7070/opentripplanner-api-webapp/ws/nimbler/closestSchedule";
+		List<String> lstOtpParams = new ArrayList<String>();
+		lstOtpParams.add("agency="+URLEncoder.encode(leg.getAgencyId()));
+		lstOtpParams.add("fromStopId="+URLEncoder.encode(leg.getFrom().getStopId().getId()));
+		lstOtpParams.add("toStopId="+URLEncoder.encode(leg.getTo().getStopId().getId()));
+		lstOtpParams.add("startTime="+leg.getStartTime());
+		lstOtpParams.add("time="+time);			
+		lstOtpParams.add("endTime="+leg.getEndTime());
+		String routerId = getAppRouterId(appType);
+		if(routerId!=null){
+			lstOtpParams.add(RequestParam.ROURER_ID+"="+URLEncoder.encode(routerId));
 		}
+		String url = baseUrl+"?"+StringUtils.join(lstOtpParams, "&");			
+		String planJsonString = HttpUtils.getHttpResponse(url);			
+		StopTimeType stopTimeList = (StopTimeType) JSONUtil.getObjectFromJson(planJsonString,StopTimeType.class);
+		if(stopTimeList.isValid())
+			return stopTimeList;
+		if(stopTimeList.message!=null)
+			throw new TpException(stopTimeList.message);
 		return null;
 	}
 	private void trimData(Itinerary itinerary) {
@@ -561,6 +607,20 @@ public class TpPlanService {
 	}
 	public void setLoggerName(String loggerName) {
 		this.loggerName = loggerName;
+	}
+
+	/**
+	 * @return the appTypeToRouterID
+	 */
+	public Map<String, String> getAppTypeToRouterID() {
+		return appTypeToRouterID;
+	}
+
+	/**
+	 * @param appTypeToRouterID the appTypeToRouterID to set
+	 */
+	public void setAppTypeToRouterID(Map<String, String> appTypeToRouterID) {
+		this.appTypeToRouterID = appTypeToRouterID;
 	}
 
 

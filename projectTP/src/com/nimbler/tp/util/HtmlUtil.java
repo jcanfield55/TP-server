@@ -503,7 +503,9 @@ public class HtmlUtil {
 				.replace("--feedbacktime--", DateFormatUtils.format(new Date(), TpConstants.OTP_DATE_FORMAT))
 				.replace("--sendermail--",StringUtils.defaultIfBlank(feedback.getEmailId(), "-"))
 				.replace("--txtfb--",StringUtils.defaultIfBlank(feedback.getFbText(), "-"))
-				.replace("--source--", FEEDBACK_SOURCE_TYPE.values()[feedback.getSource()].name());
+				.replace("--source--", FEEDBACK_SOURCE_TYPE.values()[feedback.getSource()].name())
+				.replace("--apptype--",NIMBLER_APP_TYPE.values()[feedback.getAppType()].getText())
+				.replace("--appver--", feedback.getAppVersion());
 		return otpFeedback;
 
 	}

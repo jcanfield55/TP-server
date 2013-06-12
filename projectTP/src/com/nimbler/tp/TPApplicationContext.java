@@ -32,6 +32,7 @@ public class TPApplicationContext {
 
 		NEXT_BUS_API_Impl("nextBusApiImpl"),
 		BART_API_IMPL("bartApiImpl"),
+		WMATA_API_IMPL("wmataApiImpl"),
 
 		CALTRAIN_ADVISORIES_SERVICE("caltrainAdvisoriesService"),
 		USER_MANAGEMENT_SERVICE("userManagementService"),
@@ -42,6 +43,7 @@ public class TPApplicationContext {
 		ADVISORIES_PUSH_SERVICE("advisoriesPushService"),
 		NIMBLER_APPS_BEAN("nimblerApps"),
 		GTFS_DATA_SERVICE("gtfsDataService"),
+		TWITTER_SEARCH_MANAGER("twitterSearchManager"),
 		FLURRY_MANAGEMENT_SERVICE("flurryManagementService");
 		String name;
 

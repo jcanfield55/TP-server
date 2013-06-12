@@ -1,7 +1,10 @@
 package com.nimbler.tp.service.livefeeds;
 
+import java.util.Map;
+
+import com.nimbler.tp.common.FeedsNotFoundException;
+import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.util.BeanUtil;
-import com.nimbler.tp.util.TpConstants;
 /**
  * Factory class that provides appropriate handler for getting real time data.
  * Selection criteria is OTP Leg type.
@@ -24,13 +27,12 @@ public class RealTimeAPIFactory {
 	 * @param legMode
 	 * @return
 	 */
-	public RealTimeAPI getLiveFeedAPI(String legMode) {
-		RealTimeAPI realTimeAPI = null;
-		if (legMode.equals(TpConstants.LIVE_FEED_MODES.BUS.name()) || legMode.equals(TpConstants.LIVE_FEED_MODES.TRAM.name()) || legMode.equals(TpConstants.LIVE_FEED_MODES.CABLE_CAR.name())) {
-			realTimeAPI =  BeanUtil.getNextBusApiImpl();
-		} else if (legMode.equals(TpConstants.LIVE_FEED_MODES.SUBWAY.name())) {
-			realTimeAPI =  BeanUtil.getBARTApiImpl();
-		}
-		return realTimeAPI;
+	public RealTimeAPI getLiveFeedAPI(Leg leg) throws FeedsNotFoundException{
+		String agencyName  = leg.getAgencyName();
+		Map<String, RealTimeAPI> realmtimeAgencyMap = BeanUtil.getNimblerAppsBean().getRealTimeApiByAgency();
+		RealTimeAPI api =  realmtimeAgencyMap.get(agencyName);
+		if(api==null)
+			throw new FeedsNotFoundException("No Implementation found for agency:"+agencyName);
+		return api;
 	}
 }

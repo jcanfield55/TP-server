@@ -76,7 +76,8 @@ public class LoggingService {
 	 */
 	public void error(String loggerName, String message) {
 		Logger logger = loggers.get(loggerName);
-		logger.error(getClassName()+message);
+		if(logger!=null)
+			logger.error(getClassName()+message);
 	}
 	/**
 	 * 

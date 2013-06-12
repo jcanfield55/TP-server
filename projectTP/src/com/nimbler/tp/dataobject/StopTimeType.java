@@ -35,11 +35,32 @@ public class StopTimeType {
 	public  String agencyId;
 
 	public  String tripId;
-	public long startTime;
+	public Long startTime;
 	public String headsign;
 	public String routeId;
 	public String routeShortName;
 	public String routeLongName;
+	public String message;
 
+	public boolean isValid(){
+		return startTime!=null;
+	}
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "StopTimeType ["
+				+ (agencyId != null ? "agencyId=" + agencyId + ", " : "")
+				+ (tripId != null ? "tripId=" + tripId + ", " : "")
+				+ (startTime != null ? "startTime=" + startTime + ", " : "")
+				+ (headsign != null ? "headsign=" + headsign + ", " : "")
+				+ (routeId != null ? "routeId=" + routeId + ", " : "")
+				+ (routeShortName != null ? "routeShortName=" + routeShortName
+						+ ", " : "")
+						+ (routeLongName != null ? "routeLongName=" + routeLongName
+								+ ", " : "")
+								+ (message != null ? "message=" + message : "") + "]";
+	}
 
 }

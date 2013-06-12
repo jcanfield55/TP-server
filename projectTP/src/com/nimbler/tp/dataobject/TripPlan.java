@@ -7,6 +7,7 @@ package com.nimbler.tp.dataobject;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 
@@ -44,9 +45,15 @@ public class TripPlan implements Cloneable,Serializable{
 	 */
 	private List<Itinerary> itineraries = new ArrayList<Itinerary>();
 
-	private String planUrlParams;
+	private String planUrlParams;//paramaters
+
+	private Map<String, String> requestParameters;
 
 	private int appType = NIMBLER_APP_TYPE.CALTRAIN.ordinal();
+	/**
+	 * Actual url that was called
+	 */
+	private String requestUrl;
 
 	public TripPlan() {}
 
@@ -109,6 +116,14 @@ public class TripPlan implements Cloneable,Serializable{
 				+ ", itineraries=" + itineraries + "]";
 	}
 
+	public String getRequestUrl() {
+		return requestUrl;
+	}
+
+	public void setRequestUrl(String requestUrl) {
+		this.requestUrl = requestUrl;
+	}
+
 	public String getId() {
 		return id;
 	}
@@ -145,6 +160,14 @@ public class TripPlan implements Cloneable,Serializable{
 		if(appType==0)
 			return;
 		this.appType = appType;
+	}
+
+	public Map<String, String> getRequestParameters() {
+		return requestParameters;
+	}
+
+	public void setRequestParameters(Map<String, String> requestParameters) {
+		this.requestParameters = requestParameters;
 	}
 
 }

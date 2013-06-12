@@ -6,6 +6,8 @@
  */
 package com.nimbler.tp.service;
 
+
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,12 +16,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.mongodb.BasicDBObject;
 import com.nimbler.tp.common.DBException;
+import com.nimbler.tp.dataobject.NimblerApps;
+import com.nimbler.tp.dataobject.RequestMap;
 import com.nimbler.tp.dbobject.User;
 import com.nimbler.tp.mongo.MongoQueryConstant;
 import com.nimbler.tp.mongo.PersistenceService;
+import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
+import com.nimbler.tp.util.DbUtils;
+import com.nimbler.tp.util.OperationCode.TP_CODES;
 import com.nimbler.tp.util.RequestParam;
 import com.nimbler.tp.util.TpConstants;
+import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
 import com.nimbler.tp.util.TpConstants.MONGO_TABLES;
 import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
 import com.nimbler.tp.util.TpException;
@@ -44,6 +52,7 @@ public class UserManagementService {
 	 * Save alert preferences.
 	 *
 	 * @param usr the req user value
+	 * @deprecated
 	 */
 	public void saveAlertPreferences(User usr) {
 		try {
@@ -68,6 +77,8 @@ public class UserManagementService {
 				map.put(RequestParam.ADV_ENABLE_BART,usr.getEnableBartAdv());
 				map.put(RequestParam.ADV_ENABLE_CALTRAIN,usr.getEnableCaltrainAdv());
 				map.put(RequestParam.ADV_ENABLE_SF_MUNI,usr.getEnableSfMuniAdv());                             
+				map.put(RequestParam.ADV_ENABLE_WMATA,usr.getEnableWmataAdv());
+
 				map.put(RequestParam.NOTIF_TIMING_MORNING,usr.getNotifTimingMorning());
 				map.put(RequestParam.NOTIF_TIMING_MIDDAY,usr.getNotifTimingMidday());
 				map.put(RequestParam.NOTIF_TIMING_EVENING,usr.getNotifTimingEvening());
@@ -83,7 +94,6 @@ public class UserManagementService {
 				map.put(RequestParam.BIKE_TRIANGLE_BIKEFRIENDLY, usr.getBikeTriangleBikeFriendly());
 				map.put(RequestParam.BIKE_TRIANGLE_FLAT, usr.getBikeTriangleFlat());
 				map.put(RequestParam.BIKE_TRIANGLE_QUICK, usr.getBikeTriangleQuick());
-				map.put("appVer", usr.getAppVer());
 				persistenceService.update(MONGO_TABLES.users.name(), query , map);
 			} else {
 				usr.setCreateTime(time);
@@ -92,6 +102,76 @@ public class UserManagementService {
 			}
 		} catch (DBException e) {
 			logger.error(loggerName, e.getMessage());
+		}
+	}
+
+
+	/**
+	 * Save alert preferences.
+	 *
+	 * @param reqParam the req param
+	 * @throws TpException the tp exception
+	 */
+	public void saveAlertPreferences(RequestMap req) throws TpException {
+		try {
+			int appType = req.getAppType();
+			long time = System.currentTimeMillis();
+			String deviceTocken = req.getString(RequestParam.DEVICE_TOKEN);
+
+			BasicDBObject usr = new BasicDBObject();
+			usr.put(TpConstants.APP_TYPE, appType);
+			usr.put(TpConstants.NUMBER_OF_ALERT, req.getInt(RequestParam.ALERT,5));
+			usr.put(TpConstants.DEVICE_ID, req.getString(RequestParam.DEVICE_ID));
+			usr.put(TpConstants.MAX_WALK_DISTANCE, req.getDouble(RequestParam.MAX_DISTANCE));
+			usr.put(TpConstants.DEVICE_TOKEN, deviceTocken);
+			usr.put(RequestParam.APP_VERSION, req.getString(RequestParam.APP_VERSION,"-1"));
+
+			usr.put(TpConstants.UPDATE_TIME, time);
+
+			NimblerApps apps = BeanUtil.getNimblerAppsBean();
+			Integer[] agencies = ComUtils.splitToIntArray(apps.getAppIdentifierToAgenciesMap().get(appType));
+
+			if(agencies!=null)
+				for (int i : agencies) {
+					String enableColName = AGENCY_TYPE.values()[i].getEnableAdvisoryColumnName();
+					usr.put(enableColName,req.getBoolean(enableColName,true));
+				}
+			usr.put(RequestParam.NOTIF_TIMING_MORNING,req.getBoolean(RequestParam.NOTIF_TIMING_MORNING,true));
+			usr.put(RequestParam.NOTIF_TIMING_MIDDAY,req.getBoolean(RequestParam.NOTIF_TIMING_MIDDAY,false));
+			usr.put(RequestParam.NOTIF_TIMING_EVENING,req.getBoolean(RequestParam.NOTIF_TIMING_EVENING,true));
+			usr.put(RequestParam.NOTIF_TIMING_NIGHT,req.getBoolean(RequestParam.NOTIF_TIMING_NIGHT,false));
+			usr.put(RequestParam.NOTIF_TIMING_WEEKEND,req.getBoolean(RequestParam.NOTIF_TIMING_WEEKEND,false));
+
+			usr.put(RequestParam.ENABLE_STD_NOTIFICATION, req.getBoolean(RequestParam.ENABLE_STD_NOTIFICATION,false));
+			usr.put(RequestParam.ENABLE_URGENT_NOTIFICATION,req.getBoolean(RequestParam.ENABLE_URGENT_NOTIFICATION,true));
+
+			usr.put(RequestParam.TRANSIT_MODE,req.getInt(RequestParam.TRANSIT_MODE,User.TRANSIT_MODE.TRANSIT_WALK.ordinal()));
+			usr.put(RequestParam.MAX_BIKE_DISTANCE,req.getDouble(RequestParam.MAX_BIKE_DISTANCE));
+			usr.put(RequestParam.BIKE_TRIANGLE_BIKEFRIENDLY,(req.getDouble(RequestParam.BIKE_TRIANGLE_BIKEFRIENDLY)));
+			usr.put(RequestParam.BIKE_TRIANGLE_FLAT, req.getDouble(RequestParam.BIKE_TRIANGLE_FLAT));
+			usr.put(RequestParam.BIKE_TRIANGLE_QUICK, req.getDouble(RequestParam.BIKE_TRIANGLE_QUICK));
+
+			BasicDBObject query =DbUtils.getDefaultAppFilterQuery(appType, deviceTocken);
+
+			int count = persistenceService.getCount(MONGO_TABLES.users.name(), query, User.class);
+			if (count>0) {
+				persistenceService.update(MONGO_TABLES.users.name(),query, usr);
+			} else {
+				if(agencies!=null){
+					for (Integer ag : agencies) {
+						AGENCY_TYPE agency = AGENCY_TYPE.values()[ag];
+						usr.put(agency.getLastReadTimeColumnName(), 0L);
+						usr.put(agency.getPushTimeColumnName(), 0L);
+					}
+				}
+				persistenceService.addDbObject(MONGO_TABLES.users.name(), usr) ;
+			}
+		} catch (NumberFormatException e) {
+			logger.warn(loggerName,"NumberFormatException:"+ e.getMessage());
+			throw new TpException(TP_CODES.INVALID_REQUEST);
+		} catch (DBException e) {
+			logger.warn(loggerName,"DBException:"+ e.getMessage());
+			throw new TpException(TP_CODES.FAIL);
 		}
 	}
 

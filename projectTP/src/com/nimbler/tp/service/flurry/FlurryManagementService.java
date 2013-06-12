@@ -66,6 +66,8 @@ public class FlurryManagementService {
 	 * Request daily flurry report.
 	 */
 	public void requestDailyFlurryReport() {
+		if(!enableService)
+			return;
 		logger.debug(loggerName, "request start....");		
 		long endTime  = System.currentTimeMillis();
 		long startTime  = DateUtils.addHours(new Date(endTime), hours).getTime();
@@ -177,6 +179,7 @@ public class FlurryManagementService {
 	 */
 	@SuppressWarnings({ "cast", "unchecked" })
 	public void fetchFlurryReports() {
+		//		retryRequestDailyFlurryReport();
 		try {
 			logger.debug(loggerName, "checking for pending reports....");
 			List<FlurryReportStatus> lstFlurryReportStatus =  (List<FlurryReportStatus>) persistenceService.findByIn(MONGO_TABLES.flurry_report_status.name(), 

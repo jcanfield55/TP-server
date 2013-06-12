@@ -29,6 +29,12 @@
 		<property name="loggerName">
 			<value>com.nimbler.tp.service.TpPlanService</value>
 		</property>
+		<property name="appTypeToRouterID">
+			<map>
+				<entry key="4" value="" />
+				<entry key="5" value="file:/otp-staging-ebs/otp/graph/wdc/Graph.obj" />
+			</map>
+		</property>
 	</bean>
 
 	<bean id="tpEventLoggingService" class="com.nimbler.tp.service.TpEventLoggingService">
@@ -58,6 +64,7 @@
 			<value>com.nimbler.tp.service.smtp.MailService</value>
 		</property>
 	</bean>
+	
 
 	<bean id="loggingService" class="com.nimbler.tp.service.LoggingService"
 		init-method="init" />
@@ -77,14 +84,32 @@
 			<value>com.nimbler.tp.service.livefeeds</value>
 		</property>
 	</bean>
+	<bean id="wmataApiImpl" class="com.nimbler.tp.service.livefeeds.WmataApiImpl">		
+	</bean>
+	<bean id="wmataCachedApiClient" class="com.nimbler.tp.service.livefeeds.cache.WmataCachedApiClient" >
+	</bean>
+	
+	<bean id="wmataApiClient" class="com.nimbler.tp.service.livefeeds.stub.WmataApiClient">
+		<property name="baseUrl">
+			<value>http://api.wmata.com/</value>
+		</property>
+
+		<property name="routeMap">
+			<map>
+				<entry key="GET_STOP" value="Bus.svc/json/JStops" />
+				<entry key="BUS_PREDICTION" value="NextBusService.svc/json/JPredictions" />
+				<entry key="RAIL_LINES" value="Rail.svc/json/JLines" />
+				<entry key="RAIL_STATION_BY_LINES" value="Rail.svc/json/JStations" />
+				<entry key="RAIL_PREDICTION" value="StationPrediction.svc/json/GetPrediction/" />
+				<entry key="RAIL_PREDICTION_ALL" value="StationPrediction.svc/json/GetPrediction/All" />
+			</map>
+		</property>
+	</bean>
 
 	<bean id="nextBusApiClient" class="com.nimbler.tp.service.livefeeds.stub.NextBusApiClient"
 		init-method="init">
 		<property name="baseUrl">
 			<value>http://webservices.nextbus.com/service/publicXMLFeed</value>
-		</property>
-		<property name="loggerName">
-			<value>com.nimbler.tp.service.livefeeds</value>
 		</property>
 	</bean>
 
@@ -104,14 +129,6 @@
 		<property name="bartAPIRegKey">
 			<value>MW9S-E7SL-26DU-VV8V</value>
 		</property>
-		<property name="timeDiffercenceInMin">
-			<!-- In minutes -->
-			<value>3</value>
-		</property>
-		<!--<property name="maxTimeDifference">
-			In minutes 
-			<value>40</value>			
-		</property>-->
 	</bean>
 
 	<bean id="advisoriesPushService"
@@ -119,10 +136,15 @@
 		init-method="init">	
 		<property name="agencyTweetSourceMap"> <!-- keys point to ordinal value of TPCpnstants.AGENCY_TYPE enum, value = comma separated sources -->
 			<map> 
-				<entry key="1" value="apprikacaltrain" /><!-- CALTRAIN -apprikacaltrain -->
+ 				<entry key="1" value="apprikacaltrain" /><!-- CALTRAIN -apprikacaltrain -->
 				<entry key="2" value="apprikabart" /> <!-- BART - apprikabart -->
 				<entry key="3" value="apprikasfmta" /><!-- SFMUNI - apprikasfmta -->
 				<entry key="4" value="apprikactransit" />  <!-- AC_TRANSIT - apprikactransit -->
+				<entry key="8" value="wmata" /> <!--  WMATA - apprikwmata  -->
+			<!-- 	<entry key="1" value="caltrain_news,caltrain" />CALTRAIN -apprikacaltrain
+				<entry key="2" value="sfbartalert" /> BART - apprikabart
+				<entry key="3" value="sfmta_muni" />SFMUNI - apprikasfmta
+				<entry key="4" value="rideact" /> -->
 			</map>
 		</property>	
 		<property name="agencyTweetSourceIconMap"> <!-- keys point to ordinal value of TPCpnstants.AGENCY_TYPE enum, value = comma separated sources -->
@@ -132,11 +154,6 @@
 				<entry key="sfbartalert" value="bart.png" />								
 				<entry key="sfmta_muni" value="sfmta.png" />								
 				<entry key="rideact" value="actransit.png" />	
-				<!-- by app Type from agency id --> 												
-				<entry key="1" value="caltrain.png" />								
-				<entry key="2" value="bart.png" />								
-				<entry key="3" value="sfmta.png" />								
-				<entry key="4" value="actransit.png" />
 				<!-- test -->
 				<entry key="apprikacaltrain" value="caltrain.png" />	
 				<entry key="apprikabart" value="bart.png" />	
@@ -151,25 +168,28 @@
 				<entry key="2" value="1" />  
 				<entry key="3" value="1" />  
 				<entry key="4" value="1" />  
+				<entry key="8" value="1" />  
 			</map>
 		</property>
-	<property name="pushTimeInterval">
-		<map>
-			<entry key="notifTimingMorning" value="300-600" />
-			<entry key="notifTimingMidday" value="600-900" />
-			<entry key="notifTimingEvening" value="900-1170" />
-			<entry key="notifTimingNight" value="1170-1440" />
-		</map>
-	</property>	
+		<property name="pushTimeInterval">
+			<map>
+				<entry key="notifTimingMorning" value="300-600" />
+				<entry key="notifTimingMidday" value="600-900" />
+				<entry key="notifTimingEvening" value="900-1170" />
+				<entry key="notifTimingNight" value="1170-1440" />
+			</map>
+		</property>	
 		
 	</bean>
-
+	<bean id="twitterSearchManager"	class="com.nimbler.tp.service.advisories.TwitterSearchManager" />	
 	<bean id="userManagementService" class="com.nimbler.tp.service.UserManagementService">
 		<property name="loggerName">
 			<value>com.nimbler.tp.service.TpEventLoggingService</value>
 		</property>
 	</bean>
-	<bean id="flurryManagementService" class="com.nimbler.tp.service.flurry.FlurryManagementService" />		
+	<bean id="flurryManagementService" class="com.nimbler.tp.service.flurry.FlurryManagementService">
+		<property name="enableService" value="false" />
+	</bean>		
 	
 
 	<bean id="gat" class="com.nimbler.tp.gtfs.GraphAcceptanceTest"
@@ -315,20 +335,135 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="samtrans-ca-us" />
-					<property name="currentDataFile" value="E:/nimbler/GTFS//SamTrans.zip" />
+					<property name="currentDataFile" value="E:/nimbler/GTFS/SamTrans.zip" />
 					<property name="downloadUrl"
 						value="http://www.samtrans.com/Assets/GTFS/samtrans/google+transit+SamTrans+04-22-2013-My66BhE528ghop8.zipp" />
 					<property name="lastUpdateDate" value="20130406" />
 					<property name="agencyType" value="SAM_TRANS" />
 					<property name="exclusionType" value="BY_AGENCY" />
 					<property name="displayName" value="$agency_name" />
-
+				</bean> 	
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="currentDataFile"
+						value="E:/nimbler/GTFS/new/ACE.zip" />
+					<property name="defaultAgencyId" value="ACE" />
+					<property name="lastUpdateDate" value="20130501" />
+					<property name="agencyType" value="ACE" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="ACE" />
 				</bean>
-				<!-- <bean class="com.nimbler.tp.gtfs.GtfsBundle"> <property name="defaultAgencyId" 
-					value="WMATA" /> <property name="currentDataFile" value="E:/nimbler/GTFS/wmata.zip" 
-					/> <property name="agencyType" value="WMATA" /> <property name="downloadUrl" 
-					value="http://lrg.wmata.com/GTFS_data/google_transit.zip" /> <property name="lastUpdateDate" 
-					value="20130110" /> </bean> -->
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="currentDataFile"
+						value="E:/nimbler/GTFS/new/AngelFerry.zip" />
+					<property name="defaultAgencyId" value="AT" />
+					<property name="lastUpdateDate" value="20130501" />
+					<property name="agencyType" value="ANGEL_ISLAND_FERRY" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="Angel Island " />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="currentDataFile"
+						value="E:/nimbler/GTFS/new/CapitolCorridorJoint.zip" />
+					<property name="defaultAgencyId" value="Capitol Corridor" />
+					<property name="agencyType" value="CAPITOL_CORRIDOR" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="Capitol Cor" />
+					<property name="lastUpdateDate" value="20130501" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="currentDataFile" 
+						value="E:/nimbler/GTFS/new/CountyConnection.zip" />
+					<property name="defaultAgencyId" value="County Connection" />
+					<property name="agencyType" value="COUNTY_CONNECTION" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="County Con" />
+					<property name="lastUpdateDate" value="20130501" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="currentDataFile" 
+						value="E:/nimbler/GTFS/new/DumbartonExpress.zip" />
+					<property name="defaultAgencyId" value="DE" />
+					<property name="agencyType" value="DUMBARTON_EXPRESS" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="lastUpdateDate" value="20130501" />
+					<property name="displayName" value="Dumbarton Exp" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="currentDataFile" 
+						value="E:/nimbler/GTFS/new/EmeryGoRound.zip" />
+					<property name="defaultAgencyId" value="EM" />
+					<property name="agencyType" value="EMERY_GO_ROUND" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="Emery Go" />
+					<property name="lastUpdateDate" value="20130501" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="currentDataFile"
+						value="E:/nimbler/GTFS/new/MarinTransit.zip" />
+					<property name="defaultAgencyId" value="MCTD" />
+					<property name="lastUpdateDate" value="20130501" />
+					<property name="agencyType" value="MARIN_TRANSIT" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="Marin" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="currentDataFile" 
+						value="E:/nimbler/GTFS/new/SantaRosa.zip" />
+					<property name="defaultAgencyId" value="Santa Rosa CityBus" />
+					<property name="lastUpdateDate" value="20130501" />
+					<property name="agencyType" value="SANTA_ROSA" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="Santa Rosa" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="currentDataFile" 
+						value="E:/nimbler/GTFS/new/StanfordMargueriteShuttle.zip" />
+					<property name="defaultAgencyId" value="MS" />
+					<property name="agencyType" value="STANFORD_MARGUERITE_SHUTTLE" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="lastUpdateDate" value="20130501" />
+					<property name="displayName" value="Stanfor. Shutle." />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="currentDataFile" 
+						value="E:/nimbler/GTFS/new/UnionCityTransit.zip" />
+					<property name="defaultAgencyId" value="UC" />
+					<property name="agencyType" value="UNION_CITY_TRANSIT" />
+					<property name="lastUpdateDate" value="20130501" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="Union City" />
+				</bean>
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="currentDataFile" 
+						value="E:/nimbler/GTFS/new/YountvilleShuttle.zip" />
+					<property name="defaultAgencyId" value="YV" />
+					<property name="agencyType" value="YOUNTVILLE_SHUTTLE" />
+					<property name="lastUpdateDate" value="20130501" />
+					<property name="exclusionType" value="BY_AGENCY" />
+					<property name="displayName" value="Yountville" />
+				</bean>				
+				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="defaultAgencyId" value="WMATA" />
+					<property name="currentDataFile" value="E:/nimbler/GTFS/WMATA.zip" />
+					<property name="agencyType" value="WMATA" />
+					<property name="downloadUrl" value="http://lrg.wmata.com/GTFS_data/google_transit.zip" />
+					<property name="lastUpdateDate" value="20130110" />
+					<property name="exclusionType" value="BY_RAIL_BUS" />
+					<property name="agencies">
+						<list>
+							<bean class="com.nimbler.tp.dataobject.AgencyDetail">
+								<property name="gtfsAgencyId" value="1" />
+								<property name="agencyName" value="DC Circulator" />
+								<property name="displayName" value="DC Cir" />
+							</bean>
+							<bean class="com.nimbler.tp.dataobject.AgencyDetail">
+								<property name="gtfsAgencyId" value="2" />
+								<property name="agencyName" value="MET" />
+								<property name="displayName" value="Metro" />
+							</bean>
+						</list>
+					</property>
+				</bean> 
 			</list>
 		</property>
 	</bean>
@@ -338,11 +473,12 @@
 			<value>com.nimbler.tp.service.advisories.AdvisoriesService</value>
 		</property>
 	</bean>
-	<bean id="twitterMonitor" class="com.nimbler.tp.service.advisories.TwitterMonitor" />
-		
 	<bean id="dBHealthMonitoringService" class="com.nimbler.tp.gtfs.DBHealthMonitoringService" />
 	
+	<bean id="twitterMonitor" class="com.nimbler.tp.service.advisories.TwitterMonitor" />
+		
 	<bean id="gtfsDataService" class="com.nimbler.tp.gtfs.GtfsDataService">	
+		<property name="ageciesToLoad" value="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20" />	
 	<property name="gtfsColums">
 		<map>
 			<entry key="agency" value="agency_id,agency_name,agency_url" />
@@ -367,7 +503,8 @@
 		<property name="appBundleToAppIdentifierMap">
 			<map>
 				<entry key="com.Nimbler.Nimbler-Caltrain" value="1" /> 
-				<entry key="com.Nimbler.Nimbler-BART" value="4" />				
+				<entry key="com.Nimbler.Nimbler-SF" value="4" />				
+				<entry key="com.Nimbler.Nimbler-DC" value="5" />				
 			</map>
 		</property>
 		<!-- keys = ordinal value of TPCpnstants.NIMBLER_APP_TYPE enum, value = ordinal value of TPCpnstants.AGENCY_TYPE enum -->
@@ -376,6 +513,32 @@
 			      <!-- < NIMBLER_APP_TYPE, AGENCY_TYPE > -->
 				<entry key="1" value="1,2,3,4" /> <!-- comma separated value -->
 				<entry key="4" value="1,2,3,4" />
+				<entry key="5" value="8" />
+			</map>
+		</property>
+		<property name="appRouteSupportAgencies">
+			<map>
+			      <!-- < NIMBLER_APP_TYPE, AGENCY_TYPE > -->
+				<entry key="1" value="1,2,3,4,5,6,7,9,10,11,12,13,14,15,16,17,18,19,20" /> <!-- comma separated value -->
+				<entry key="4" value="1,2,3,4,5,6,7,9,10,11,12,13,14,15,16,17,18,19,20" />
+				<entry key="5" value="8" />
+			</map>
+		</property>
+	<property name="realTimeApiByAgency">
+		<map><!-- wmataApiImpl, nextBusApiImpl, bartApiImpl -->
+			<entry key="AC Transit" value-ref="nextBusApiImpl" />
+			<entry key="Bay Area Rapid Transit" value-ref="bartApiImpl" />
+			<entry key="AirBART" value-ref="bartApiImpl" />
+			<entry key="San Francisco Municipal Transportation Agency" value-ref="nextBusApiImpl" />
+			<entry key="DC Circulator" value-ref="wmataApiImpl" />
+			<entry key="MET" value-ref="wmataApiImpl" />
+		</map>
+	</property>
+	<property name="appTimeZone">
+		<map>
+			<entry key="1" value-ref="pstTimeZone" />
+			<entry key="4" value-ref="pstTimeZone" />
+			<entry key="5" value-ref="easternTimeZone" />			
 			</map>
 		</property>
 	</bean>
@@ -409,16 +572,40 @@
  		<property name="cronExpression" value="0 0 21 * * ?" /> 		    
 	</bean>
 
-	<bean name="clearAdvisaryCounterJob"
+	<bean name="onDayFinishJobPST"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="concurrent" value="false" />
 		<property name="targetBeanName" value="advisoriesPushService" />
-		<property name="targetMethod" value="resetAllCounters" />
+		<property name="targetMethod" value="onDayFinish" />
+		<property name="arguments">
+			<list>
+				<value>1,2,3,4</value> <!-- agenciIds -->			
+			</list>
+		</property>		
 	</bean>
-	<bean id="clearAdvisaryCounterTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
-		<property name="jobDetail" ref="clearAdvisaryCounterJob" />
-		<property name="cronExpression" value="0 0 0/6 * * ?" />
+	<bean id="onDayFinishTriggerPST" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="onDayFinishJobPST" />
+		<property name="cronExpression" value="0 59 23 * * ?" />		 
+		<property name="timeZone" ref="pstTimeZone" />
 	</bean>
+	
+	<bean name="onDayFinishJobDC"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false" />
+		<property name="targetBeanName" value="advisoriesPushService" />
+		<property name="targetMethod" value="onDayFinish" />
+		<property name="arguments">
+			<list>
+				<value>8</value> <!-- agenciIds -->			
+			</list>
+		</property>		
+	</bean>
+	<bean id="onDayFinishTriggerDC" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="onDayFinishJobDC" />
+ 		<property name="cronExpression" value="0 59 23 * * ?" />		
+		<property name="timeZone" ref="easternTimeZone" />
+	</bean>
+	
 	<bean name="fetchTweetsJob"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="concurrent" value="false" />
@@ -429,15 +616,17 @@
 		<property name="jobDetail" ref="fetchTweetsJob" />
 		<property name="cronExpression" value="0 0/1 * * * ?" />		
 	</bean>
-	<bean name="urgentAdvisoriesClearJob"
+	 <!-- ===================================  wmata   =================================== -->
+	<bean name="wmataApiLimitRenewJob"
 		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="concurrent" value="false" />
-		<property name="targetBeanName" value="advisoriesPushService" />
-		<property name="targetMethod" value="clearUrgentAdvisories" />
+		<property name="targetBeanName" value="wmataApiClient" />
+		<property name="targetMethod" value="resetRequestCounter" />
 	</bean>
-	<bean id="urgentAdvisoriesClearJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
-		<property name="jobDetail" ref="urgentAdvisoriesClearJob" />
+	<bean id="wmataApiLimitRenewTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="wmataApiLimitRenewJob" />
 		<property name="cronExpression" value="0 59 23 * * ?" /> 		
+		<property name="timeZone" ref="easternTimeZone" />	
 	</bean>
 	 <!-- ===============================   flurry  ================================= -->
 	<bean name="flurryDailyRequestCallJob"
@@ -468,13 +657,20 @@
 			<list>
 				<ref bean="gtfsMonitoringJobTrigger" />
 				<ref bean="fetchTweetsTrigger" />
-				<ref bean="urgentAdvisoriesClearJobTrigger" />
-				<ref bean="clearAdvisaryCounterTrigger" />
-				<ref bean="dBHealthMonitoringTrigger" />
+				<ref bean="onDayFinishTriggerPST" />
+				<ref bean="onDayFinishTriggerDC" />
+ 				<ref bean="dBHealthMonitoringTrigger" />
+             	<ref bean="wmataApiLimitRenewTrigger" />
 				<ref bean="flurryDailyRequestCallTrigger" />
 				<ref bean="flurryDailyReportCallTrigger" />
 			</list>
 		</property>
+	</bean>
+	<bean id="pstTimeZone" class="java.util.TimeZone" factory-method="getTimeZone">
+		<constructor-arg index="0" value="PST" />
+	</bean>
+	<bean id="easternTimeZone" class="java.util.TimeZone" factory-method="getTimeZone">
+		<constructor-arg index="0" value="US/Eastern" />
 	</bean>
 	<!-- ====================================== Mail configuration  ================================== -->
  	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">

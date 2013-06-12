@@ -50,7 +50,8 @@ public class FeedBack implements Serializable {
 	private String addFrom;
 	private String addTo;
 	private int appType = NIMBLER_APP_TYPE.CALTRAIN.ordinal();
-
+	private String appVersion;
+	private User user;
 	public String getId() {
 		return id;
 	}
@@ -149,7 +150,8 @@ public class FeedBack implements Serializable {
 				+ ", rating=" + rating + ", createTime=" + createTime
 				+ ", date=" + date + ", planID=" + planID + ", itineraryID="
 				+ itineraryID + ", legID=" + legID + ", addFrom=" + addFrom
-				+ ", addTo=" + addTo + ", appType=" + appType + "]";
+				+ ", addTo=" + addTo + ", appType=" + appType + ", appVersion="
+				+ appVersion + ", user=" + user + "]";
 	}
 	public int getAppType() {
 		return appType;
@@ -159,6 +161,17 @@ public class FeedBack implements Serializable {
 			return;
 		this.appType = at;
 	}
-
+	public String getAppVersion() {
+		return appVersion;
+	}
+	public void setAppVersion(String appVersion) {
+		this.appVersion = appVersion;
+	}
+	public User getUser() {
+		return user;
+	}
+	public void setUser(User user) {
+		this.user = user;
+	}
 
 }

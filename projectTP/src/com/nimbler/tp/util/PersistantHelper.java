@@ -7,6 +7,8 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.data.document.mongodb.query.Criteria;
+import org.springframework.data.document.mongodb.query.Query;
 
 import com.mongodb.BasicDBObject;
 import com.nimbler.tp.TPApplicationContext;
@@ -14,6 +16,7 @@ import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.dataobject.UserStatistics;
 import com.nimbler.tp.dbobject.NimblerParams;
 import com.nimbler.tp.dbobject.NimblerParams.NIMBLER_PARAMS;
+import com.nimbler.tp.dbobject.User;
 import com.nimbler.tp.dbobject.User.BOOLEAN_VAL;
 import com.nimbler.tp.mongo.MongoQueryConstant;
 import com.nimbler.tp.mongo.PersistenceService;
@@ -239,6 +242,63 @@ public class PersistantHelper {
 			logger.error(loggerName, e);
 		}
 		return -1;
+	}
+
+	/**
+	 * Gets the user by device token.
+	 *
+	 * @param deviceTockens the device tockens
+	 * @return the user by device token
+	 */
+	public User getUserByDeviceToken(String deviceTockens) {
+		User res = null;
+		try {
+			List objRes =  persistenceService.find(MONGO_TABLES.users.name(), TpConstants.DEVICE_TOKEN, deviceTockens, User.class);
+			if(!ComUtils.isEmptyList(objRes))
+				res = (User) objRes.get(0);
+		} catch (DBException e) {
+			logger.error(loggerName, e);
+		}
+		return res;
+	}
+
+	/**
+	 * Gets the user by device token and app type.
+	 *
+	 * @param deviceTocken the device tocken
+	 * @param appType the app type
+	 * @return the user by device token and app type
+	 */
+	public User getUserByDeviceTokenAndAppType(String deviceTocken,Integer appType) {
+		User res = null;
+		try {
+			Criteria criteria = Criteria.where(TpConstants.DEVICE_TOKEN).is(deviceTocken).and(TpConstants.APP_TYPE).is(appType);
+			Query query = Query.query(criteria);
+			List objRes =  persistenceService.findByQuery(MONGO_TABLES.users.name(), query, User.class);
+			if(!ComUtils.isEmptyList(objRes))
+				res = (User) objRes.get(0);
+		} catch (DBException e) {
+			logger.error(loggerName, e);
+		}
+		return res;
+	}
+
+	/**
+	 * Gets the user by device id.
+	 *
+	 * @param deviceId the device id
+	 * @return the user by device id
+	 */
+	public User getUserByDeviceId(String deviceId) {
+		User res = null;
+		try {
+			List objRes =  persistenceService.find(MONGO_TABLES.users.name(), TpConstants.DEVICE_ID, deviceId, User.class);
+			if(!ComUtils.isEmptyList(objRes))
+				res = (User) objRes.get(0);
+		} catch (DBException e) {
+			logger.error(loggerName, e);
+		}
+		return res;
 	}
 	/**
 	 * get last 24 hour time

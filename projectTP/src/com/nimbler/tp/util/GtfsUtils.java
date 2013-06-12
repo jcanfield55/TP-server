@@ -483,7 +483,7 @@ public class GtfsUtils {
 		}
 		String mode = map.get("mode");
 		mode = StringUtils.remove(mode, " ");
-		mode = StringUtils.substringBetween(mode,"(",")") ;
+		//mode = StringUtils.substringBetween(mode,"(",")") ;
 		StringBuffer sbUrl = new StringBuffer().append(baseUrl);
 		sbUrl.append(StringUtils.join(lstParams,"&"));
 		sbUrl.append("&mode="+mode);

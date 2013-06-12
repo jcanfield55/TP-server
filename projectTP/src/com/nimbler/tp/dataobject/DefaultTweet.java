@@ -49,6 +49,7 @@ public class DefaultTweet implements Serializable{
 		 */
 		private static final long	serialVersionUID	= 185116374571817242L;
 		private List<DefaultTweet> results;
+		private List<NewTweet> statuses;
 
 		public List<DefaultTweet> getResults() {
 			return results;
@@ -57,6 +58,15 @@ public class DefaultTweet implements Serializable{
 		public void setResults(List<DefaultTweet> results) {
 			this.results = results;
 		}
+
+		public List<NewTweet> getStatuses() {
+			return statuses;
+		}
+
+		public void setStatuses(List<NewTweet> statuses) {
+			this.statuses = statuses;
+		}
+
 	}
 
 }

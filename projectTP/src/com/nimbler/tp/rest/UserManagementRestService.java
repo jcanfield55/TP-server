@@ -11,11 +11,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.nimbler.tp.dataobject.NimblerApps;
 import com.nimbler.tp.dataobject.NimblerGtfsAgency;
+import com.nimbler.tp.dataobject.RequestMap;
 import com.nimbler.tp.dataobject.TPCountResponse;
 import com.nimbler.tp.dataobject.TPResponse;
 import com.nimbler.tp.dataobject.UserStatistics;
@@ -48,15 +51,30 @@ import com.nimbler.tp.util.TpException;
  *
  */
 @Path("/users/")
+@SuppressWarnings("unchecked")
 public class UserManagementRestService {
 
 	@Autowired
 	private LoggingService logger;
+
+	@Autowired
+	private UserManagementService userMgmtService;
+
+	@Autowired
+	private FlurryManagementService flurryMgmtService;
+
+	@Autowired
+	private NimblerApps nimblerApps;
+
+	@Autowired
+	GtfsDataService gtfsDataService;
+
 	private String loggerName;
 
-	@GET
-	@Path("/preferences/update")
-	@Produces(MediaType.TEXT_PLAIN)
+	//@GET
+	//@Path("/preferences/update")
+	//@Produces(MediaType.TEXT_PLAIN)
+	@Deprecated
 	public String saveAlertPreference(@QueryParam(RequestParam.DEVICE_ID)String deviceid,
 			@DefaultValue("-2") @QueryParam(RequestParam.ALERT)int alertCount,
 			@QueryParam(RequestParam.DEVICE_TOKEN)String deviceToken,
@@ -68,6 +86,7 @@ public class UserManagementRestService {
 			@DefaultValue("2") @QueryParam(RequestParam.ADV_ENABLE_BART)int enableBartAdv,
 			@DefaultValue("1") @QueryParam(RequestParam.ADV_ENABLE_CALTRAIN)int enableCaltrainAdv,
 			@DefaultValue("2") @QueryParam(RequestParam.ADV_ENABLE_AC_TRANSIT)int enableAcTransitAdv,
+			@DefaultValue("1") @QueryParam(RequestParam.ADV_ENABLE_WMATA)int enableWmata,
 
 			@QueryParam(RequestParam.TRANSIT_MODE)int transitMod,
 			@QueryParam(RequestParam.MAX_BIKE_DISTANCE)double maxBikeDist,
@@ -105,7 +124,7 @@ public class UserManagementRestService {
 			reqUserValue.setEnableBartAdv(enableBartAdv);
 			reqUserValue.setEnableCaltrainAdv(enableCaltrainAdv);
 			reqUserValue.setEnableSfMuniAdv(enableSfMuniAdv);
-
+			reqUserValue.setEnableWmataAdv(enableWmata);
 			reqUserValue.setNotifTimingMorning(notifTimingMorning);
 			reqUserValue.setNotifTimingMidday(notifTimingMidday);
 			reqUserValue.setNotifTimingEvening(notifTimingEvening);
@@ -119,8 +138,7 @@ public class UserManagementRestService {
 			reqUserValue.setTransitMode(transitMod);
 			reqUserValue.setMaxBikeDist(maxBikeDist);
 			reqUserValue.setAppVer(appVersion);
-			UserManagementService alertService = BeanUtil.getUserManagementService();
-			alertService.saveAlertPreferences(reqUserValue);
+			userMgmtService.saveAlertPreferences(reqUserValue);
 			response.setCode(TP_CODES.SUCESS.getCode()); 
 		} catch (TpException e) {
 			logger.error(loggerName, e.getErrMsg());
@@ -132,6 +150,40 @@ public class UserManagementRestService {
 		return getJsonResponse(response);
 	}
 
+	/**
+	 * Save alert preference abstract.
+	 *
+	 * @param request the request
+	 * @return the string
+	 * @throws TpException the tp exception
+	 */
+	@GET
+	@Path("/preferences/update")
+	@Produces(MediaType.TEXT_PLAIN)
+	public String saveAlertPreferenceAbstract(@Context HttpServletRequest request) throws TpException {
+		TPResponse response = new TPResponse();
+		try {			
+			Map<String,String[]> req = request.getParameterMap();
+			userMgmtService.saveAlertPreferences(RequestMap.of(req));
+			response.setCode(TP_CODES.SUCESS.getCode());
+		} catch (TpException e) {
+			logger.error(loggerName, e.getErrMsg());
+			response.setCode(e.getErrCode());
+		} catch (Exception e) {
+			logger.error(loggerName, e);
+			response.setCode(TP_CODES.FAIL.ordinal());
+		}
+		return getJsonResponse(response);
+	}
+
+	/**
+	 * Update device token.
+	 *
+	 * @param deviceToken the device token
+	 * @param dummyId the dummy id
+	 * @param appType the app type
+	 * @return the string
+	 */
 	@GET
 	@Path("/preferences/update/token")	
 	public String updateDeviceToken(@QueryParam(RequestParam.DEVICE_TOKEN)String deviceToken,
@@ -140,9 +192,8 @@ public class UserManagementRestService {
 		try {
 			if(ComUtils.isEmptyString(deviceToken) || ComUtils.isEmptyString(dummyId) || ComUtils.isEmptyString(appType))
 				throw new TpException(TP_CODES.INVALID_REQUEST);
-			UserManagementService alertService = BeanUtil.getUserManagementService();
-			logger.debug(loggerName, "Dummy token updated: "+dummyId+"-->"+deviceToken);
-			int count = alertService.updateToken(deviceToken,dummyId,Integer.parseInt(appType));
+			logger.debug(loggerName, "Dummy token updated: "+dummyId+"-->"+deviceToken);			
+			int count = userMgmtService.updateToken(deviceToken,dummyId,Integer.parseInt(appType));
 			response = new TPResponse((count>0)?TP_CODES.SUCESS:TP_CODES.DATA_NOT_EXIST);
 		} catch (TpException e) {			
 			response = ResponseUtil.createResponse(e);
@@ -153,6 +204,13 @@ public class UserManagementRestService {
 		return getJsonResponse(response);
 	}
 
+	/**
+	 * Save alert preference.
+	 *
+	 * @param deviceTocken the device tocken
+	 * @param appType the app type
+	 * @return the string
+	 */
 	@GET
 	@Path("/preferences/get")
 	@Produces(MediaType.TEXT_PLAIN)
@@ -163,8 +221,7 @@ public class UserManagementRestService {
 		try {
 			if(appType==null || deviceTocken==null)
 				return res;
-			UserManagementService userManagementService = BeanUtil.getUserManagementService();
-			User user = userManagementService.getUserByDeviceToken(deviceTocken);
+			User user = userMgmtService.getUserByDeviceToken(deviceTocken);
 			if(user!=null)
 				res = JSONUtil.getJsonFromObj(user);
 		} catch (TpException e) {
@@ -173,6 +230,12 @@ public class UserManagementRestService {
 		return res;
 	}
 
+	/**
+	 * Gets the counts.
+	 *
+	 * @return the counts
+	 * @throws TpException the tp exception
+	 */
 	@GET
 	@Path("/statistics/")
 	@Produces(MediaType.TEXT_PLAIN)
@@ -199,6 +262,13 @@ public class UserManagementRestService {
 		}
 		return getJsonResponse(response);
 	}
+
+	/**
+	 * Gets the user state.
+	 *
+	 * @return the user state
+	 * @throws TpException the tp exception
+	 */
 	@GET
 	@Path("/state/")
 	@Produces(MediaType.TEXT_HTML)
@@ -222,6 +292,12 @@ public class UserManagementRestService {
 		return "Error While getting data";
 	}
 
+	/**
+	 * Gets the orphan gtfs route tag.
+	 *
+	 * @return the orphan gtfs route tag
+	 * @throws TpException the tp exception
+	 */
 	@GET
 	@Path("/orphanGtfsRoutes/")
 	@Produces(MediaType.TEXT_PLAIN)
@@ -235,14 +311,21 @@ public class UserManagementRestService {
 		return "Not Found";
 	}
 
+	/**
+	 * Request flurry.
+	 *
+	 * @param start the start
+	 * @param end the end
+	 * @return the string
+	 * @throws TpException the tp exception
+	 */
 	@GET
 	@Path("/flurry/")
 	@Produces(MediaType.TEXT_PLAIN)
 	public String requestFlurry(@QueryParam("start") String start,@QueryParam("end") String end) throws TpException {
 		TPResponse response = ResponseUtil.createResponse(TP_CODES.SUCESS);
 		try {
-			FlurryManagementService flurry =  BeanUtil.getFlurryManagementService();
-			flurry.requestDailyFlurryReport(Long.parseLong(start), Long.parseLong(end));
+			flurryMgmtService.requestDailyFlurryReport(Long.parseLong(start), Long.parseLong(end));
 		} catch (NumberFormatException e) {
 			logger.error(loggerName, e);
 			response = ResponseUtil.createResponse(TP_CODES.INVALID_REQUEST);
@@ -252,6 +335,13 @@ public class UserManagementRestService {
 		}
 		return getJsonResponse(response);
 	}
+
+	/**
+	 * Gets the app type.
+	 *
+	 * @param appBundleId the app bundle id
+	 * @return the app type
+	 */
 	@GET
 	@Path("getAppType")
 	public String getAppType(
@@ -269,14 +359,19 @@ public class UserManagementRestService {
 		return res;
 	}
 
+	/**
+	 * Gets the app agency details.
+	 *
+	 * @param appType the app type
+	 * @return the app agency details
+	 */
 	@GET
 	@Path("getAppAgencies")
 	public String getAppAgencyDetails(
 			@QueryParam(TpConstants.APP_TYPE) Integer appType) {
 		TPResponse tpResponse = null;
 		try {
-			GtfsDataService dataService = BeanUtil.getGtfsDataServiceBean();
-			List<NimblerGtfsAgency> agencies = dataService.getNimblerAgencyDetailsForApp(appType,false);
+			List<NimblerGtfsAgency> agencies = gtfsDataService.getNimblerAgencyDetailsForApp(appType,false);
 			if(agencies!=null){
 				tpResponse = ResponseUtil.createResponse(TP_CODES.SUCESS);
 				tpResponse.setAgencies(agencies);
@@ -293,21 +388,22 @@ public class UserManagementRestService {
 	}
 
 	/**
-	 * 
-	 * @param appBundleId
-	 * @return
+	 * Gets the app type from app bundle id.
+	 *
+	 * @param appBundleId the app bundle id
+	 * @return the app type from app bundle id
 	 */
 	private int getAppTypeFromAppBundleId(String appBundleId) {
-		NimblerApps apps = BeanUtil.getNimblerAppsBean();
 		if (StringUtils.isEmpty(appBundleId))
 			return NIMBLER_APP_TYPE.CALTRAIN.ordinal(); //default for current caltrain app users
-		else
-			return apps.getAppBundleToAppIdentifierMap().get(appBundleId.trim());
+		return nimblerApps.getAppBundleToAppIdentifierMap().get(appBundleId.trim());
 	}
+
 	/**
-	 * 
-	 * @param response
-	 * @return
+	 * Gets the json response.
+	 *
+	 * @param response the response
+	 * @return the json response
 	 */
 	private String getJsonResponse(Object response) {
 		try {
@@ -317,11 +413,63 @@ public class UserManagementRestService {
 		}
 		return "";
 	}
+
+	/**
+	 * Sets the logger name.
+	 *
+	 * @param loggerName the new logger name
+	 */
 	public void setLoggerName(String loggerName) {
 		this.loggerName = loggerName;
 	}
 
+	/**
+	 * Gets the logger name.
+	 *
+	 * @return the logger name
+	 */
 	public String getLoggerName() {
 		return loggerName;
 	}
+
+	public LoggingService getLogger() {
+		return logger;
+	}
+
+	public void setLogger(LoggingService logger) {
+		this.logger = logger;
+	}
+
+	public UserManagementService getUserMgmtService() {
+		return userMgmtService;
+	}
+
+	public void setUserMgmtService(UserManagementService userMgmtService) {
+		this.userMgmtService = userMgmtService;
+	}
+
+	public FlurryManagementService getFlurryMgmtService() {
+		return flurryMgmtService;
+	}
+
+	public void setFlurryMgmtService(FlurryManagementService flurryMgmtService) {
+		this.flurryMgmtService = flurryMgmtService;
+	}
+
+	public NimblerApps getNimblerApps() {
+		return nimblerApps;
+	}
+
+	public void setNimblerApps(NimblerApps nimblerApps) {
+		this.nimblerApps = nimblerApps;
+	}
+
+	public GtfsDataService getGtfsDataService() {
+		return gtfsDataService;
+	}
+
+	public void setGtfsDataService(GtfsDataService gtfsDataService) {
+		this.gtfsDataService = gtfsDataService;
+	}
+
 }

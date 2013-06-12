@@ -17,9 +17,11 @@ import com.nimbler.tp.service.TpPlanService;
 import com.nimbler.tp.service.UserManagementService;
 import com.nimbler.tp.service.advisories.AdvisoriesPushService;
 import com.nimbler.tp.service.advisories.AdvisoriesService;
+import com.nimbler.tp.service.advisories.TwitterSearchManager;
 import com.nimbler.tp.service.flurry.FlurryManagementService;
 import com.nimbler.tp.service.livefeeds.BARTApiImpl;
 import com.nimbler.tp.service.livefeeds.NextBusApiImpl;
+import com.nimbler.tp.service.livefeeds.WmataApiImpl;
 import com.nimbler.tp.service.livefeeds.stub.BARTApiClient;
 import com.nimbler.tp.service.livefeeds.stub.NextBusApiClient;
 
@@ -66,6 +68,9 @@ public class BeanUtil {
 	public static final FlurryManagementService getFlurryManagementService(){
 		return (FlurryManagementService) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.FLURRY_MANAGEMENT_SERVICE.bean());
 	}
+	public static final TwitterSearchManager getTwitterSearchManager(){
+		return (TwitterSearchManager) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.TWITTER_SEARCH_MANAGER.bean());
+	}
 	/**
 	 * 
 	 * @return
@@ -94,6 +99,10 @@ public class BeanUtil {
 	 */
 	public static final BARTApiImpl getBARTApiImpl(){
 		return (BARTApiImpl) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.BART_API_IMPL.bean());
+	}
+
+	public static WmataApiImpl getWMATAApiImpl() {
+		return (WmataApiImpl) TPApplicationContext.getBeanInstance().getBean(SPRING_BEANS.WMATA_API_IMPL.bean());
 	}
 
 	public static final UserManagementService getUserManagementService() {

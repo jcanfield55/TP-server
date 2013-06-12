@@ -37,6 +37,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -85,6 +86,13 @@ public class ComUtils {
 	public static int getSecondsSinceMidNight(long epoch){
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTimeZone(TimeZone.getTimeZone("PST"));
+		calendar.setTimeInMillis(epoch);
+		return calendar.get(Calendar.HOUR_OF_DAY)*60*60 + calendar.get(Calendar.MINUTE)*60 + calendar.get(Calendar.SECOND);
+
+	}
+	public static int getSecondsSinceMidNight(long epoch,TimeZone timeZone){
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTimeZone(timeZone);
 		calendar.setTimeInMillis(epoch);
 		return calendar.get(Calendar.HOUR_OF_DAY)*60*60 + calendar.get(Calendar.MINUTE)*60 + calendar.get(Calendar.SECOND);
 
@@ -299,6 +307,11 @@ public class ComUtils {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}	
+	}
+
+	public static Integer[] getAdvisoryAgenciesForApp(String appIdentifier) {
+		String agencies = BeanUtil.getNimblerAppsBean().getAppIdentifierToAgenciesMap().get(appIdentifier);
+		return splitToIntArray(agencies);
 	}
 
 	/**
@@ -569,6 +582,7 @@ public class ComUtils {
 	/**
 	 * Crrently we have one to one mapping for app and agency.
 	 * @param agencyType
+	 * @deprecated
 	 * @return
 	 */
 	public static Integer[] getAppsSupportingAgency(Integer agencyType) {		
@@ -582,8 +596,41 @@ public class ComUtils {
 			return new Integer[]{NIMBLER_APP_TYPE.CALTRAIN.ordinal()};
 		}
 	}
-	public static boolean isWeekEnd(){
-		int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK); 
+
+	/**
+	 * Gets the timezone by app.
+	 *
+	 * @param app the app
+	 * @return the timezone by app
+	 */
+	public static TimeZone getAppTimeZone(int app) {
+		return BeanUtil.getNimblerAppsBean().getTimeZoneByApp(app);
+	}
+
+
+	/**
+	 * Split to int array.
+	 *
+	 * @param values the values
+	 * @return the integer[]
+	 */
+	public static Integer[] splitToIntArray(String values) {
+		if(values == null)
+			return null;
+		String[] vals = values.split(",");
+		Integer[] integers = new Integer[vals.length];
+		for (int i = 0; i < vals.length; i++) {
+			integers[i] = NumberUtils.toInt(vals[i]);
+		}
+		return integers;
+	}
+	public static boolean isWeekEnd(TimeZone timeZone){
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTimeZone(timeZone);
+		int day = calendar.get(Calendar.DAY_OF_WEEK);
 		return (day==1 || day==7);
+	}
+	public static boolean isFileExist(String file) {
+		return new File(file).exists();
 	}
 }

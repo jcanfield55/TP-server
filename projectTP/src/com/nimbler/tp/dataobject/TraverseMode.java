@@ -10,11 +10,11 @@ import java.util.Set;
 
 import javax.xml.bind.annotation.XmlType;
 
-@XmlType(name="TraverseMode")  
+@XmlType(name="TraverseMode")
 public enum TraverseMode {
 	WALK, BICYCLE, CAR, TRAM, SUBWAY, RAIL, BUS, FERRY, CABLE_CAR, GONDOLA, FUNICULAR, TRANSIT, TRAINISH, BUSISH, BOARDING, ALIGHTING, TRANSFER, STL;
 
-	private static HashMap <Set<TraverseMode>, Set<TraverseMode>> setMap = 
+	private static HashMap <Set<TraverseMode>, Set<TraverseMode>> setMap =
 			new HashMap <Set<TraverseMode>, Set<TraverseMode>>();
 
 	public static Set<TraverseMode> internSet (Set<TraverseMode> modeSet) {
@@ -30,7 +30,7 @@ public enum TraverseMode {
 		}
 		return ret;
 	}
-	public boolean isSame(String mode) {
+	public boolean is(String mode) {
 		if(mode!=null){
 			return mode.equalsIgnoreCase(name());
 		}

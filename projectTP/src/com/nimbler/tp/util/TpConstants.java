@@ -52,6 +52,7 @@ public class TpConstants {
 	public static final String WS_PLAN 					=TpProperty.getDefaultProperty("ws.plan");
 	public static final String MONITOR_INTERVAL    		=TpProperty.getDefaultProperty("monitor.interval");
 	public static final String MAX_TIME_UPPER_LIMIT    	=TpProperty.getDefaultProperty("maxtime.upper.limit");
+	public static final String SERVER_META_DATA    	=     SERVER_URL+"ws/metadata";
 
 	public static final String RESPONSE_PLAN            =TpProperty.getDefaultProperty("response.plan");
 	public static final String RESPONSE_ERROR_ID    	=TpProperty.getDefaultProperty("response.error.id");
@@ -92,6 +93,7 @@ public class TpConstants {
 	public static final String CREATE_TIME 		= "createTime";
 	public static final String UPDATE_TIME 		= "updateTime";
 	public static final String APP_TYPE 		= "appType";
+
 	public static final String LAST_PUSH_TIME_BART  = "lastPushTimeBart";
 	public static final String LAST_PUSH_TIME_ACT   = "lastPushTimeAct ";
 	public static final String LAST_PUSH_TIME_SFMUNI = "lastPushTimeSfMuni";
@@ -156,6 +158,7 @@ public class TpConstants {
 	public static final int ROUTE_DIRECTION_OUTBOUND = 0;
 	public static final int ROUTE_DIRECTION_INBOUND = 1;
 	public static final int INACTIVE_DEVICES_NO_OF_ALEARTS = -2;
+	public static final String TIMEZONE_EASTERN = "US/Eastern";
 
 	public enum NIMBLER_APP_TYPE {
 		DEFAULT(""),//0
@@ -168,7 +171,8 @@ public class TpConstants {
 		/**
 		 * Ordinal 4
 		 */
-		SF_BAY_AREA("SF");//4
+		SF_BAY_AREA("SF"),//4
+		WDC("DC");//5
 
 		private String text;
 		public String getText() {
@@ -191,7 +195,7 @@ public class TpConstants {
 		VTA("","","VTA",""),//5
 		MENLO_MIDDAY("","","Menlo-Midday",""),//6
 		SF_FERRIES("","","SF-ferries",""),//7
-		WMATA("","","WMATA",""),//8
+		WMATA("lastPushTimeWmata","enableWmataAdv","WMATA","lastReadTimeWmata"),
 		SAM_TRANS("lastPushTimeSam","enableSamAdv","SamTrans","lastReadTimeSam"),//9		
 		ACE("","","ACE",""),//10
 		ANGEL_ISLAND_FERRY("","","Angel Ferry",""),//11
