@@ -33,6 +33,7 @@
 			<map>
 				<entry key="4" value="" />
 				<entry key="5" value="file:/otp-staging-ebs/otp/graph/wdc/Graph.obj" />
+				<entry key="6" value="" />
 			</map>
 		</property>
 	</bean>
@@ -136,11 +137,12 @@
 		init-method="init">	
 		<property name="agencyTweetSourceMap"> <!-- keys point to ordinal value of TPCpnstants.AGENCY_TYPE enum, value = comma separated sources -->
 			<map> 
- 				<entry key="1" value="apprikacaltrain" /><!-- CALTRAIN -apprikacaltrain -->
-				<entry key="2" value="apprikabart" /> <!-- BART - apprikabart -->
-				<entry key="3" value="apprikasfmta" /><!-- SFMUNI - apprikasfmta -->
-				<entry key="4" value="apprikactransit" />  <!-- AC_TRANSIT - apprikactransit -->
-				<entry key="8" value="wmata" /> <!--  WMATA - apprikwmata  -->
+ 				<!-- <entry key="1" value="apprikacaltrain" />CALTRAIN -apprikacaltrain
+				<entry key="2" value="apprikabart" /> BART - apprikabart
+				<entry key="3" value="apprikasfmta" />SFMUNI - apprikasfmta
+				<entry key="4" value="apprikactransit" />  AC_TRANSIT - apprikactransit
+				<entry key="8" value="apprikactransit" />  WMATA - apprikwmata  -->
+				<entry key="21" value="apprikactransit" /> <!--  WMATA - apprikwmata  -->
 			<!-- 	<entry key="1" value="caltrain_news,caltrain" />CALTRAIN -apprikacaltrain
 				<entry key="2" value="sfbartalert" /> BART - apprikabart
 				<entry key="3" value="sfmta_muni" />SFMUNI - apprikasfmta
@@ -154,6 +156,7 @@
 				<entry key="sfbartalert" value="bart.png" />								
 				<entry key="sfmta_muni" value="sfmta.png" />								
 				<entry key="rideact" value="actransit.png" />	
+				<entry key="trimet" value="actransit.png" />	
 				<!-- test -->
 				<entry key="apprikacaltrain" value="caltrain.png" />	
 				<entry key="apprikabart" value="bart.png" />	
@@ -169,11 +172,12 @@
 				<entry key="3" value="1" />  
 				<entry key="4" value="1" />  
 				<entry key="8" value="1" />  
+				<entry key="21" value="1" />  
 			</map>
 		</property>
 		<property name="pushTimeInterval">
 			<map>
-				<entry key="notifTimingMorning" value="300-600" />
+				<entry key="notifTimingMorning" value="0-600" />
 				<entry key="notifTimingMidday" value="600-900" />
 				<entry key="notifTimingEvening" value="900-1170" />
 				<entry key="notifTimingNight" value="1170-1440" />
@@ -218,6 +222,20 @@
 					<!-- 1- sandbox, 2- production -->
 					<property name="certType" value="1" />
 					<property name="appType" value="SF_BAY_AREA" />
+				</bean>				
+				<bean class="com.nimbler.tp.dataobject.ApnBundle">
+					<property name="password" value="jj_nn_ss@321" />
+					<property name="KEYSTORE_P12_FILE" value="conf/cert/NimblerDCPushDeveloperCert.p12" />
+					<!-- 1- sandbox, 2- production -->
+					<property name="certType" value="1" />
+					<property name="appType" value="WDC" />
+				</bean>
+				<bean class="com.nimbler.tp.dataobject.ApnBundle">
+					<property name="password" value="jj_nn_ss@321" />
+					<property name="KEYSTORE_P12_FILE" value="conf/cert/NimblerDCPushDeveloperCert.p12" />
+					<!-- 1- sandbox, 2- production -->
+					<property name="certType" value="1" />
+					<property name="appType" value="PORTLAND" />
 				</bean>
 			</list>
 		</property>
@@ -228,7 +246,7 @@
 
 	<bean id="gtfsMonitoring" class="com.nimbler.tp.gtfs.GtfsDataMonitor"
 		init-method="init">
-		<property name="downloadDirectory" value="E:/nimbler/GTFS/tmp/" />
+		<property name="downloadDirectory" value="d:/nimbler/GTFS/tmp/" />
 		<property name="loggerName">
 			<value>com.nimbler.tp.gtfs.GtfsDataMonitor</value>
 		</property>
@@ -237,8 +255,18 @@
 		<property name="gtfsBundles">
 			<list>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
+					<property name="defaultAgencyId" value="TriMet" />
+					<property name="currentDataFile" value="d:/nimbler/GTFS/Trimet.zip" />
+					<property name="downloadUrl" value="http://bart.gov/dev/schedules/google_transit.zip" />
+					<property name="lastUpdateDate" value="20120910" />
+					<property name="agencyType" value="TRIMET" />
+					<property name="exclusionType" value="BY_RAIL_BUS" />
+					<property name="displayName" value="$agency_id" />
+				</bean>
+				<!--
+				 <bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="BART" />
-					<property name="currentDataFile" value="E:/nimbler/GTFS/BART.zip" />
+					<property name="currentDataFile" value="d:/nimbler/GTFS/BART.zip" />
 					<property name="downloadUrl"
 						value="http://bart.gov/dev/schedules/google_transit.zip" />
 					<property name="lastUpdateDate" value="20120910" />
@@ -248,7 +276,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="Menlo-Midday" />
-					<property name="currentDataFile" value="E:/nimbler/GTFS/Menlo-Midday.zip" />
+					<property name="currentDataFile" value="d:/nimbler/GTFS/Menlo-Midday.zip" />
 					<property name="downloadUrl"
 						value="http://www.menlopark.org/departments/trn/google/google_transit.zip" />
 					<property name="lastUpdateDate" value="20120910" />
@@ -259,7 +287,7 @@
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="AC Transit" />
 					<property name="currentDataFile"
-						value="E:\nimbler\GTFS\AC-GTFSExtJune152013\AC-GTFSExtJune152013.zip" />
+						value="D:/nimbler/GTFS/ACtransit.zip" />
 					<property name="downloadUrl"
 						value="http://www.actransit.org/wp-content/plugins/download-monitor/download.php?id=5" />
 					<property name="lastUpdateDate" value="20120910" />
@@ -270,7 +298,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.CaltrainGtfsBundle">
 					<property name="defaultAgencyId" value="Caltrain" />
-					<property name="currentDataFile" value="E:/nimbler/GTFS/Caltrain.zip" />
+					<property name="currentDataFile" value="d:/nimbler/GTFS/Caltrain.zip" />
 					<property name="downloadUrl"
 						value="http://www.caltrain.com/Assets/GTFS/caltrain/google_transit.zip" />
 					<property name="lastUpdateDate" value="20120912" />
@@ -281,7 +309,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="SF-ferries" />
-					<property name="currentDataFile" value="E:/nimbler/GTFS/SF-ferries.zip" />
+					<property name="currentDataFile" value="d:/nimbler/GTFS/SF-ferries.zip" />
 					<property name="downloadUrl"
 						value="http://trilliumtransit.com/transit_feeds/sfbay-ferries-ca-us/gtfs.zip" />
 					<property name="lastUpdateDate" value="20130106" />
@@ -314,7 +342,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="VTA" />
-					<property name="currentDataFile" value="E:/nimbler/GTFS//VTA.zip" />
+					<property name="currentDataFile" value="d:/nimbler/GTFS//VTA.zip" />
 					<property name="downloadUrl"
 						value="http://www.vta.org/dev/data/google_transit.zip " />
 					<property name="lastUpdateDate" value="20130106" />
@@ -324,7 +352,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="SFMTA" />
-					<property name="currentDataFile" value="E:/nimbler/GTFS//SFMTA.zip" />
+					<property name="currentDataFile" value="d:/nimbler/GTFS//SFMTA.zip" />
 					<property name="downloadUrl"
 						value="http://www.sfmta.com/transitdata/google_transit.zip" />
 					<property name="lastUpdateDate" value="20130106" />
@@ -335,7 +363,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="samtrans-ca-us" />
-					<property name="currentDataFile" value="E:/nimbler/GTFS/SamTrans.zip" />
+					<property name="currentDataFile" value="d:/nimbler/GTFS/SamTrans.zip" />
 					<property name="downloadUrl"
 						value="http://www.samtrans.com/Assets/GTFS/samtrans/google+transit+SamTrans+04-22-2013-My66BhE528ghop8.zipp" />
 					<property name="lastUpdateDate" value="20130406" />
@@ -345,7 +373,7 @@
 				</bean> 	
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="currentDataFile"
-						value="E:/nimbler/GTFS/new/ACE.zip" />
+						value="d:/nimbler/GTFS/new/ACE.zip" />
 					<property name="defaultAgencyId" value="ACE" />
 					<property name="lastUpdateDate" value="20130501" />
 					<property name="agencyType" value="ACE" />
@@ -354,7 +382,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="currentDataFile"
-						value="E:/nimbler/GTFS/new/AngelFerry.zip" />
+						value="d:/nimbler/GTFS/new/AngelFerry.zip" />
 					<property name="defaultAgencyId" value="AT" />
 					<property name="lastUpdateDate" value="20130501" />
 					<property name="agencyType" value="ANGEL_ISLAND_FERRY" />
@@ -363,7 +391,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="currentDataFile"
-						value="E:/nimbler/GTFS/new/CapitolCorridorJoint.zip" />
+						value="d:/nimbler/GTFS/new/CapitolCorridorJoint.zip" />
 					<property name="defaultAgencyId" value="Capitol Corridor" />
 					<property name="agencyType" value="CAPITOL_CORRIDOR" />
 					<property name="exclusionType" value="BY_AGENCY" />
@@ -372,7 +400,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="currentDataFile" 
-						value="E:/nimbler/GTFS/new/CountyConnection.zip" />
+						value="d:/nimbler/GTFS/new/CountyConnection.zip" />
 					<property name="defaultAgencyId" value="County Connection" />
 					<property name="agencyType" value="COUNTY_CONNECTION" />
 					<property name="exclusionType" value="BY_AGENCY" />
@@ -381,7 +409,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="currentDataFile" 
-						value="E:/nimbler/GTFS/new/DumbartonExpress.zip" />
+						value="d:/nimbler/GTFS/new/DumbartonExpress.zip" />
 					<property name="defaultAgencyId" value="DE" />
 					<property name="agencyType" value="DUMBARTON_EXPRESS" />
 					<property name="exclusionType" value="BY_AGENCY" />
@@ -390,7 +418,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="currentDataFile" 
-						value="E:/nimbler/GTFS/new/EmeryGoRound.zip" />
+						value="d:/nimbler/GTFS/new/EmeryGoRound.zip" />
 					<property name="defaultAgencyId" value="EM" />
 					<property name="agencyType" value="EMERY_GO_ROUND" />
 					<property name="exclusionType" value="BY_AGENCY" />
@@ -399,7 +427,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="currentDataFile"
-						value="E:/nimbler/GTFS/new/MarinTransit.zip" />
+						value="d:/nimbler/GTFS/new/MarinTransit.zip" />
 					<property name="defaultAgencyId" value="MCTD" />
 					<property name="lastUpdateDate" value="20130501" />
 					<property name="agencyType" value="MARIN_TRANSIT" />
@@ -408,7 +436,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="currentDataFile" 
-						value="E:/nimbler/GTFS/new/SantaRosa.zip" />
+						value="d:/nimbler/GTFS/new/SantaRosa.zip" />
 					<property name="defaultAgencyId" value="Santa Rosa CityBus" />
 					<property name="lastUpdateDate" value="20130501" />
 					<property name="agencyType" value="SANTA_ROSA" />
@@ -417,7 +445,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="currentDataFile" 
-						value="E:/nimbler/GTFS/new/StanfordMargueriteShuttle.zip" />
+						value="d:/nimbler/GTFS/new/StanfordMargueriteShuttle.zip" />
 					<property name="defaultAgencyId" value="MS" />
 					<property name="agencyType" value="STANFORD_MARGUERITE_SHUTTLE" />
 					<property name="exclusionType" value="BY_AGENCY" />
@@ -426,7 +454,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="currentDataFile" 
-						value="E:/nimbler/GTFS/new/UnionCityTransit.zip" />
+						value="d:/nimbler/GTFS/new/UnionCityTransit.zip" />
 					<property name="defaultAgencyId" value="UC" />
 					<property name="agencyType" value="UNION_CITY_TRANSIT" />
 					<property name="lastUpdateDate" value="20130501" />
@@ -435,7 +463,7 @@
 				</bean>
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="currentDataFile" 
-						value="E:/nimbler/GTFS/new/YountvilleShuttle.zip" />
+						value="d:/nimbler/GTFS/new/YountvilleShuttle.zip" />
 					<property name="defaultAgencyId" value="YV" />
 					<property name="agencyType" value="YOUNTVILLE_SHUTTLE" />
 					<property name="lastUpdateDate" value="20130501" />
@@ -444,7 +472,7 @@
 				</bean>				
 				<bean class="com.nimbler.tp.gtfs.GtfsBundle">
 					<property name="defaultAgencyId" value="WMATA" />
-					<property name="currentDataFile" value="E:/nimbler/GTFS/WMATA.zip" />
+					<property name="currentDataFile" value="d:/nimbler/GTFS/WMATA.zip" />
 					<property name="agencyType" value="WMATA" />
 					<property name="downloadUrl" value="http://lrg.wmata.com/GTFS_data/google_transit.zip" />
 					<property name="lastUpdateDate" value="20130110" />
@@ -463,7 +491,7 @@
 							</bean>
 						</list>
 					</property>
-				</bean> 
+				</bean>  -->
 			</list>
 		</property>
 	</bean>
@@ -478,7 +506,7 @@
 	<bean id="twitterMonitor" class="com.nimbler.tp.service.advisories.TwitterMonitor" />
 		
 	<bean id="gtfsDataService" class="com.nimbler.tp.gtfs.GtfsDataService">	
-		<property name="ageciesToLoad" value="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20" />	
+		<property name="ageciesToLoad" value="21" />	
 	<property name="gtfsColums">
 		<map>
 			<entry key="agency" value="agency_id,agency_name,agency_url" />
@@ -505,6 +533,7 @@
 				<entry key="com.Nimbler.Nimbler-Caltrain" value="1" /> 
 				<entry key="com.Nimbler.Nimbler-SF" value="4" />				
 				<entry key="com.Nimbler.Nimbler-DC" value="5" />				
+				<entry key="com.Nimbler.Nimbler-portland" value="6" />				
 			</map>
 		</property>
 		<!-- keys = ordinal value of TPCpnstants.NIMBLER_APP_TYPE enum, value = ordinal value of TPCpnstants.AGENCY_TYPE enum -->
@@ -514,6 +543,7 @@
 				<entry key="1" value="1,2,3,4" /> <!-- comma separated value -->
 				<entry key="4" value="1,2,3,4" />
 				<entry key="5" value="8" />
+				<entry key="6" value="21" />
 			</map>
 		</property>
 		<property name="appRouteSupportAgencies">
@@ -522,6 +552,7 @@
 				<entry key="1" value="1,2,3,4,5,6,7,9,10,11,12,13,14,15,16,17,18,19,20" /> <!-- comma separated value -->
 				<entry key="4" value="1,2,3,4,5,6,7,9,10,11,12,13,14,15,16,17,18,19,20" />
 				<entry key="5" value="8" />
+				<entry key="6" value="21" />
 			</map>
 		</property>
 	<property name="realTimeApiByAgency">
@@ -532,6 +563,7 @@
 			<entry key="San Francisco Municipal Transportation Agency" value-ref="nextBusApiImpl" />
 			<entry key="DC Circulator" value-ref="wmataApiImpl" />
 			<entry key="MET" value-ref="wmataApiImpl" />
+			<entry key="TriMet" value-ref="trimetApiImpl" />
 		</map>
 	</property>
 	<property name="appTimeZone">
@@ -539,11 +571,18 @@
 			<entry key="1" value-ref="pstTimeZone" />
 			<entry key="4" value-ref="pstTimeZone" />
 			<entry key="5" value-ref="easternTimeZone" />			
+			<entry key="6" value-ref="pstTimeZone" />			
 			</map>
 		</property>
 	</bean>
 
 
+	<bean id="trimetApiClient" class="com.nimbler.tp.service.livefeeds.stub.TrimetApiClient">
+	</bean>
+	<bean id="trimetApiImpl" class="com.nimbler.tp.service.livefeeds.TrimetApiImpl">
+	</bean>
+	<bean id="trimetCachedApiClient" class="com.nimbler.tp.service.livefeeds.cache.TrimetCachedApiClient">
+	</bean>
 	<bean id="bartAlertCriteria" class="com.nimbler.tp.service.advisories.BartAlertCriteria" />
 
 	
@@ -579,7 +618,7 @@
 		<property name="targetMethod" value="onDayFinish" />
 		<property name="arguments">
 			<list>
-				<value>1,2,3,4</value> <!-- agenciIds -->			
+				<value>1,2,3,4,21</value> <!-- agenciIds -->			
 			</list>
 		</property>		
 	</bean>
@@ -600,6 +639,7 @@
 			</list>
 		</property>		
 	</bean>
+
 	<bean id="onDayFinishTriggerDC" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="onDayFinishJobDC" />
  		<property name="cronExpression" value="0 59 23 * * ?" />		
@@ -661,8 +701,8 @@
 				<ref bean="onDayFinishTriggerDC" />
  				<ref bean="dBHealthMonitoringTrigger" />
              	<ref bean="wmataApiLimitRenewTrigger" />
-				<ref bean="flurryDailyRequestCallTrigger" />
-				<ref bean="flurryDailyReportCallTrigger" />
+				<!-- <ref bean="flurryDailyRequestCallTrigger" />
+				<ref bean="flurryDailyReportCallTrigger" /> -->
 			</list>
 		</property>
 	</bean>

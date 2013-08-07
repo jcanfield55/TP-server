@@ -24,11 +24,10 @@ import com.nimbler.tp.util.TpConstants;
  */
 public class LoggingService {	 
 
-	private Map<String, Logger> loggers;
+	private Map<String, Logger> loggers = new HashMap<String, Logger>();
 
 	public void init() {
 		DOMConfigurator.configure(LoggingService.class.getClassLoader().getResource(TpConstants.FILE_LOG_CONFIGURATION));
-		loggers = new HashMap<String, Logger>();
 
 		for (Enumeration allLoggers = LogManager.getCurrentLoggers();allLoggers.hasMoreElements();) {
 			Logger logger = (Logger) allLoggers.nextElement();
@@ -62,7 +61,8 @@ public class LoggingService {
 	 */
 	public void debug(String loggerName, String message) {
 		Logger logger = loggers.get(loggerName);
-		logger.debug(getClassName()+message);
+		if(logger!=null)
+			logger.debug(getClassName()+message);
 	}
 
 	public void debug(String loggerName, String message,String...values) {

@@ -1,3 +1,6 @@
+/*
+ * @author nirmal
+ */
 package com.nimbler.tp.util;
 
 import java.io.BufferedInputStream;
@@ -6,9 +9,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -17,10 +23,21 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import com.nimbler.tp.common.RealTimeDataException;
 import com.nimbler.tp.common.StopNotFoundException;
@@ -249,6 +266,32 @@ public class WmataUtil {
 				break;
 		}
 		return res;
+	}
+
+	/**
+	 * Gets the gtfs publich time.
+	 *
+	 * @param dateFormat: EEE, dd MMM yyyy HH:mm:ss z
+	 * @param url       : https://www.wmata.com/rider_tools/devCode.xml
+	 * @param xPath     : /rss/channel/item/pubDate/text()
+	 * @return the gtfs publich time
+	 * @throws XPathExpressionException the x path expression exception
+	 * @throws SAXException the sAX exception
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws ParseException the parse exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public static Date getGtfsPublishTime(String dateFormat,String url,String xPath) throws XPathExpressionException, SAXException, ParserConfigurationException, ParseException, IOException {
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(dateFormat);
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder builder = factory.newDocumentBuilder();
+		Document doc = builder.parse(url);
+		XPathFactory xPathFactory = XPathFactory.newInstance();
+		XPath xpath = xPathFactory.newXPath();
+		XPathExpression expr = xpath.compile(xPath);
+		String strDate = (String) expr.evaluate(doc,XPathConstants.STRING);
+		Date date = simpleDateFormat.parse(strDate);
+		return date;
 	}
 
 	public static List filterOneStopByDistance(Point p, Set<? extends Point> lstStops,double maxDistance) {

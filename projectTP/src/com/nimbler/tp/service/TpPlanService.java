@@ -28,8 +28,10 @@ import com.nimbler.tp.dataobject.AgencyAndId;
 import com.nimbler.tp.dataobject.Itinerary;
 import com.nimbler.tp.dataobject.Leg;
 import com.nimbler.tp.dataobject.StopTimeType;
+import com.nimbler.tp.dataobject.TraverseMode;
 import com.nimbler.tp.dataobject.TripPlan;
 import com.nimbler.tp.dataobject.TripResponse;
+import com.nimbler.tp.dataobject.WalkStep;
 import com.nimbler.tp.gtfs.PlanCompareTask;
 import com.nimbler.tp.mongo.PersistenceService;
 import com.nimbler.tp.util.ComUtils;
@@ -183,6 +185,8 @@ public class TpPlanService {
 			plan.setRequestUrl(url);
 			List<Itinerary> itineraries = plan.getItineraries();
 
+			addWalkIndex(itineraries);
+
 			String strSavePlan = StringUtils.defaultString(reqMap.get(RequestParam.SAVE_PLAN),"true");
 			boolean savePlan = Boolean.parseBoolean(strSavePlan);
 			if(savePlan){
@@ -215,6 +219,34 @@ public class TpPlanService {
 			logger.error(loggerName, e);
 		}
 		return response;	
+	}
+
+	/**
+	 * Adds the walk index.
+	 *
+	 * @param itineraries the itineraries
+	 */
+	private void addWalkIndex(List<Itinerary> itineraries) {
+		try {
+			if(itineraries==null)
+				return;
+			for (Itinerary itinerary : itineraries) {
+				for (Leg leg : itinerary.getLegs()) {
+					String mode = leg.getMode();
+					if(TraverseMode.BICYCLE.is(mode) || TraverseMode.WALK.is(mode) ){
+						List<WalkStep> walkSteps = leg.getSteps();
+						if(walkSteps==null)
+							continue;
+						int i = 0;
+						for (WalkStep walkStep : walkSteps) {
+							walkStep.setIndex(i++);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			logger.error(loggerName,e);
+		}
 	}
 
 	private String getAppRouterId(String app) {

@@ -278,6 +278,8 @@ public class GtfsUtils {
 	}
 	/**
 	 * Read agency ids.
+	 * @param bundle 
+	 * @param bundle 
 	 *
 	 * @param gtfsFile the gtfs file
 	 * @return the list
@@ -285,31 +287,34 @@ public class GtfsUtils {
 	 * @throws ZipException 
 	 * @throws TpException 
 	 */
-	public List<String> readAgencyIds(File file) throws ZipException, IOException, TpException {
+	public List<String> readAgencyIds(File file, GtfsBundle bundle) throws ZipException, IOException, TpException {
 		List<String> lstRes = new ArrayList<String>();
 		List<String> lstLines = IOUtils.readLines(getZipEntryDataStream(file, TpConstants.ZIP_AGENCY_FILE),GTFS_ENCODE_FORMAT);		
 		if(ComUtils.isEmptyList(lstLines))
 			throw new TpException("Invalid file, No data found in file: "+file);
 		String[] headers = lstLines.get(0).split(",");
 		int AGENCY_ID = -1;
-		int AGENCY_NAME = -1;
+		//		int AGENCY_NAME = -1;
 		for (int i = 0; i < headers.length; i++) {			
 			if(headers[i].toLowerCase().indexOf("agency_id")!=-1)
 				AGENCY_ID = i;
-			else if (headers[i].toLowerCase().indexOf("agency_name")!=-1)
-				AGENCY_NAME =i;
+			//			else if (headers[i].toLowerCase().indexOf("agency_name")!=-1)
+			//				AGENCY_NAME =i;
 		}
-		if(AGENCY_ID == -1 || AGENCY_NAME==-1)
-			throw new TpException("No valid header index found  in data for file(agency.txt):"+file+", header: "+lstLines.get(0));
+		//		if(AGENCY_ID == -1 || AGENCY_NAME==-1)
+		//			throw new TpException("No valid header index found  in data for file(agency.txt):"+file+", header: "+lstLines.get(0));
 		for (int i = 1; i < lstLines.size(); i++) {					
 			try {
 				String[] line = lstLines.get(i).split(",");
 				ComUtils.removeQuotation(line);
 				if(line==null || line.length<2){
-					logger.warn(loggerName, "empty/invalid line found in gtfs:"+file.getAbsoluteFile()+" at line:"+lstLines.get(i));
+					logger.debug(loggerName, "empty/invalid line found in gtfs:"+file.getAbsoluteFile()+" at line:"+lstLines.get(i));
 					continue;					
 				}
-				lstRes.add(StringUtils.defaultIfBlank(line[AGENCY_ID], line[AGENCY_NAME]));
+				if(AGENCY_ID==-1 || StringUtils.isBlank(line[AGENCY_ID]))
+					lstRes.add(bundle.getDefaultAgencyId());
+				else
+					lstRes.add(line[AGENCY_ID]);
 			} catch (Exception e) {
 				logger.error(loggerName,"Malformed data Found in file(calander.txt):"+file.getAbsolutePath()+" at line "+i+", data: "+lstLines.get(i),e);				
 			}

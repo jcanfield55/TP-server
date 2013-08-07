@@ -5,6 +5,7 @@ package com.nimbler.tp.service.livefeeds;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 
+import java.io.FileNotFoundException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -106,19 +107,10 @@ public class WmataApiImpl implements RealTimeAPI {
 			if(stopMapping.getDate()!=null)
 				System.out.println("    Date   :"+new Date(stopMapping.getDate()));
 			System.out.println("    Note   :"+stopMapping.getNote());
-
-			//			Map<String, RailStopSequence> s = stopMapping.getRailStopSequence();
-			//			for (Map.Entry<String, RailStopSequence> entry : s.entrySet()) {
-			//				String key = entry.getKey();
-			//				RailStopSequence value = entry.getValue();
-			//				System.out.println("-------------------------------");
-			//				System.out.println(key+" - "+ToStringBuilder.reflectionToString(value.getStopCodeSequence(),ToStringStyle.SHORT_PREFIX_STYLE));
-			//				for (RailStopSeqElement element : value.getPath()) {
-			//					System.out.println("      "+element.getLineCode()+" - "+element.getSeqNum()+"-"+element.getStationCode()+"-"+element.getStationName());
-			//				}
-			//			}
 			System.out.println("WMATA Stop Read Complete....");
 
+		} catch (FileNotFoundException e) {
+			System.out.println("[ERROR] file not found:"+e.getMessage());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -199,6 +191,24 @@ public class WmataApiImpl implements RealTimeAPI {
 			if(_verbose)
 				logger.debug(loggerName, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 		}
+	}
+
+	/* (non-Javadoc)
+	 * @see com.nimbler.tp.service.livefeeds.RealTimeAPI#getAllRealTimeFeeds(java.util.List)
+	 */
+	@Override
+	public List<LegLiveFeed> getAllRealTimeFeeds(List<Leg> legs) throws FeedsNotFoundException {
+		List<LegLiveFeed> lstRes = new ArrayList<LegLiveFeed>();
+		for (Leg leg : legs) {
+			try {
+				LegLiveFeed legFeed = getAllRealTimeFeeds(leg);
+				if (legFeed!=null) 
+					lstRes.add(legFeed);
+			} catch (FeedsNotFoundException e) {
+				logger.info(loggerName, e.getMessage());
+			}
+		}
+		return lstRes;
 	}
 
 	/**
@@ -555,13 +565,15 @@ public class WmataApiImpl implements RealTimeAPI {
 		if(lstBusStops.size()>1){ // check route in case of multiple api stops
 			List<BusStop> lstfilteredBusStops = new ArrayList<BusStop>();
 			Collection<String> apiRoutes = stopMapping.getBusRouteIdMapping().get(routeTag);
-			for (BusStop busStop : lstBusStops) {
-				for (String apiRoute : apiRoutes) {
-					if(busStop.haveRoute(apiRoute,true))
-						lstfilteredBusStops.add(busStop);
-					break;
+			OUTER:
+				for (BusStop busStop : lstBusStops) {
+					for (String apiRoute : apiRoutes) {
+						if(busStop.haveRoute(apiRoute,true)){
+							lstfilteredBusStops.add(busStop);
+							continue OUTER;
+						}
+					}
 				}
-			}
 			lstBusStops = lstfilteredBusStops;
 		}
 		validateList(lstBusStops, "No api stops found for route : "+routeTag);
@@ -595,6 +607,15 @@ public class WmataApiImpl implements RealTimeAPI {
 		for (RealTimePrediction realTimePrediction : lstRealTimePredictions) {
 			gtfsDataService.getMatchingScheduleForRealTime(leg, type,realTimePrediction);
 		}
+	}
+
+
+	@Override
+	public VehiclePosition getVehiclePosition(Leg leg)	throws FeedsNotFoundException {
+		if(equalsIgnoreCase(leg.getMode(), TraverseMode.BUS.name()))
+			throw new FeedsNotFoundException("Mode not suported for WMATA agency: "+leg.getMode());
+		//		cachedApiClient
+		return null;
 	}
 	public int getMaxEarlyThresold() {
 		return maxEarlyThresold;
@@ -707,8 +728,13 @@ public class WmataApiImpl implements RealTimeAPI {
 		this.gtfsDataService = gtfsDataService;
 	}
 
-	@Override
-	public VehiclePosition getVehiclePosition(Leg leg)	throws FeedsNotFoundException {
-		return null;
+	public boolean isVerbose() {
+		return _verbose;
 	}
+
+	public void setVerbose(boolean _verbose) {
+		this._verbose = _verbose;
+	}
+
+
 }

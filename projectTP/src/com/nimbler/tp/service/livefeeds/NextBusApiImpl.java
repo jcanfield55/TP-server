@@ -27,6 +27,7 @@ import com.nimbler.tp.dataobject.nextbus.Predictions;
 import com.nimbler.tp.dataobject.nextbus.VehiclePosition;
 import com.nimbler.tp.gtfs.GtfsDataService;
 import com.nimbler.tp.gtfs.TripStopIndex;
+import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.service.livefeeds.cache.NextBusPredictionCache;
 import com.nimbler.tp.service.livefeeds.cache.NextBusVehiclePositionCache;
 import com.nimbler.tp.util.GtfsUtils;
@@ -40,7 +41,7 @@ import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
  */
 public class NextBusApiImpl implements RealTimeAPI {
 
-	private static final boolean _verbose = false;
+	private boolean _verbose = false;
 
 	private Map<String, String> agencyMap;
 
@@ -49,6 +50,11 @@ public class NextBusApiImpl implements RealTimeAPI {
 	private int timeDiffercenceInMin;
 	@Autowired
 	GtfsDataService gtfsDataService;
+
+	@Autowired
+	private LoggingService logger;
+
+	private String loggerName = "com.nimbler.tp.service.livefeeds";
 
 	public enum NEXTBUS_API_NAME{
 		AC_TRANSIT("actransit"),
@@ -380,6 +386,20 @@ public class NextBusApiImpl implements RealTimeAPI {
 		}
 
 	}
+	@Override
+	public List<LegLiveFeed> getAllRealTimeFeeds(List<Leg> legs) throws FeedsNotFoundException {
+		List<LegLiveFeed> lstRes = new ArrayList<LegLiveFeed>();
+		for (Leg leg : legs) {
+			try {
+				LegLiveFeed legFeed = getAllRealTimeFeeds(leg);
+				if (legFeed!=null) 
+					lstRes.add(legFeed);
+			} catch (FeedsNotFoundException e) {
+				logger.info(loggerName, e.getMessage());
+			}
+		}
+		return lstRes;
+	}
 
 	public Map<String, String> getAgencyMap() {
 		return agencyMap;
@@ -401,5 +421,14 @@ public class NextBusApiImpl implements RealTimeAPI {
 	public void setOrphanGtfsRouteTag(Multimap<String, String> orphanGtfsRouteTag) {
 		this.orphanGtfsRouteTag = orphanGtfsRouteTag;
 	}
+
+	public boolean isVerbose() {
+		return _verbose;
+	}
+
+	public void setVerbose(boolean _verbose) {
+		this._verbose = _verbose;
+	}
+
 
 }

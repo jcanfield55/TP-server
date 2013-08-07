@@ -7,6 +7,7 @@ import static org.apache.commons.lang3.StringUtils.join;
 
 import java.util.Date;
 
+import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.nimbler.tp.service.LoggingService;
@@ -37,6 +38,10 @@ public class TwitterMonitor {
 
 	@Autowired
 	private MailService	mailService;
+
+	private long lastMailSentTime = 0;
+
+	private long remindPeriodInMillSec = DateUtils.MILLIS_PER_HOUR;
 
 	/**
 	 * Fetch sucess.
@@ -75,14 +80,15 @@ public class TwitterMonitor {
 			if(!enableNotification)
 				return;
 			openErrorCount++;
-			if(mailSent){				
-				return;
-			}
-			if(openErrorCount>=errorThreshold){
+
+			// send mail if not sent OR send remainder
+			if((!mailSent && openErrorCount>=errorThreshold) || 
+					(mailSent && (System.currentTimeMillis()-lastMailSentTime)>remindPeriodInMillSec)){ 
 				String error = exception.getClass().getSimpleName()+": "+exception.getMessage()+" for source: "+sources;
 				logger.debug(loggerName, "Sending mail : "+error);
 				mailService.sendMail(TpConstants.OTP_FAIL_NOTIFY_EMAIL_ID, "Error Fetching Tweets..!!!!", error,false);
 				mailSent = true;
+				lastMailSentTime = System.currentTimeMillis();
 			}
 		} catch (Exception e) {
 			logger.error(loggerName, e);
@@ -145,6 +151,22 @@ public class TwitterMonitor {
 
 	public void setMailService(MailService mailService) {
 		this.mailService = mailService;
+	}
+
+	public long getLastMailSentTime() {
+		return lastMailSentTime;
+	}
+
+	public void setLastMailSentTime(long lastMailSentTime) {
+		this.lastMailSentTime = lastMailSentTime;
+	}
+
+	public long getRemindPeriodInMillSec() {
+		return remindPeriodInMillSec;
+	}
+
+	public void setRemindPeriodInMillSec(long remindPeriodInMillSec) {
+		this.remindPeriodInMillSec = remindPeriodInMillSec;
 	}
 
 }

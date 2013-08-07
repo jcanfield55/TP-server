@@ -53,7 +53,7 @@ public class GtfsMetaExtractor implements Runnable{
 			GtfsUtils utils = new GtfsUtils(logger, loggerName);
 
 			//read agency ids
-			List<String> lstAgencyIds = utils.readAgencyIds(gtfsFile);
+			List<String> lstAgencyIds = utils.readAgencyIds(gtfsFile,bundle);
 			bundle.setAgencyIds(lstAgencyIds);
 
 			//read and calculate calander.txt

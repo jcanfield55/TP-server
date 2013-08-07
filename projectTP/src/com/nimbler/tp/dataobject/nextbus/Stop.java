@@ -11,7 +11,7 @@ public class Stop {
 	private String lat;
 	private String lon;
 	private String stopId;
-	
+
 	@XmlAttribute
 	public String getTag() {
 		return tag;
@@ -47,12 +47,48 @@ public class Stop {
 	public void setStopId(String stopId) {
 		this.stopId = stopId;
 	}
-	
+
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((lat == null) ? 0 : lat.hashCode());
+		result = prime * result + ((lon == null) ? 0 : lon.hashCode());
+		result = prime * result + ((stopId == null) ? 0 : stopId.hashCode());
+		return result;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Stop other = (Stop) obj;
+		if (lat == null) {
+			if (other.lat != null)
+				return false;
+		} else if (!lat.equals(other.lat))
+			return false;
+		if (lon == null) {
+			if (other.lon != null)
+				return false;
+		} else if (!lon.equals(other.lon))
+			return false;
+		if (stopId == null) {
+			if (other.stopId != null)
+				return false;
+		} else if (!stopId.equals(other.stopId))
+			return false;
+		return true;
+	}
 	@Override
 	public String toString() {
 		return "Stop [lat=" + lat + ", lon=" + lon + ", stopId=" + stopId
 				+ ", tag=" + tag + ", title=" + title + "]";
 	}
-	
-	
+
+
 }

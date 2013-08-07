@@ -95,9 +95,10 @@
 
 									<textarea id="deviceTokenArea" name="deviceToken" rows="4" cols="50" placeholder="Enter comma separated device tokens"
 										style="max-width: 100%; min-width: 100%"><%=deviceToken%></textarea>
-									<input type="radio" name="certificate" checked="checked" value="1" style="margin-top: 5px; width: auto;"> Nimbler Caltrain</input> <input
-										type="radio" name="certificate" value="4" style="margin-top: 5px; width: auto;"> Nimbler SF</input><br /> <input align="left"
-										name="chkEnableSound" type="checkbox" style="margin-top: 5px;">Enable Sound</input>
+									<input type="radio" name="certificate" checked="checked" value="1" style="margin-top: 5px; width: auto;"> Nimbler Caltrain</input><br /> 
+									<input type="radio" name="certificate" value="4" style="margin-top: 5px; width: auto;"> Nimbler SF</input><br /> 
+									<input type="radio" name="certificate" value="5" style="margin-top: 5px; width: auto;"> Nimbler DC</input><br /> 
+									<input align="left"	name="chkEnableSound" type="checkbox" style="margin-top: 5px;">Enable Sound</input>
 								</div>
 							</div>
 							<!-- -----------------------push by agency-------------------------- -->
@@ -107,15 +108,17 @@
 									<input type="radio" name="agency" checked="checked" value="1" class="agencyradio" style="width: auto;"> Caltrain</input><br /> 
 									<input type="radio" name="agency" value="2" class="agencyradio" style="width: auto;"> BART</input><br /> 
 									<input type="radio" name="agency" value="3" class="agencyradio" style="width: auto;"> SFMTA</input><br /> 
-									<input type="radio" name="agency" value="4" class="agencyradio" style="width: auto;"> Ac Transit</input>
+									<input type="radio" name="agency" value="4" class="agencyradio" style="width: auto;"> Ac Transit</input><br />
+									<input type="radio" name="agency" value="8" class="agencyradio" style="width: auto;"> WMATA</input>
 								</div>
 							</div>
 							<!-- -----------------------push by App-------------------------- -->
 							<div class="selectionradio" style="margin-bottom: 25px;">
-								<input type="radio" name="selectiontype" value="4" align="left" style="width: auto;">Push By Application (Not as admin tweet): </input>
+								<input type="radio" name="selectiontype" value="4" align="left" style="width: auto;">Push By Application (Will not be listed under advisory): </input>
 								<div id="seltype4" class="desc" style="display: none; padding: 10px; border-left: .15em solid; background: #E9EAEE">
-									<input type="radio" name="apptype" value="1" checked="checked" class="agencyradio" style="width: auto;"> Nimbler Caltrain</input><br /> <input
-										type="radio" name="apptype" value="4" class="agencyradio" style="width: auto;"> Nimbler SF</input><br />
+									<input type="radio" name="apptype" value="1" checked="checked" class="agencyradio" style="width: auto;"> Nimbler Caltrain</input><br /> 
+									<input type="radio" name="apptype" value="4" class="agencyradio" style="width: auto;"> Nimbler SF</input><br />
+									<input type="radio" name="apptype" value="5" class="agencyradio" style="width: auto;"> Nimbler DC</input><br />
 								</div>
 							</div>
 						</div>

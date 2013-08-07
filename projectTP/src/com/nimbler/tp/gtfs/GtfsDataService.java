@@ -166,7 +166,7 @@ public class GtfsDataService {
 	private void readGtfsData() {
 		long start = System.currentTimeMillis();
 
-		createNextBusStopIndexList();
+		createStopIndexList();
 		createBartStopIndexList();		
 		readRawGtfsData();
 		readBartRouteInfo();
@@ -207,7 +207,7 @@ public class GtfsDataService {
 	/**
 	 * Creates the next bus stop index list {@link TripStopIndex}.
 	 */
-	private void createNextBusStopIndexList() {
+	private void createStopIndexList() {
 		long start = System.currentTimeMillis();
 		List<Class<?>> lstClasses = new ArrayList<Class<?>>();
 		lstClasses.add(Agency.class);
@@ -232,7 +232,7 @@ public class GtfsDataService {
 						if(mappedTripId!=null)
 							acTransitTripIdMapping.put(tripId, mappedTripId);						
 					}
-				}else if (bundle.getAgencyType().equals(AGENCY_TYPE.SFMUNI)) {
+				}else if (bundle.getAgencyType().equals(AGENCY_TYPE.SFMUNI) || bundle.getAgencyType().equals(AGENCY_TYPE.TRIMET)) {
 					GtfsRelationalDaoImpl context = GtfsUtils.getGtfsDao(bundle.getValidFile(), lstClasses);
 					tripStopIndex.save(bundle.getAgencyType(), context,new Transformer() {
 						@Override
@@ -750,4 +750,11 @@ public class GtfsDataService {
 		this.tripStopIndex = tripStopIndex;
 	}
 
+	public BidiMap getAcTransitTripIdMapping() {
+		return acTransitTripIdMapping;
+	}
+
+	public void setAcTransitTripIdMapping(BidiMap acTransitTripIdMapping) {
+		this.acTransitTripIdMapping = acTransitTripIdMapping;
+	}
 }

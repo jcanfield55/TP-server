@@ -101,8 +101,19 @@ public class LegLiveFeed {
 	}
 	@Override
 	public String toString() {
-		return "LegLiveFeed [leg=" + leg + ", departureTime=" + departureTime
-				+ ", arrivalTime=" + arrivalTime + ", timeDiffInMins="
-				+ timeDiffInMins + ", arrivalTimeFlag=" + arrivalTimeFlag + "]";
+		return "LegLiveFeed ["
+				+ (leg != null ? "leg=" + leg + ", " : "")
+				+ (departureTime != null ? "departureTime=" + departureTime
+						+ ", " : "")
+						+ (arrivalTime != null ? "arrivalTime=" + arrivalTime + ", "
+								: "")
+								+ (timeDiffInMins != null ? "timeDiffInMins=" + timeDiffInMins
+										+ ", " : "")
+										+ (arrivalTimeFlag != null ? "arrivalTimeFlag="
+												+ arrivalTimeFlag + ", " : "")
+												+ (lstPredictions != null ? "lstPredictions=" + lstPredictions
+														+ ", " : "")
+														+ (lstVehiclePositions != null ? "lstVehiclePositions="
+																+ lstVehiclePositions : "") + "]";
 	}
 }

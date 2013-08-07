@@ -64,6 +64,35 @@ public class HttpUtils {
 		return sb.toString();
 	}
 
+	public static String getHttpResponse(String url,String type) throws TpException {
+		StringBuilder sb = new StringBuilder();
+		HttpURLConnection connection = null; 
+		try {
+			connection = (HttpURLConnection)new URL(url).openConnection();
+			connection.setDoOutput(true);
+			if(type!=null)
+				connection.addRequestProperty("Accept", type);
+			int responseCode = connection.getResponseCode();
+			if(responseCode != 200)
+				throw new TpException("Server returned http response code "+responseCode);
+			BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			String line;
+			while((line = br.readLine()) !=null)
+				sb.append(line);
+		} catch (UnknownHostException e) {
+			throw new TpException("UnknownHost: "+e.getMessage());
+		} catch (MalformedURLException e) {
+			throw new TpException("MalformedURL: "+e.getMessage());
+		}catch (IOException e) {
+			throw new TpException(e.getMessage());
+		}finally{
+			if(connection !=null){
+				connection.disconnect();
+			}
+		}
+		return sb.toString();
+	}
+
 	/**
 	 * Request http get.
 	 *

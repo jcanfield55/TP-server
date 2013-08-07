@@ -16,6 +16,7 @@ import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 
@@ -23,6 +24,7 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.nimbler.tp.TPApplicationContext;
 import com.nimbler.tp.common.DBException;
 import com.nimbler.tp.common.FeedsNotFoundException;
@@ -286,13 +288,20 @@ public class RealTimePredictionService {
 			logger.debug(loggerName, "Live feeds not applicable for any of the legs: "+legs); 
 			return null;
 		}
+		ArrayListMultimap<RealTimeAPI, Leg> multimap = ArrayListMultimap.create();
 		for (Leg leg : legs) {
 			try {
 				RealTimeAPI liveFeedAPI = RealTimeAPIFactory.getInstance().getLiveFeedAPI(leg);
-				LegLiveFeed legFeed = liveFeedAPI.getAllRealTimeFeeds(leg);
-				if (legFeed!=null) {
-					lstRes.add(legFeed);
-				}
+				multimap.put(liveFeedAPI, leg);
+			} catch (FeedsNotFoundException e) {
+				logger.info(loggerName, e.getMessage());
+			}
+		}
+		for (RealTimeAPI api : multimap.keySet()) {
+			try {
+				List<LegLiveFeed> feeds = api.getAllRealTimeFeeds(multimap.get(api));
+				if(feeds!=null)
+					lstRes.addAll(feeds);
 			} catch (FeedsNotFoundException e) {
 				logger.info(loggerName, e.getMessage());
 			}
@@ -377,7 +386,7 @@ public class RealTimePredictionService {
 			Map<String, GtfsStop> stopIdMap = stopMapping.getBusGtfsStopsById();
 			GtfsStop gtfsStop = stopIdMap.get(stopID);
 			if(gtfsStop==null){
-				return " No gtfs Stop";
+				return "No gtfs Stop";
 			}
 			return JSONUtil.getJsonFromObj(gtfsStop.getBusStopsForRoute(routeId));
 		} catch (Exception e) {
@@ -428,6 +437,26 @@ public class RealTimePredictionService {
 			return JSONUtil.getJsonFromObj(res);
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+		return "Error";
+	}
+	@GET
+	@Path("/log/verbose/{agency}")
+	public String togleLogs(@PathParam("agency") String agency) {
+		try {
+			Boolean currantStatus = null;
+			if("wmata".equalsIgnoreCase(agency)){
+				currantStatus =	BeanUtil.getWMATAApiImpl().isVerbose();
+				BeanUtil.getWMATAApiImpl().setVerbose(!currantStatus);
+			}else if ("nextbus".equalsIgnoreCase(agency)){
+				currantStatus =	BeanUtil.getNextBusApiImpl().isVerbose();
+				BeanUtil.getNextBusApiImpl().setVerbose(!currantStatus);
+			}
+			if(currantStatus == null)
+				return "Bean not found";
+			return "Set to : "+(!currantStatus);
+		} catch (Exception e) {
+			logger.error(loggerName, e);
 		}
 		return "Error";
 	}

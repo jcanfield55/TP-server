@@ -395,20 +395,48 @@ public class Leg {
 
 	@Override
 	public String toString() {
-		return "Leg [startTime=" + startTime + ", endTime=" + endTime
-				+ ", distance=" + distance + ", mode=" + mode + ", route="
-				+ route + ", agencyName=" + agencyName + ", agencyUrl="
-				+ agencyUrl + ", agencyTimeZoneOffset=" + agencyTimeZoneOffset
-				+ ", routeColor=" + routeColor + ", routeTextColor="
-				+ routeTextColor + ", interlineWithPreviousLeg="
-				+ interlineWithPreviousLeg + ", tripShortName=" + tripShortName
-				+ ", headsign=" + headsign + ", agencyId=" + agencyId
-				+ ", tripId=" + tripId + ", from=" + from + ", to=" + to
-				+ ", stop=" + intermediateStops + ", legGeometry=" + legGeometry
-				+ ", walkSteps=" + steps + ", notes=" + notes
-				+ ", routeShortName=" + routeShortName + ", routeLongName="
-				+ routeLongName + ", boardRule=" + boardRule + ", alightRule="
-				+ alightRule + "]\n";
+		return "Leg ["
+				+ (id != null ? "id=" + id + ", " : "")
+				+ (itinId != null ? "itinId=" + itinId + ", " : "")
+				+ (startTime != null ? "startTime=" + startTime + ", " : "")
+				+ (endTime != null ? "endTime=" + endTime + ", " : "")
+				+ (distance != null ? "distance=" + distance + ", " : "")
+				+ (mode != null ? "mode=" + mode + ", " : "")
+				+ (route != null ? "route=" + route + ", " : "")
+				+ (routeId != null ? "routeId=" + routeId + ", " : "")
+				+ (agencyName != null ? "agencyName=" + agencyName + ", " : "")
+				+ (agencyUrl != null ? "agencyUrl=" + agencyUrl + ", " : "")
+				+ (agencyTimeZoneOffset != null ? "agencyTimeZoneOffset="
+						+ agencyTimeZoneOffset + ", " : "")
+						+ (routeColor != null ? "routeColor=" + routeColor + ", " : "")
+						+ (routeTextColor != null ? "routeTextColor=" + routeTextColor
+								+ ", " : "")
+								+ (interlineWithPreviousLeg != null ? "interlineWithPreviousLeg="
+										+ interlineWithPreviousLeg + ", "
+										: "")
+										+ (tripShortName != null ? "tripShortName=" + tripShortName
+												+ ", " : "")
+												+ (headsign != null ? "headsign=" + headsign + ", " : "")
+												+ (agencyId != null ? "agencyId=" + agencyId + ", " : "")
+												+ (tripId != null ? "tripId=" + tripId + ", " : "")
+												+ (from != null ? "from=" + from + ", " : "")
+												+ (to != null ? "to=" + to + ", " : "")
+												+ (intermediateStops != null ? "intermediateStops="
+														+ intermediateStops + ", " : "")
+														+ (legGeometry != null ? "legGeometry=" + legGeometry + ", "
+																: "")
+																+ (steps != null ? "steps=" + steps + ", " : "")
+																+ (notes != null ? "notes=" + notes + ", " : "")
+																+ (routeShortName != null ? "routeShortName=" + routeShortName
+																		+ ", " : "")
+																		+ (routeLongName != null ? "routeLongName=" + routeLongName
+																				+ ", " : "")
+																				+ (boardRule != null ? "boardRule=" + boardRule + ", " : "")
+																				+ (alightRule != null ? "alightRule=" + alightRule + ", " : "")
+																				+ (rentedBike != null ? "rentedBike=" + rentedBike + ", " : "")
+																				+ (duration != null ? "duration=" + duration + ", " : "")
+																				+ (size != null ? "size=" + size + ", " : "")
+																				+ (vehicleId != null ? "vehicleId=" + vehicleId : "") + "]";
 	}
 
 	public String getId() {

@@ -14,6 +14,7 @@ import java.util.TreeMap;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.nimbler.tp.common.FeedsNotFoundException;
 import com.nimbler.tp.common.RealTimeDataException;
@@ -29,6 +30,7 @@ import com.nimbler.tp.dataobject.bart.Station;
 import com.nimbler.tp.dataobject.nextbus.VehiclePosition;
 import com.nimbler.tp.gtfs.GtfsDataService;
 import com.nimbler.tp.gtfs.RouteStopIndex;
+import com.nimbler.tp.service.LoggingService;
 import com.nimbler.tp.service.livefeeds.cache.BartETDCache;
 import com.nimbler.tp.util.BeanUtil;
 import com.nimbler.tp.util.ComUtils;
@@ -50,6 +52,11 @@ public class BARTApiImpl implements RealTimeAPI {
 	private int earlyThreshold = 1;
 
 	private String bartAPIRegKey;
+
+	@Autowired
+	private LoggingService logger;
+
+	private String loggerName = "com.nimbler.tp.service.livefeeds";
 
 	private int maxTimeDifference = 30;//can be updated from bean
 	private int maxTimeDifferenceForEarly = 10;//can be updated from bean
@@ -395,6 +402,22 @@ public class BARTApiImpl implements RealTimeAPI {
 		this.bartAPIRegKey = bartAPIRegKey;
 	}
 
+	public LoggingService getLogger() {
+		return logger;
+	}
+
+	public void setLogger(LoggingService logger) {
+		this.logger = logger;
+	}
+
+	public String getLoggerName() {
+		return loggerName;
+	}
+
+	public void setLoggerName(String loggerName) {
+		this.loggerName = loggerName;
+	}
+
 	@Override
 	public LegLiveFeed getLegArrivalTime(Leg leg) throws FeedsNotFoundException {
 		throw new FeedsNotFoundException("Not suported");
@@ -403,6 +426,21 @@ public class BARTApiImpl implements RealTimeAPI {
 	@Override
 	public VehiclePosition getVehiclePosition(Leg leg) throws FeedsNotFoundException {
 		throw new FeedsNotFoundException("VehiclePosition Not suported for bart");
+	}
+
+	@Override
+	public List<LegLiveFeed> getAllRealTimeFeeds(List<Leg> legs) throws FeedsNotFoundException {
+		List<LegLiveFeed> lstRes = new ArrayList<LegLiveFeed>();
+		for (Leg leg : legs) {
+			try {
+				LegLiveFeed legFeed = getAllRealTimeFeeds(leg);
+				if (legFeed!=null) 
+					lstRes.add(legFeed);
+			} catch (FeedsNotFoundException e) {
+				logger.info(loggerName, e.getMessage());
+			}
+		}
+		return lstRes;
 	}
 
 }

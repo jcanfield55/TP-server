@@ -97,6 +97,16 @@ public class ComUtils {
 		return calendar.get(Calendar.HOUR_OF_DAY)*60*60 + calendar.get(Calendar.MINUTE)*60 + calendar.get(Calendar.SECOND);
 
 	}
+	public static String capitalize(String str) {;
+	if(str==null)
+		return null;		
+	char[] chars = str.toCharArray();
+	if(chars.length<1)
+		return str;
+	chars[0] = Character.toUpperCase(chars[0]);
+	return new String(chars);
+
+	}
 	/**
 	 * Checks if is empty list.
 	 *

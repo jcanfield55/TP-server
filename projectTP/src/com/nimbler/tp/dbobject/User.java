@@ -67,12 +67,14 @@ public class User implements Serializable {
 	private long lastReadTimeAct;
 	private long lastReadTimeSfMuni;
 	private long lastReadTimeWmata;
+	private long lastReadTimeTrimet;
 
 	private long lastPushTime;//caltrain app
 	private long lastPushTimeCaltrain;
 	private long lastPushTimeBart;
 	private long lastPushTimeAct;
 	private long lastPushTimeSfMuni;
+	private long lastPushTimeTrimet;
 
 	private long createTime;
 	private long updateTime;
@@ -91,6 +93,7 @@ public class User implements Serializable {
 	private int enableCaltrainAdv = BOOLEAN_VAL.TRUE.ordinal();
 	private int enableAcTransitAdv = BOOLEAN_VAL.FALSE.ordinal();
 	private Integer enableWmataAdv = BOOLEAN_VAL.TRUE.ordinal();
+	private Integer enableTrimetAdv = BOOLEAN_VAL.TRUE.ordinal();
 
 	private Long lastPushTimeWmata;
 
@@ -247,6 +250,35 @@ public class User implements Serializable {
 
 	public int getNotifTimingWeekend() {
 		return notifTimingWeekend;
+	}
+
+	public long getLastReadTimeTrimet() {
+		return lastReadTimeTrimet;
+	}
+
+
+	public void setLastReadTimeTrimet(long lastReadTimeTrimet) {
+		this.lastReadTimeTrimet = lastReadTimeTrimet;
+	}
+
+
+	public long getLastPushTimeTrimet() {
+		return lastPushTimeTrimet;
+	}
+
+
+	public void setLastPushTimeTrimet(long lastPushTimeTrimet) {
+		this.lastPushTimeTrimet = lastPushTimeTrimet;
+	}
+
+
+	public Integer getEnableTrimetAdv() {
+		return enableTrimetAdv;
+	}
+
+
+	public void setEnableTrimetAdv(Integer enableTrimetAdv) {
+		this.enableTrimetAdv = enableTrimetAdv;
 	}
 
 

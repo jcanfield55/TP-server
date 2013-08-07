@@ -81,6 +81,7 @@ public class WalkStep {
 	 * x is the distance from the start of the step, y is the elevation at this distance.
 	 */
 	private String elevation;
+	private Integer index;
 
 	//	@XmlElement
 	//	public List<Alert> alerts;
@@ -210,4 +211,11 @@ public class WalkStep {
 		this.elevation = elevation;
 	}
 
+	public Integer getIndex() {
+		return index;
+	}
+
+	public void setIndex(Integer index) {
+		this.index = index;
+	}
 }

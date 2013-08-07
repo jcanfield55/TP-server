@@ -23,7 +23,7 @@ import com.nimbler.tp.util.TpConstants.AGENCY_TYPE;
  */
 public class TripStopIndex {
 	/**
-	 * route id, list of stop id
+	 * trip id, list of stop id
 	 */
 	private Map<AGENCY_TYPE, Map<String,List<String>>> trip_stopTimes = new HashMap<AGENCY_TYPE, Map<String,List<String>>>();
 
@@ -48,14 +48,14 @@ public class TripStopIndex {
 	 */
 	public boolean isValidStopsForTrip(AGENCY_TYPE type,String tripId,String from,String to) {
 		Map<String, List<String>> trip_st = trip_stopTimes.get(type);
-		if(trip_st!=null){
-			List<String> stops = trip_st.get(tripId);
-			if(stops!=null){
-				int fromIndex = stops.indexOf(from.toLowerCase());
-				int toIndex = stops.indexOf(to.toLowerCase());						
-				if(fromIndex !=-1 && toIndex!=-1 && fromIndex<toIndex){
-					return true;
-				}
+		if(trip_st==null)
+			throw new RuntimeException("Stop Index is not available for agency: "+type);
+		List<String> stops = trip_st.get(tripId);
+		if(stops!=null){
+			int fromIndex = stops.indexOf(from.toLowerCase());
+			int toIndex = stops.indexOf(to.toLowerCase());						
+			if(fromIndex !=-1 && toIndex!=-1 && fromIndex<toIndex){
+				return true;
 			}
 		}
 		return false;

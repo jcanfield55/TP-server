@@ -3,6 +3,7 @@
  */
 package com.nimbler.tp.service.advisories;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -528,19 +529,6 @@ public class AdvisoriesPushService {
 			BasicDBObject queryObj = new BasicDBObject();
 			queryObj.put(TpConstants.NUMBER_OF_ALERT, new BasicDBObject(MongoQueryConstant.GREATER_THAN, 0));
 			queryObj.put(agencyType.getEnableAdvisoryColumnName(), BOOLEAN_VAL.TRUE.ordinal());
-			/*	
-			queryObj.put(TpConstants.APP_TYPE, agencyType.ordinal());
-			 * if(agencyType.ordinal() == AGENCY_TYPE.CALTRAIN.ordinal()){
-				DBObject appCalTrain = new BasicDBObject(TpConstants.APP_TYPE, new BasicDBObject(MongoQueryConstant.IN, new Object[]{null,NIMBLER_APP_TYPE.CALTRAIN.ordinal()}));
-				DBObject appBay = new BasicDBObject(TpConstants.APP_TYPE, NIMBLER_APP_TYPE.SF_BAY_AREA.ordinal());
-				appBay.put(agencyType.getEnableAdvisoryColumnName(),BOOLEAN_VAL.TRUE.ordinal());
-				BasicDBList or = new BasicDBList();
-				or.add(appCalTrain);
-				or.add(appBay);
-				queryObj.put(MongoQueryConstant.OR, or);				
-			}else{
-				queryObj.put(TpConstants.APP_TYPE, NIMBLER_APP_TYPE.SF_BAY_AREA.ordinal());
-			}*/
 
 			BasicQuery basicQuery = new BasicQuery(queryObj);
 			int count = persistenceService.getCount(MONGO_TABLES.users.name(), queryObj, User.class);
@@ -856,11 +844,20 @@ public class AdvisoriesPushService {
 		} else if (agencyId == AGENCY_TYPE.SFMUNI.ordinal()) {
 			return user.getLastPushTimeSfMuni(); 
 		} else if (agencyId == AGENCY_TYPE.CALTRAIN.ordinal()) {
-			//return user.getLastPushTimeCaltrain();
 			return user.getLastPushTime();
 		} else {
-			return user.getLastPushTime();
+			try {
+				String strMethod = AGENCY_TYPE.values()[agencyId].getPushTimeColumnName();
+				strMethod = StringUtils.capitalize(strMethod);
+				Method method = user.getClass().getMethod("get"+strMethod);
+				Object val = method.invoke(user);
+				if(val!=null)
+					return (Long)val;
+			} catch (Exception e) {
+				logger.error(loggerName, "user:"+ user + ", agency: \" + agency",e);
+			}
 		}
+		return 0;
 	}
 	static class ThresholdIncData{
 		ThresholdBoard board;

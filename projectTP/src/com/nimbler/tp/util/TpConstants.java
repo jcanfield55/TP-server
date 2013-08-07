@@ -172,7 +172,8 @@ public class TpConstants {
 		 * Ordinal 4
 		 */
 		SF_BAY_AREA("SF"),//4
-		WDC("DC");//5
+		WDC("DC"),//5
+		PORTLAND("Portland");//6
 
 		private String text;
 		public String getText() {
@@ -183,7 +184,7 @@ public class TpConstants {
 		}
 		private NIMBLER_APP_TYPE(String text) {
 			this.text = text;
-		}
+		}	
 	}
 
 	public enum AGENCY_TYPE {
@@ -207,7 +208,9 @@ public class TpConstants {
 		SANTA_ROSA("","","Santa Rosa CityBus",""),//17
 		STANFORD_MARGUERITE_SHUTTLE("","","Stanford Shuttle",""),//18
 		UNION_CITY_TRANSIT("","","Union City Transit",""),//19
-		YOUNTVILLE_SHUTTLE("","","YountvilleShuttle","");//20
+		YOUNTVILLE_SHUTTLE("","","YountvilleShuttle",""),//20
+		//portland
+		TRIMET("lastPushTimeTrimet","enableTrimetAdv","Trimet","lastReadTimeTrimet");//21
 
 		private String lastReadTimeColumnName;
 
@@ -223,7 +226,7 @@ public class TpConstants {
 			this.pushTimeColumnName = pushTimeColumnName;
 			this.enableAdvisoryColumnName = enableAdvisoryColumnName;
 			this.text = txt;
-			this.lastReadTimeColumnName = readTime;
+			this.lastReadTimeColumnName = readTime;			
 		}
 
 		public String getText() {

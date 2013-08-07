@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+	targetNamespace="urn:trimet:arrivals" 
+	xmlns="urn:trimet:arrivals"
+	elementFormDefault="qualified">
+	<xs:element name="resultSet" type="resultSet" />
+	<xs:complexType name="resultSet">
+		<xs:sequence>
+			<xs:element name="errorMessage" type="xs:string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="location" type="locationType" minOccurs="0" maxOccurs="10"/>
+			<xs:element name="arrival" type="arrivalType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="routeStatus" type="routeStatusType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="queryTime" type="xs:long" use="optional" />
+	</xs:complexType>
+	<xs:complexType name="locationType">
+		<xs:attribute name="locid" type="xs:int" use="required"/>
+		<xs:attribute name="desc" type="xs:string" use="required"/>
+		<xs:attribute name="dir" type="xs:string" use="required"/>
+		<xs:attribute name="lat" type="xs:double" use="required"/>
+		<xs:attribute name="lng" type="xs:double" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="arrivalType">
+		<xs:sequence>
+			<xs:element name="blockPosition" type="blockPositionType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="route" type="xs:int" use="required"/>
+		<xs:attribute name="locid" type="xs:int" use="required"/>
+		<xs:attribute name="dir" type="xs:int" use="required"/>
+		<xs:attribute name="shortSign" type="xs:string" use="required" />
+		<xs:attribute name="fullSign" type="xs:string" use="required" />
+		<xs:attribute name="estimated" type="xs:long" use="optional" />
+		<xs:attribute name="scheduled" type="xs:long" use="required" />
+		<xs:attribute name="block" type="xs:int" use="required" />
+		<xs:attribute name="piece" type="xs:string" use="required" />
+		<xs:attribute name="departed" type="xs:boolean" use="required" />
+		<xs:attribute name="detour" type="xs:boolean" use="optional" />
+		<xs:attribute name="status" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					possible values:
+					estimated = arrival time was estimated with vehicle arrival information
+					scheduled = scheduled arrival time is available only. No real time information available for estimation. Bus's radio may be down or vehicle may not be in service. Arrivals are not estimated when further than an hour away.
+					delayed = status of service is uncertain.
+					canceled = scheduled arrival was canceled for the day
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="blockPositionType">
+		<xs:sequence>
+			<xs:element name="trip" type="tripType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="layover" type="layoverType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="at" type="xs:long" use="required" />
+		<xs:attribute name="lat" type="xs:double" use="optional" />
+		<xs:attribute name="lng" type="xs:double" use="optional" />
+		<xs:attribute name="heading" type="xs:int" use="optional" />
+		<xs:attribute name="feet" type="xs:int" use="required" />
+	</xs:complexType>
+	<xs:complexType name="layoverType">
+		<xs:sequence>
+			<xs:element name="location" type="locationType" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+		<xs:attribute name="start" type="xs:long" use="required" />
+		<xs:attribute name="end" type="xs:long" use="required" />
+	</xs:complexType>
+	<xs:complexType name="tripType">
+		<xs:attribute name="progress" type="xs:int" use="required" />
+		<xs:attribute name="destDist" type="xs:int" use="required" />
+		<xs:attribute name="route" type="xs:int" use="required"/>
+		<xs:attribute name="dir" type="xs:int" use="required"/>
+		<xs:attribute name="tripNum" type="xs:int" use="required"/>
+		<xs:attribute name="pattern" type="xs:int" use="required"/>
+		<xs:attribute name="desc" type="xs:string" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="routeStatusType">
+		<xs:attribute name="route" type="xs:int" use="required"/>
+		<xs:attribute name="status" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					possible values:
+					estimatedOnly = Arrivals for this route are only being reported if they can be estimated within the next hour. This occurs in inclement weather conditions.
+					off = No arrivals are being reported for this route. This occurs when conditions such as snow and ice cause vehicles along the route to travel off their trip patterns. In such cases predictions are highly inaccurate or impossible.
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		
+	</xs:complexType>
+</xs:schema>

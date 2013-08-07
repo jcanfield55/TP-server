@@ -7,10 +7,12 @@ import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -34,6 +36,7 @@ import com.nimbler.tp.util.TpConstants.NIMBLER_APP_TYPE;
  */
 public class HtmlUtil {	
 	public static final String DATE_FORMAT_PATTERN = "dd-MMM-yyyy";
+	public static final String FEEDBACK_FORMAT_PATTERN = "EEE, dd MMM yyyy HH:mm:ss z";
 	private static final String table="<table width=\"70%\" cellspacing=\"1\" cellpadding=\"1\" border=\"0\" style=\"background: #1879AD; margin-top: 15\">--data--</table>";
 	private static final String ROW_COLSPAN_BG = "#E8E8E8";
 	private static final int	SUMMARY_COLUMS	= 8;
@@ -479,8 +482,8 @@ public class HtmlUtil {
 				to = plan.getTo()!=null ? plan.getTo().getName() : null;*/
 			from = feedback.getAddFrom()!=null ? feedback.getAddFrom() : (plan.getFrom()!=null ? plan.getFrom().getName() : null);
 			to =  feedback.getAddTo()!=null ? feedback.getAddTo() : (plan.getTo()!=null ? plan.getTo().getName() : null);
-
-			date = DateFormatUtils.format(plan.getDate(), TpConstants.OTP_DATE_FORMAT);
+			//			date =    DateFormatUtils.format(plan.getDate(), TpConstants.OTP_DATE_FORMAT);
+			date =  getAppDate(new Date(plan.getDate()),feedback.getAppType());
 			if(plan.getPlanUrlParams()!=null)
 				webUrl = "<a href='"+TpConstants.SERVER_WEB_URL+"#/submit&"+plan.getPlanUrlParams()+"'>"+TpConstants.SERVER_WEB_URL+"</a>";			
 		}
@@ -500,7 +503,7 @@ public class HtmlUtil {
 				.replace("--to--", StringUtils.defaultIfBlank(to, "-"))
 				.replace("--date--", StringUtils.defaultIfBlank(date, "-"))
 				.replace("--weburl--", StringUtils.defaultIfBlank(webUrl, "-"))
-				.replace("--feedbacktime--", DateFormatUtils.format(new Date(), TpConstants.OTP_DATE_FORMAT))
+				.replace("--feedbacktime--", getAppDate(new Date(), feedback.getAppType()))
 				.replace("--sendermail--",StringUtils.defaultIfBlank(feedback.getEmailId(), "-"))
 				.replace("--txtfb--",StringUtils.defaultIfBlank(feedback.getFbText(), "-"))
 				.replace("--source--", FEEDBACK_SOURCE_TYPE.values()[feedback.getSource()].name())
@@ -508,6 +511,14 @@ public class HtmlUtil {
 				.replace("--appver--", feedback.getAppVersion());
 		return otpFeedback;
 
+	}
+
+	public static String getAppDate(Date date, int appType) {
+		SimpleDateFormat dateFormat = new SimpleDateFormat(FEEDBACK_FORMAT_PATTERN);
+		TimeZone tz = BeanUtil.getNimblerAppsBean().getTimeZoneByApp(appType);
+		if(tz!=null)
+			dateFormat.setTimeZone(tz);
+		return dateFormat.format(date);
 	}
 
 	public static String getUserStatistics(List<UserStatistics> lstStatistics) throws IOException {
