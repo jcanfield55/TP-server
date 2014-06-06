@@ -110,7 +110,7 @@ public class User implements Serializable {
 	 */
 	private int notifTimingMorning = BOOLEAN_VAL.TRUE.ordinal();
 	/**
-	 * Weekday Midday (10 - 3:00pm)
+	 * Weekday Midday(10 - 3:00pm)
 	 */
 	private int notifTimingMidday= BOOLEAN_VAL.FALSE.ordinal();
 	/**
