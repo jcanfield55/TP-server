@@ -1,18 +1,16 @@
 package mongo;
 import java.util.ArrayList;
 
-import com.nimbler.tp.TPApplicationContext;
-import com.nimbler.tp.TPApplicationContext.SPRING_BEANS;
 import com.nimbler.tp.dbobject.EventLog;
-import com.nimbler.tp.mongo.PersistanceService;
 import com.nimbler.tp.startup.StartupManager;
 
 public class TestMongoApp {
 
 	public static void main(String[] args) {
 		new StartupManager();
-		PersistanceService service = (PersistanceService) TPApplicationContext.getInstance().getBean(SPRING_BEANS.PERSISTANCE_SERVICE.bean());
-		System.out.println(service);
+		//		PersistanceService service = (PersistanceService) TPApplicationContext.getInstance().getBean(SPRING_BEANS.PERSISTANCE_SERVICE.bean());
+		//		System.out.println(service);
+
 		ArrayList<String> list = new ArrayList<String>();
 		list.add("100");
 		list.add("200");

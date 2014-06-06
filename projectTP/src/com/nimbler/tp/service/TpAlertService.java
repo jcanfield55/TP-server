@@ -15,7 +15,7 @@ import com.nimbler.tp.service.smtp.MailService;
 
 /**
  * The Class 
- *
+ * Not used
  * @author nirmal
  */
 public class TpAlertService {

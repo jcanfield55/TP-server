@@ -210,7 +210,11 @@ public class TpConstants {
 		UNION_CITY_TRANSIT("","","Union City Transit",""),//19
 		YOUNTVILLE_SHUTTLE("","","YountvilleShuttle",""),//20
 		//portland
-		TRIMET("lastPushTimeTrimet","enableTrimetAdv","Trimet","lastReadTimeTrimet");//21
+		TRIMET("lastPushTimeTrimet","enableTrimetAdv","Trimet","lastReadTimeTrimet"),//21
+		RIDE_CONNECTION("","","Ride Conn",""),//22
+		SANDY("","","Sandy",""),//23
+		BLUE_STAR("","","Blue Star",""),//24
+		SMART("","","SMART","");//25
 
 		private String lastReadTimeColumnName;
 

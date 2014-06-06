@@ -1,10 +1,22 @@
-/TPServer/ws/event/revgeocode
+/TPServer/ws/plan/new
 	
-
-lat -raw address
-lon - formatted address
-geoRes - geo json response form google
 deviceid
+planJsonString
+rawAddTo
+frmtdAddTo
+geoResTo
+rawAddFrom
+frmtdAddFrom
+geoRestoFrom
+fromType // 1-GEO,2-REVERSE_GEO
+toType // 1-GEO,2-REVERSE_GEO
+latTo
+lonTo
+latFrom
+lonFrom
+timeFrom // time spent in from geo request
+timeTo // time spent in to geo request
+timeTripPlan // time spent in trip generation
 
 
-http://10.0.0.38:8080/TPServer/ws/event/geocode?type=1&rawAdd=raw&frmtdAdd=ffffrrrmtd&geoRes={}geo json&deviceid=123-456-789
+

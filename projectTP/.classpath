@@ -12,7 +12,5 @@
 	<classpathentry kind="lib" path="TP-tomcat-6.0.20/lib/catalina.jar"/>
 	<classpathentry kind="lib" path="TP-tomcat-6.0.20/lib/servlet-api.jar"/>
 	<classpathentry kind="lib" path="TP-tomcat-6.0.20/lib/jsp-api.jar"/>
-	<classpathentry kind="lib" path="E:/My_Shared/All_Library/httpcore-4.0.1.jar"/>
-	<classpathentry kind="lib" path="E:/My_Shared/All_Library/object-explorer.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

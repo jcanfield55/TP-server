@@ -43,7 +43,7 @@
 		<mkdir dir="build/classes" />
 		<copydir dest="build/src" src="src">
 		</copydir>
-		<javac srcdir="build/src" destdir="build/classes" classpath="${cp}">
+		<javac srcdir="build/src" destdir="build/classes" classpath="${cp}" encoding="utf-8">
 		</javac>
 		
 		<jar destfile="WebContent/WEB-INF/lib/${build.jar.file}" basedir="build/classes">
