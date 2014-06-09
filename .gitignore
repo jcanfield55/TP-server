@@ -1,1 +1,5 @@
 .svn
+/projectTP/build
+/projectTP/dist
+/projectTP/WebContent/WEB-INF/classes
+/projectTP/TP-tomcat-6.0.20/webapps/TPServer.war
